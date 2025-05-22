@@ -81,7 +81,11 @@
                               <Tooltip text="Thêm địa điểm từ kết quả tìm kiếm" />
                            </tooltip>
                            <graphic>
-                              <Label text="+" styleClass="button-icon" />
+                              <ImageView fitHeight="18.0" fitWidth="18.0">
+                                 <image>
+                                    <Image url="@/tourrouteplanner/icons/add.png" />
+                                 </image>
+                              </ImageView>
                            </graphic>
                         </Button>
                      </children>
@@ -108,11 +112,25 @@
                            <padding>
                               <Insets bottom="8.0" left="15.0" right="15.0" top="8.0" />
                            </padding>
+                           <graphic>
+                              <ImageView fitHeight="16.0" fitWidth="16.0">
+                                 <image>
+                                    <Image url="@/tourrouteplanner/icons/delete.png" />
+                                 </image>
+                              </ImageView>
+                           </graphic>
                         </Button>
                         <Button mnemonicParsing="false" onAction="#onClearAllPlaces" styleClass="clear-button" text="Xóa tất cả">
                            <padding>
                               <Insets bottom="8.0" left="15.0" right="15.0" top="8.0" />
                            </padding>
+                           <graphic>
+                              <ImageView fitHeight="16.0" fitWidth="16.0">
+                                 <image>
+                                    <Image url="@/tourrouteplanner/icons/delete.png" />
+                                 </image>
+                              </ImageView>
+                           </graphic>
                         </Button>
                      </children>
                      <VBox.margin>
@@ -128,6 +146,13 @@
                      <padding>
                         <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
                      </padding>
+                     <graphic>
+                        <ImageView fitHeight="20.0" fitWidth="20.0">
+                           <image>
+                              <Image url="@/tourrouteplanner/icons/route.png" />
+                           </image>
+                        </ImageView>
+                     </graphic>
                   </Button>                  <Label text="Thông tin lộ trình:" styleClass="section-header">
                      <font>
                         <Font name="System Bold" size="16.0" />
