@@ -1,0 +1,83 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId> <!-- Bạn có thể thay đổi groupId -->
+    <artifactId>TourRoutePlanner</artifactId>
+    <version>1.0-SNAPSHOT</version> <!-- Bạn có thể thay đổi version -->
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source> <!-- Đảm bảo phù hợp với JDK của bạn -->
+        <maven.compiler.target>17</maven.compiler.target> <!-- Đảm bảo phù hợp với JDK của bạn -->
+        <javafx.version>21.0.1</javafx.version> <!-- Phiên bản JavaFX -->
+        <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version> <!-- Phiên bản plugin JavaFX Maven -->
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-web</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version> <!-- Phiên bản Gson -->
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version> <!-- Bạn có thể xem xét nâng cấp plugin này nếu muốn -->
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>${javafx.maven.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <!-- Default configuration for running with javafx:run -->
+                        <id>default-cli</id>
+                        <configuration>
+                            <mainClass>tourrouteplanner.Main</mainClass> <!-- Thay thế bằng main class của bạn nếu khác -->
+                            <!-- Thêm các VM options nếu cần, ví dụ để tăng bộ nhớ -->
+                            <!-- <options>
+                                <option>-Xmx1024m</option>
+                            </options> -->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Plugin exec-maven-plugin không còn cần thiết để chạy JavaFX khi đã có javafx-maven-plugin -->
+            <!-- Bạn có thể xóa hoặc comment nó lại nếu không dùng cho mục đích khác -->
+            <!-- 
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>tourrouteplanner.Main</mainClass>
+                </configuration>
+            </plugin>
+            -->
+        </plugins>
+    </build>
+</project>

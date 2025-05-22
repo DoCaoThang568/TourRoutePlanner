@@ -1,0 +1,35 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+/target/
+/logs/
+
+# IDEs
+/.idea/
+*.iml
+*.ipr
+*.iws
+/.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NetBeans
+nbactions.xml
+nb-configuration.xml
+
+# Others
+*.log
+*.tmp
+*.swp
+
+# Ignore sensitive files
+config.properties
+
+# Ignore large data files
+vietnam-latest.osm.pbf

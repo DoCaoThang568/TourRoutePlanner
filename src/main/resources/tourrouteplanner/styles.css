@@ -1,0 +1,151 @@
+﻿/* Fixed JavaFX CSS - removed unsupported properties and corrected syntax */
+.root {
+    -fx-background-color: #f8fafc;
+    -fx-font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+    -fx-font-size: 15px;
+}
+
+.menu-bar, .app-header {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #2563eb 0%, #60a5fa 100%);
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 8, 0, 0, 4);
+    -fx-padding: 12 0 12 24;
+    -fx-border-radius: 0 0 18 18;
+}
+
+.header-title {
+    -fx-text-fill: white;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.side-panel {
+    -fx-background-color: #fff;
+    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 12, 0, 0, 4);
+    -fx-background-radius: 18;
+    -fx-padding: 28 24 24 24;
+}
+
+.section-header {
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+    -fx-text-fill: #2563eb;
+    -fx-border-color: transparent transparent #e5e7eb transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 0 0 12 0;
+}
+
+.search-field {
+    -fx-background-radius: 24;
+    -fx-border-radius: 24;
+    -fx-border-color: #e5e7eb;
+    -fx-padding: 10 18 10 18;
+    -fx-background-color: #f8fafc;
+    -fx-prompt-text-fill: #6b7280;
+}
+
+.places-list {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #e5e7eb;
+    -fx-background-color: #f8fafc;
+    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 4, 0, 0, 1);
+}
+
+.places-list .list-cell {
+    -fx-padding: 10 14 10 14;
+    -fx-background-radius: 8;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: transparent transparent #e5e7eb transparent;
+}
+.places-list .list-cell:filled:selected {
+    -fx-background-color: #60a5fa;
+    -fx-text-fill: #1e40af;
+    -fx-font-weight: bold;
+    -fx-border-color: #2563eb;
+    -fx-border-width: 0 0 0 4;
+}
+
+.button {
+    -fx-background-radius: 24;
+    -fx-border-radius: 24;
+    -fx-padding: 10 22;
+    -fx-cursor: hand;
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 4, 0, 0, 2);
+    -fx-font-weight: bold;
+    -fx-border-width: 0;
+}
+
+.find-route-button {
+    -fx-background-color: #22c55e;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 24;
+    -fx-border-radius: 24;
+    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 6, 0, 0, 3);
+    -fx-padding: 12 28;
+    -fx-border-width: 0;
+}
+.find-route-button:hover {
+    -fx-background-color: #86efac;
+    -fx-scale-x: 1.04;
+    -fx-scale-y: 1.04;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #60a5fa;
+    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.12), 8, 0, 0, 2);
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+
+.route-info-container {
+    -fx-background-color: #fff;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 4, 0, 0, 1);
+    -fx-padding: 16;
+}
+
+.route-info {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 15px;
+    -fx-background-color: #f8fafc;
+    -fx-border-color: transparent;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+    -fx-text-fill: #22223b;
+}
+
+.map-container {
+    -fx-border-color: #e5e7eb;
+    -fx-border-width: 2;
+    -fx-background-color: #fff;
+    -fx-background-radius: 18;
+}
+
+.status-bar {
+    -fx-background-color: #1e40af;
+    -fx-padding: 8 20;
+    -fx-background-radius: 0 0 12 12;
+}
+
+.status-text {
+    -fx-text-fill: #fff;
+    -fx-font-size: 13px;
+}
+
+.split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.split-pane-divider {
+    -fx-background-color: #e5e7eb;
+    -fx-padding: 0 1;
+}
