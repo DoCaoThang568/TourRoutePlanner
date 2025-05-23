@@ -9,29 +9,34 @@
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.web.WebView?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
 
+<!-- Root container của ứng dụng, sử dụng BorderPane layout -->
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="700.0" minWidth="1000.0" prefHeight="700.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tourrouteplanner.MainController" stylesheets="@styles.css">
+   <!-- Khu vực TOP: Chứa MenuBar và Header của ứng dụng -->
    <top>
       <VBox BorderPane.alignment="CENTER">
          <children>
+            <!-- Thanh Menu chính -->
             <MenuBar styleClass="menu-bar">
               <menus>
                 <Menu mnemonicParsing="false" text="Tệp">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#onSaveRoute" text="Lưu lộ trình..." />
-                    <MenuItem mnemonicParsing="false" onAction="#onLoadRoute" text="Tải lộ trình..." />
+                    <MenuItem mnemonicParsing="false" onAction="#handleSaveRoute" text="Lưu lộ trình..." />
+                    <MenuItem mnemonicParsing="false" onAction="#handleLoadRoute" text="Tải lộ trình..." />
                     <SeparatorMenuItem mnemonicParsing="false" />
                     <MenuItem mnemonicParsing="false" onAction="#onExit" text="Thoát" />
                   </items>
@@ -43,6 +48,7 @@
                 </Menu>
               </menus>
             </MenuBar>
+            <!-- Header của ứng dụng -->
             <HBox alignment="CENTER_LEFT" styleClass="app-header" spacing="15.0">
                <padding>
                   <Insets bottom="15.0" left="25.0" right="25.0" top="15.0" />
@@ -57,26 +63,31 @@
             </HBox>
          </children>
       </VBox>
-   </top><center>
+   </top>
+   <!-- Khu vực CENTER: Chứa SplitPane chia giao diện thành 2 phần chính -->
+   <center>
       <SplitPane dividerPositions="0.28" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER" styleClass="main-split-pane">
         <items>
+          <!-- Panel bên trái: Chứa các control nhập liệu và hiển thị thông tin -->
           <VBox prefHeight="200.0" prefWidth="300.0" spacing="15.0" styleClass="side-panel">
                <padding>
                   <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </padding>
-               <children>                  <Label text="Tìm kiếm địa điểm:" styleClass="section-header">
+               <children>                  
+                  <!-- Khu vực tìm kiếm địa điểm -->
+                  <Label text="Tìm kiếm địa điểm:" styleClass="section-header">
                      <font>
                         <Font name="System Bold" size="16.0" />
                      </font>
                   </Label>
                   <HBox spacing="12.0" alignment="CENTER_LEFT">
                      <children>
-                        <TextField fx:id="searchTextField" onAction="#onSearchLocation" promptText="Nhập tên địa điểm..." styleClass="search-field" HBox.hgrow="ALWAYS">
+                        <TextField fx:id="searchBox" onAction="#handleSearch" promptText="Nhập tên địa điểm..." styleClass="search-field" HBox.hgrow="ALWAYS">
                            <tooltip>
                               <Tooltip text="Nhập ít nhất 2 ký tự để tìm kiếm địa điểm" />
                            </tooltip>
                         </TextField>
-                        <Button mnemonicParsing="false" onAction="#onAddPlaceFromSearch" styleClass="action-button">
+                        <Button mnemonicParsing="false" onAction="#handleAddSelected" styleClass="action-button">
                            <tooltip>
                               <Tooltip text="Thêm địa điểm từ kết quả tìm kiếm" />
                            </tooltip>
@@ -93,7 +104,8 @@
                         <Insets bottom="15.0" />
                      </VBox.margin>
                   </HBox>
-                    <Label text="Các điểm đã chọn:" styleClass="section-header">
+                  <!-- Khu vực hiển thị kết quả tìm kiếm -->
+                  <Label text="Kết quả tìm kiếm:" styleClass="section-header">
                      <font>
                         <Font name="System Bold" size="16.0" />
                      </font>
@@ -101,14 +113,35 @@
                         <Insets top="10.0" />
                      </VBox.margin>
                   </Label>
-                  <ListView fx:id="placesListView" prefHeight="200.0" styleClass="places-list" VBox.vgrow="ALWAYS">
+                  <ListView fx:id="placeListView" prefHeight="150.0" styleClass="places-list">
+                     <VBox.margin>
+                        <Insets top="8.0" bottom="10.0" />
+                     </VBox.margin>
+                  </ListView>
+
+                  <!-- Khu vực hiển thị các điểm đã chọn trong lộ trình -->
+                  <Label text="Các điểm đã chọn trong lộ trình:" styleClass="section-header">
+                     <font>
+                        <Font name="System Bold" size="16.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets top="10.0" />
+                     </VBox.margin>
+                  </Label>
+                  <TableView fx:id="routeTableView" prefHeight="180.0" styleClass="route-table" VBox.vgrow="ALWAYS">
+                    <columns>
+                      <TableColumn fx:id="routePlaceNameColumn" prefWidth="150.0" text="Tên địa điểm" />
+                      <TableColumn fx:id="routePlaceAddressColumn" prefWidth="200.0" text="Địa chỉ" />
+                    </columns>
                      <VBox.margin>
                         <Insets top="8.0" />
                      </VBox.margin>
-                  </ListView>
+                  </TableView>
+
+                  <!-- Các nút thao tác với danh sách điểm đã chọn -->
                   <HBox alignment="CENTER" spacing="15.0">
                      <children>
-                        <Button mnemonicParsing="false" onAction="#onRemovePlace" styleClass="remove-button" text="Xóa điểm">
+                        <Button mnemonicParsing="false" onAction="#handleRemoveSelected" styleClass="remove-button" text="Xóa điểm">
                            <padding>
                               <Insets bottom="8.0" left="15.0" right="15.0" top="8.0" />
                            </padding>
@@ -136,7 +169,9 @@
                      <VBox.margin>
                         <Insets top="12.0" />
                      </VBox.margin>
-                  </HBox>                  <Button mnemonicParsing="false" onAction="#onFindRoute" prefHeight="45.0" styleClass="find-route-button" text="Tìm lộ trình tối ưu">
+                  </HBox>
+                  <!-- Nút tìm lộ trình tối ưu -->
+                  <Button mnemonicParsing="false" onAction="#handleFindRoute" prefHeight="45.0" styleClass="find-route-button" text="Tìm lộ trình tối ưu">
                      <font>
                         <Font name="System Bold" size="15.0" />
                      </font>
@@ -153,7 +188,9 @@
                            </image>
                         </ImageView>
                      </graphic>
-                  </Button>                  <Label text="Thông tin lộ trình:" styleClass="section-header">
+                  </Button>                  
+                  <!-- Khu vực hiển thị thông tin lộ trình -->
+                  <Label text="Thông tin lộ trình:" styleClass="section-header">
                      <font>
                         <Font name="System Bold" size="16.0" />
                      </font>
@@ -167,9 +204,12 @@
                      </VBox.margin>
                   </ScrollPane>
                </children>
-            </VBox>            <AnchorPane styleClass="map-container">
+            </VBox>
+            <!-- Panel bên phải: Chứa bản đồ -->
+            <AnchorPane styleClass="map-container">
                <children>
-                  <WebView fx:id="mapWebView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                  <!-- StackPane để chứa trình duyệt JxBrowser hiển thị bản đồ -->
+                  <StackPane fx:id="mapPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                </children>
                <padding>
                   <Insets bottom="0.0" left="0.0" right="0.0" top="0.0" />
@@ -177,7 +217,9 @@
             </AnchorPane>
         </items>
       </SplitPane>
-   </center>   <bottom>
+   </center>
+   <!-- Khu vực BOTTOM: Chứa thanh trạng thái -->
+   <bottom>
       <HBox alignment="CENTER_LEFT" styleClass="status-bar" BorderPane.alignment="CENTER">
          <padding>
             <Insets bottom="5.0" left="15.0" right="15.0" top="5.0" />

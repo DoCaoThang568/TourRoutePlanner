@@ -1,10 +1,11 @@
-﻿/* Fixed JavaFX CSS - removed unsupported properties and corrected syntax */
+﻿/* General Styles */
 .root {
     -fx-background-color: #f8fafc;
     -fx-font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
     -fx-font-size: 15px;
 }
 
+/* Header and Menu Bar */
 .menu-bar, .app-header {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #2563eb 0%, #60a5fa 100%);
     -fx-text-fill: white;
@@ -19,6 +20,7 @@
     -fx-font-weight: bold;
 }
 
+/* Side Panel */
 .side-panel {
     -fx-background-color: #fff;
     -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 12, 0, 0, 4);
@@ -35,6 +37,7 @@
     -fx-padding: 0 0 12 0;
 }
 
+/* Form Elements (Search) */
 .search-field {
     -fx-background-radius: 24;
     -fx-border-radius: 24;
@@ -44,6 +47,7 @@
     -fx-prompt-text-fill: #6b7280;
 }
 
+/* List Styles (Places List) */
 .places-list {
     -fx-background-radius: 10;
     -fx-border-radius: 10;
@@ -66,6 +70,7 @@
     -fx-border-width: 0 0 0 4;
 }
 
+/* Button Styles */
 .button {
     -fx-background-radius: 24;
     -fx-border-radius: 24;
@@ -103,6 +108,7 @@
     -fx-scale-y: 1.03;
 }
 
+/* Route Info Display */
 .route-info-container {
     -fx-background-color: #fff;
     -fx-border-color: #e5e7eb;
@@ -122,6 +128,7 @@
     -fx-text-fill: #22223b;
 }
 
+/* Map Container */
 .map-container {
     -fx-border-color: #e5e7eb;
     -fx-border-width: 2;
@@ -129,6 +136,7 @@
     -fx-background-radius: 18;
 }
 
+/* Status Bar */
 .status-bar {
     -fx-background-color: #1e40af;
     -fx-padding: 8 20;
@@ -140,6 +148,7 @@
     -fx-font-size: 13px;
 }
 
+/* Split Pane */
 .split-pane {
     -fx-background-color: transparent;
     -fx-padding: 0;

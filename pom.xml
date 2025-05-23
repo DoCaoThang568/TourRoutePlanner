@@ -12,7 +12,15 @@
         <maven.compiler.target>17</maven.compiler.target> <!-- Đảm bảo phù hợp với JDK của bạn -->
         <javafx.version>21.0.1</javafx.version> <!-- Phiên bản JavaFX -->
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version> <!-- Phiên bản plugin JavaFX Maven -->
+        <jxbrowser.version>8.7.0</jxbrowser.version> <!-- Phiên bản JxBrowser được sử dụng trong dự án -->
     </properties>
+
+    <repositories>
+        <repository>
+            <id>jxbrowser-releases</id>
+            <url>https://europe-maven.pkg.dev/jxbrowser/releases</url> <!-- Repository chứa các thư viện JxBrowser của TeamDev -->
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -33,8 +41,23 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.10.1</version> <!-- Phiên bản Gson -->
+            <version>2.10.1</version> <!-- Phiên bản Gson, thư viện xử lý JSON -->
         </dependency>
+
+        <!-- JxBrowser Dependencies -->
+        <dependency>
+            <groupId>com.teamdev.jxbrowser</groupId>
+            <artifactId>jxbrowser-javafx</artifactId>
+            <version>${jxbrowser.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.teamdev.jxbrowser</groupId>
+            <artifactId>jxbrowser-win64</artifactId>
+            <version>${jxbrowser.version}</version>
+        </dependency>
+        <!-- Nếu bạn muốn ứng dụng chạy được trên nhiều nền tảng, bạn có thể cần thêm
+             các dependency platform-specific khác như jxbrowser-linux64, jxbrowser-mac, jxbrowser-mac-arm -->
+
     </dependencies>
 
     <build>
@@ -42,7 +65,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version> <!-- Bạn có thể xem xét nâng cấp plugin này nếu muốn -->
+                <version>3.8.1</version> <!-- Cân nhắc nâng cấp phiên bản plugin này nếu cần -->
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
@@ -54,11 +77,11 @@
                 <version>${javafx.maven.plugin.version}</version>
                 <executions>
                     <execution>
-                        <!-- Default configuration for running with javafx:run -->
+                        <!-- Cấu hình mặc định để chạy ứng dụng với lệnh javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>tourrouteplanner.Main</mainClass> <!-- Thay thế bằng main class của bạn nếu khác -->
-                            <!-- Thêm các VM options nếu cần, ví dụ để tăng bộ nhớ -->
+                            <mainClass>tourrouteplanner.Main</mainClass> <!-- Thay thế bằng main class của ứng dụng nếu khác -->
+                            <!-- Thêm các tùy chọn cho máy ảo Java (VM options) nếu cần, ví dụ để tăng bộ nhớ -->
                             <!-- <options>
                                 <option>-Xmx1024m</option>
                             </options> -->
@@ -66,8 +89,9 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Plugin exec-maven-plugin không còn cần thiết để chạy JavaFX khi đã có javafx-maven-plugin -->
-            <!-- Bạn có thể xóa hoặc comment nó lại nếu không dùng cho mục đích khác -->
+            <!-- Plugin exec-maven-plugin không còn cần thiết để chạy ứng dụng JavaFX 
+                 khi đã có javafx-maven-plugin. 
+                 Bạn có thể xóa hoặc giữ lại comment này nếu không sử dụng cho mục đích khác. -->
             <!-- 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
