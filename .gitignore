@@ -27,6 +27,7 @@ nb-configuration.xml
 *.log
 *.tmp
 *.swp
+*.json
 
 # Ignore sensitive files
 config.properties
