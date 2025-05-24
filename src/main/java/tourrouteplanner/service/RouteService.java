@@ -96,8 +96,8 @@ public class RouteService {
                 .map(p -> String.format(Locale.US, "%.5f,%.5f", p.getLongitude(), p.getLatitude()))
                 .collect(Collectors.joining(";"));
 
-        // Xây dựng URL cho API OSRM
-        String apiUrl = String.format("%s/route/v1/driving/%s?overview=full&geometries=geojson&alternatives=false",
+        // Xây dựng URL cho API OSRM - Thêm steps=true để lấy hướng dẫn chi tiết
+        String apiUrl = String.format("%s/route/v1/driving/%s?overview=full&geometries=geojson&alternatives=false&steps=true",
                                     osrmServerUrl, coordinatesString);
 
         HttpURLConnection connection = (HttpURLConnection) URI.create(apiUrl).toURL().openConnection();
@@ -179,8 +179,30 @@ public class RouteService {
                 polyline.add(new Route.Coordinate(lat, lng)); // Tạo đối tượng Coordinate
             }
         }
+
+        // Trích xuất hướng dẫn từng chặng (turn-by-turn instructions)
+        StringBuilder turnByTurnInstructionsBuilder = new StringBuilder();
+        if (routeObject.has("legs") && routeObject.getAsJsonArray("legs").size() > 0) {
+            JsonArray legsArray = routeObject.getAsJsonArray("legs");
+            for (int i = 0; i < legsArray.size(); i++) {
+                JsonObject legObject = legsArray.get(i).getAsJsonObject();
+                if (legObject.has("steps")) {
+                    JsonArray stepsArray = legObject.getAsJsonArray("steps");
+                    for (int j = 0; j < stepsArray.size(); j++) {
+                        JsonObject stepObject = stepsArray.get(j).getAsJsonObject();
+                        if (stepObject.has("maneuver") && stepObject.getAsJsonObject("maneuver").has("instruction")) {
+                            String instruction = stepObject.getAsJsonObject("maneuver").get("instruction").getAsString();
+                            turnByTurnInstructionsBuilder.append(instruction).append("\\n");
+                        }
+                    }
+                }
+            }
+        }
+        String turnByTurnInstructions = turnByTurnInstructionsBuilder.toString().trim();
+
         // Tạo đối tượng Route với các thông tin đã phân tích và danh sách waypoints gốc
-        return new Route(originalWaypoints, polyline, totalDistanceMeters / 1000.0, totalDurationSeconds / 60.0);
+        // Bao gồm cả hướng dẫn từng chặng
+        return new Route(originalWaypoints, polyline, totalDistanceMeters / 1000.0, totalDurationSeconds / 60.0, turnByTurnInstructions);
     }
 
     /**

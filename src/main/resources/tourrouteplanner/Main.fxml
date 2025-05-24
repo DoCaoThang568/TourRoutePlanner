@@ -7,25 +7,24 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.text.Font?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.image.Image?>
 
 <!-- Root container của ứng dụng, sử dụng BorderPane layout -->
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="700.0" minWidth="1000.0" prefHeight="700.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tourrouteplanner.MainController" stylesheets="@styles.css">
+<BorderPane fx:controller="tourrouteplanner.MainController" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="700.0" minWidth="1000.0" prefHeight="700.0" prefWidth="1200.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
    <!-- Khu vực TOP: Chứa MenuBar và Header của ứng dụng -->
    <top>
       <VBox BorderPane.alignment="CENTER">
@@ -49,12 +48,12 @@
               </menus>
             </MenuBar>
             <!-- Header của ứng dụng -->
-            <HBox alignment="CENTER_LEFT" styleClass="app-header" spacing="15.0">
+            <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="app-header">
                <padding>
                   <Insets bottom="15.0" left="25.0" right="25.0" top="15.0" />
                </padding>
                <children>
-                  <Label text="TOUR ROUTE PLANNER" styleClass="header-title">
+                  <Label styleClass="header-title" text="TOUR ROUTE PLANNER">
                      <font>
                         <Font name="System Bold" size="22.0" />
                      </font>
@@ -66,21 +65,21 @@
    </top>
    <!-- Khu vực CENTER: Chứa SplitPane chia giao diện thành 2 phần chính -->
    <center>
-      <SplitPane dividerPositions="0.28" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER" styleClass="main-split-pane">
+      <SplitPane BorderPane.alignment="CENTER" dividerPositions="0.35" prefHeight="160.0" prefWidth="200.0" styleClass="main-split-pane">
         <items>
           <!-- Panel bên trái: Chứa các control nhập liệu và hiển thị thông tin -->
-          <VBox prefHeight="200.0" prefWidth="300.0" spacing="15.0" styleClass="side-panel">
+          <VBox prefHeight="200.0" prefWidth="350.0" spacing="15.0" styleClass="side-panel">
                <padding>
                   <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </padding>
                <children>                  
                   <!-- Khu vực tìm kiếm địa điểm -->
-                  <Label text="Tìm kiếm địa điểm:" styleClass="section-header">
+                  <Label styleClass="section-header" text="Tìm kiếm địa điểm:">
                      <font>
                         <Font name="System Bold" size="16.0" />
                      </font>
                   </Label>
-                  <HBox spacing="12.0" alignment="CENTER_LEFT">
+                  <HBox alignment="CENTER_LEFT" spacing="12.0">
                      <children>
                         <TextField fx:id="searchBox" onAction="#handleSearch" promptText="Nhập tên địa điểm..." styleClass="search-field" HBox.hgrow="ALWAYS">
                            <tooltip>
@@ -105,7 +104,7 @@
                      </VBox.margin>
                   </HBox>
                   <!-- Khu vực hiển thị kết quả tìm kiếm -->
-                  <Label text="Kết quả tìm kiếm:" styleClass="section-header">
+                  <Label styleClass="section-header" text="Kết quả tìm kiếm:">
                      <font>
                         <Font name="System Bold" size="16.0" />
                      </font>
@@ -115,12 +114,12 @@
                   </Label>
                   <ListView fx:id="placeListView" prefHeight="200.0" styleClass="places-list" VBox.vgrow="SOMETIMES">
                      <VBox.margin>
-                        <Insets top="8.0" bottom="10.0" />
+                        <Insets bottom="10.0" top="8.0" />
                      </VBox.margin>
                   </ListView>
 
                   <!-- Khu vực hiển thị các điểm đã chọn trong lộ trình -->
-                  <Label text="Các điểm đã chọn trong lộ trình:" styleClass="section-header">
+                  <Label styleClass="section-header" text="Các điểm đã chọn trong lộ trình:">
                      <font>
                         <Font name="System Bold" size="16.0" />
                      </font>
@@ -128,7 +127,7 @@
                         <Insets top="10.0" />
                      </VBox.margin>
                   </Label>
-                  <TableView fx:id="routeTableView" prefHeight="180.0" styleClass="route-table" VBox.vgrow="ALWAYS">
+                  <TableView fx:id="routeTableView" prefHeight="250.0" styleClass="route-table" VBox.vgrow="ALWAYS">
                     <columns>
                       <TableColumn fx:id="routePlaceNameColumn" prefWidth="150.0" text="Tên địa điểm" />
                       <TableColumn fx:id="routePlaceAddressColumn" prefWidth="200.0" text="Địa chỉ" />
@@ -170,51 +169,55 @@
                         <Insets top="12.0" />
                      </VBox.margin>
                   </HBox>
-                  <!-- Nút tìm lộ trình tối ưu -->
-                  <Button mnemonicParsing="false" onAction="#handleFindRoute" prefHeight="45.0" styleClass="find-route-button" text="Tìm lộ trình tối ưu">
-                     <font>
-                        <Font name="System Bold" size="15.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets top="15.0" bottom="15.0" />
-                     </VBox.margin>
-                     <padding>
-                        <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
-                     </padding>
-                     <graphic>
-                        <ImageView fitHeight="20.0" fitWidth="20.0">
-                           <image>
-                              <Image url="@/tourrouteplanner/icons/route.png" />
-                           </image>
-                        </ImageView>
-                     </graphic>
-                  </Button>                  
-                  <!-- Khu vực hiển thị thông tin lộ trình -->
-                  <Label text="Thông tin lộ trình:" styleClass="section-header">
-                     <font>
-                        <Font name="System Bold" size="16.0" />
-                     </font>
-                  </Label>
-                  <ScrollPane fitToWidth="true" styleClass="route-info-container" VBox.vgrow="ALWAYS">
-                     <content>
-                        <TextArea fx:id="routeInfoTextArea" editable="false" wrapText="true" styleClass="route-info" />
-                     </content>
-                     <VBox.margin>
-                        <Insets top="8.0" />
-                     </VBox.margin>
-                  </ScrollPane>
+                  <!-- Nút tìm lộ trình tối ưu đã được di chuyển -->
+                  <!-- Khu vực hiển thị thông tin lộ trình đã được xóa -->
                </children>
             </VBox>
-            <!-- Panel bên phải: Chứa bản đồ -->
-            <AnchorPane styleClass="map-container">
-               <children>
+            <!-- Panel bên phải: Chứa bản đồ và các control mới -->
+            <BorderPane fx:id="mapAndControlsPane">
+               <center>
                   <!-- StackPane để chứa trình duyệt JxBrowser hiển thị bản đồ -->
-                  <StackPane fx:id="mapPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-               </children>
-               <padding>
-                  <Insets bottom="0.0" left="0.0" right="0.0" top="0.0" />
-               </padding>
-            </AnchorPane>
+                  <StackPane fx:id="mapPane" BorderPane.alignment="CENTER" />
+               </center>
+               <bottom>
+                  <VBox alignment="TOP_CENTER" spacing="10.0" BorderPane.alignment="CENTER">
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <!-- Nút tìm lộ trình tối ưu -->
+                              <Button fx:id="findRouteButton" mnemonicParsing="false" onAction="#handleFindRoute" prefHeight="45.0" styleClass="find-route-button" text="Tìm lộ trình tối ưu">
+                                 <font>
+                                    <Font name="System Bold" size="15.0" />
+                                 </font>
+                                 <padding>
+                                    <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+                                 </padding>
+                                 <graphic>
+                                    <ImageView fitHeight="20.0" fitWidth="20.0">
+                                       <image>
+                                          <Image url="@/tourrouteplanner/icons/route.png" />
+                                       </image>
+                                    </ImageView>
+                                 </graphic>
+                              </Button>
+                           </children>
+                        </HBox>
+                        <!-- Khu vực hiển thị thông tin lộ trình động (ban đầu ẩn) -->
+                        <ScrollPane fx:id="dynamicRouteInfoScrollPane" fitToWidth="true" styleClass="route-info-container" VBox.vgrow="NEVER">
+                           <content>
+                              <TextArea fx:id="dynamicRouteInfoTextArea" editable="false" wrapText="true" styleClass="route-info" />
+                           </content>
+                           <VBox.margin>
+                              <Insets top="8.0" />
+                           </VBox.margin>
+                        </ScrollPane>
+                     </children>
+                  </VBox>
+               </bottom>
+            </BorderPane>
         </items>
       </SplitPane>
    </center>
@@ -225,7 +228,7 @@
             <Insets bottom="5.0" left="15.0" right="15.0" top="5.0" />
          </padding>
          <children>
-            <Label fx:id="statusLabel" text="Sẵn sàng" styleClass="status-text" />
+            <Label fx:id="statusLabel" styleClass="status-text" text="Sẵn sàng" />
          </children>
       </HBox>
    </bottom>

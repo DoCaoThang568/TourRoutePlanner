@@ -15,6 +15,8 @@ public class Route {
     private double totalDistanceKm;
     /** Tổng thời gian di chuyển ước tính của tuyến đường, đơn vị tính bằng phút. */
     private double totalDurationMinutes;
+    /** Hướng dẫn chi tiết từng chặng của tuyến đường. */
+    private String turnByTurnInstructions;
 
     /**
      * Khởi tạo một đối tượng Route mới.
@@ -22,12 +24,14 @@ public class Route {
      * @param coordinates Danh sách các {@link Coordinate} xác định hình dạng đường đi của tuyến đường.
      * @param totalDistanceKm Tổng khoảng cách của tuyến đường, tính bằng kilomet.
      * @param totalDurationMinutes Tổng thời gian di chuyển ước tính của tuyến đường, tính bằng phút.
+     * @param turnByTurnInstructions Hướng dẫn chi tiết từng chặng của tuyến đường.
      */
-    public Route(List<Place> waypoints, List<Coordinate> coordinates, double totalDistanceKm, double totalDurationMinutes) {
+    public Route(List<Place> waypoints, List<Coordinate> coordinates, double totalDistanceKm, double totalDurationMinutes, String turnByTurnInstructions) {
         this.waypoints = waypoints;
         this.coordinates = coordinates;
         this.totalDistanceKm = totalDistanceKm;
         this.totalDurationMinutes = totalDurationMinutes;
+        this.turnByTurnInstructions = turnByTurnInstructions;
     }
 
     /** Lấy danh sách các điểm tham chiếu (waypoints) của tuyến đường. */
@@ -38,6 +42,8 @@ public class Route {
     public double getTotalDistanceKm() { return totalDistanceKm; }
     /** Lấy tổng thời gian di chuyển ước tính của tuyến đường (phút). */
     public double getTotalDurationMinutes() { return totalDurationMinutes; }
+    /** Lấy hướng dẫn chi tiết từng chặng của tuyến đường. */
+    public String getTurnByTurnInstructions() { return turnByTurnInstructions; }
 
     /**
      * Lớp nội tĩnh (static inner class) đại diện cho một tọa độ địa lý (vĩ độ và kinh độ).
