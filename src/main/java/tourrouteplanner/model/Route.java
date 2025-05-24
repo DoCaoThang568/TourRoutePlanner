@@ -11,10 +11,10 @@ public class Route {
     private List<Place> waypoints;
     /** Danh sách các cặp tọa độ (vĩ độ, kinh độ) mô tả chi tiết đường đi của tuyến đường. */
     private List<Coordinate> coordinates;
-    /** Tổng khoảng cách của tuyến đường, đơn vị tính bằng kilomet (km). */
-    private double totalDistanceKm;
-    /** Tổng thời gian di chuyển ước tính của tuyến đường, đơn vị tính bằng phút. */
-    private double totalDurationMinutes;
+    /** Tổng khoảng cách của tuyến đường, đơn vị tính bằng mét (m). */
+    private double totalDistanceMeters;
+    /** Tổng thời gian di chuyển ước tính của tuyến đường, đơn vị tính bằng giây (s). */
+    private double totalDurationSeconds;
     /** Hướng dẫn chi tiết từng chặng của tuyến đường. */
     private String turnByTurnInstructions;
 
@@ -22,15 +22,15 @@ public class Route {
      * Khởi tạo một đối tượng Route mới.
      * @param waypoints Danh sách các {@link Place} (điểm tham chiếu) trong tuyến đường, theo thứ tự.
      * @param coordinates Danh sách các {@link Coordinate} xác định hình dạng đường đi của tuyến đường.
-     * @param totalDistanceKm Tổng khoảng cách của tuyến đường, tính bằng kilomet.
-     * @param totalDurationMinutes Tổng thời gian di chuyển ước tính của tuyến đường, tính bằng phút.
+     * @param totalDistanceMeters Tổng khoảng cách của tuyến đường, tính bằng mét.
+     * @param totalDurationSeconds Tổng thời gian di chuyển ước tính của tuyến đường, tính bằng giây.
      * @param turnByTurnInstructions Hướng dẫn chi tiết từng chặng của tuyến đường.
      */
-    public Route(List<Place> waypoints, List<Coordinate> coordinates, double totalDistanceKm, double totalDurationMinutes, String turnByTurnInstructions) {
+    public Route(List<Place> waypoints, List<Coordinate> coordinates, double totalDistanceMeters, double totalDurationSeconds, String turnByTurnInstructions) {
         this.waypoints = waypoints;
         this.coordinates = coordinates;
-        this.totalDistanceKm = totalDistanceKm;
-        this.totalDurationMinutes = totalDurationMinutes;
+        this.totalDistanceMeters = totalDistanceMeters;
+        this.totalDurationSeconds = totalDurationSeconds;
         this.turnByTurnInstructions = turnByTurnInstructions;
     }
 
@@ -38,10 +38,17 @@ public class Route {
     public List<Place> getWaypoints() { return waypoints; }
     /** Lấy danh sách các tọa độ mô tả đường đi của tuyến đường. */
     public List<Coordinate> getCoordinates() { return coordinates; }
+
     /** Lấy tổng khoảng cách của tuyến đường (km). */
-    public double getTotalDistanceKm() { return totalDistanceKm; }
+    public double getTotalDistanceKm() {
+        return this.totalDistanceMeters / 1000.0;
+    }
+
     /** Lấy tổng thời gian di chuyển ước tính của tuyến đường (phút). */
-    public double getTotalDurationMinutes() { return totalDurationMinutes; }
+    public double getTotalDurationMinutes() {
+        return this.totalDurationSeconds / 60.0;
+    }
+
     /** Lấy hướng dẫn chi tiết từng chặng của tuyến đường. */
     public String getTurnByTurnInstructions() { return turnByTurnInstructions; }
 

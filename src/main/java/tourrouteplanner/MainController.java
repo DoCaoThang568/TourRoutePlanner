@@ -427,7 +427,7 @@ public class MainController {
                 handleFindRoute(); // Tính toán lại lộ trình nếu còn ít nhất 2 điểm.
             } else {
                 clearRoute(); // Xóa lộ trình trên bản đồ nếu không còn đủ điểm.
-                updateDynamicRouteInfo("Tổng quãng đường: 0 km", null); // Update new UI
+                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
             }
         } else {
             // Thông báo nếu không có điểm nào được chọn trong TableView.
@@ -445,27 +445,57 @@ public class MainController {
         if (currentRoutePlaces.size() < 2) {
             Utils.showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Cần ít nhất 2 địa điểm để tìm đường đi.");
             clearRoute(); // Xóa lộ trình cũ (nếu có).
-            updateDynamicRouteInfo("Tổng quãng đường: 0 km", null);
+            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
             return;
         }
         try {
             Route route = routeService.getRoute(new ArrayList<>(currentRoutePlaces));
             if (route != null && route.getCoordinates() != null && !route.getCoordinates().isEmpty()) {
                 drawRoute(route.getCoordinates()); // Vẽ lộ trình lên bản đồ.
-                // The getTurnByTurnInstructions() method in Route.java now returns String, not List<String>
-                // We need to handle this change. For now, we'll pass it directly.
-                // If it's null or empty, updateDynamicRouteInfo will handle it.
-                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", route.getTotalDistanceKm()), route.getTurnByTurnInstructions());
+                updateDynamicRouteInfo(
+                    String.format(Locale.US, "Tổng quãng đường: %.2f km", route.getTotalDistanceKm()),
+                    route.getTurnByTurnInstructions()
+                );
             } else {
                 Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm đường", "Không thể tìm thấy đường đi cho các địa điểm đã chọn.");
                 clearRoute();
-                updateDynamicRouteInfo("Tổng quãng đường: 0 km", null);
+                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
             }
         } catch (IOException e) {
             e.printStackTrace();
             Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm đường", "Lỗi khi kết nối dịch vụ tìm đường: " + e.getMessage());
             clearRoute();
-            updateDynamicRouteInfo("Tổng quãng đường: 0 km", null);
+            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
+        }
+    }
+
+    /**
+     * Cập nhật vùng hiển thị thông tin lộ trình động.
+     * @param totalDistanceText Chuỗi hiển thị tổng quãng đường.
+     * @param turnByTurnInstructions Chuỗi hướng dẫn chi tiết từng chặng.
+     */
+    private void updateDynamicRouteInfo(String totalDistanceText, String turnByTurnInstructions) {
+        if (dynamicRouteInfoScrollPane != null && dynamicRouteInfoTextArea != null) {
+            StringBuilder infoBuilder = new StringBuilder();
+            infoBuilder.append(totalDistanceText);
+
+            if (turnByTurnInstructions != null && !turnByTurnInstructions.trim().isEmpty()) {
+                infoBuilder.append("\n\nHướng dẫn chi tiết:\n"); // Thêm một dòng mới trước "Hướng dẫn chi tiết"
+                infoBuilder.append(turnByTurnInstructions);
+            } else {
+                // Nếu không có hướng dẫn, có thể không cần hiển thị phần "Hướng dẫn chi tiết"
+                // hoặc hiển thị một thông báo như "Không có hướng dẫn chi tiết."
+                // Hiện tại, nếu không có hướng dẫn, sẽ không có gì được thêm vào sau tổng quãng đường.
+            }
+
+            dynamicRouteInfoTextArea.setText(infoBuilder.toString());
+
+            // Chỉ hiển thị ScrollPane nếu có nội dung (ít nhất là tổng quãng đường)
+            boolean hasContent = totalDistanceText != null && !totalDistanceText.trim().isEmpty();
+            dynamicRouteInfoScrollPane.setVisible(hasContent);
+            dynamicRouteInfoScrollPane.setManaged(hasContent);
+        } else {
+            System.err.println("dynamicRouteInfoScrollPane or dynamicRouteInfoTextArea is null. Cannot update route info.");
         }
     }
 
@@ -499,23 +529,31 @@ public class MainController {
             StorageService.LoadedRouteData loadedData = storageService.loadRoute(file);
             // Kiểm tra dữ liệu tải về và danh sách địa điểm không null.
             if (loadedData != null && loadedData.getPlaces() != null) {
-                currentRoutePlaces.setAll(loadedData.getPlaces()); // Cập nhật danh sách địa điểm.
-                clearAllMarkers(); // Xóa các marker cũ.
-                // Thêm marker cho các địa điểm vừa tải.
-                currentRoutePlaces.forEach(p -> {addMapMarker(p.getName(), p.getLatitude(), p.getLongitude(), p.getAddress());});
-                // Nếu có thông tin lộ trình đã lưu, vẽ lại lộ trình và cập nhật quãng đường.
-                if (loadedData.getRoute() != null && loadedData.getRoute().getCoordinates() != null && !loadedData.getRoute().getCoordinates().isEmpty()) {
-                    drawRoute(loadedData.getRoute().getCoordinates());
-                     // The getTurnByTurnInstructions() method in Route.java now returns String, not List<String>
-                    updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", loadedData.getRoute().getTotalDistanceKm()), loadedData.getRoute().getTurnByTurnInstructions()); // Corrected string literal
+                currentRoutePlaces.setAll(loadedData.getPlaces());
+                clearAllMarkers();
+                currentRoutePlaces.forEach(p -> addMapMarker(p.getName(), p.getLatitude(), p.getLongitude(), p.getAddress()));
+
+                Route loadedRouteInfo = loadedData.getRoute();
+                if (loadedRouteInfo != null && loadedRouteInfo.getCoordinates() != null && !loadedRouteInfo.getCoordinates().isEmpty()) {
+                    drawRoute(loadedRouteInfo.getCoordinates());
+                    updateDynamicRouteInfo(
+                        String.format(Locale.US, "Tổng quãng đường: %.2f km", loadedRouteInfo.getTotalDistanceKm()),
+                        loadedRouteInfo.getTurnByTurnInstructions()
+                    );
                 } else {
-                    clearRoute();
-                    updateDynamicRouteInfo("Tổng quãng đường: 0 km", null);
+                    // Nếu không có thông tin lộ trình trong tệp (ví dụ: tệp cũ chỉ lưu địa điểm)
+                    // hoặc thông tin lộ trình không hợp lệ, thì tính toán lại nếu có thể.
+                    if (currentRoutePlaces.size() >= 2) {
+                        handleFindRoute(); // Thử tìm lại lộ trình dựa trên các điểm đã tải.
+                    } else {
+                        clearRoute();
+                        updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
+                    }
                 }
-            } else if (loadedData == null) {
-                Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tải lộ trình", "Không thể tải dữ liệu lộ trình từ tệp.");
+            } else {
+                Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tải lộ trình", "Không thể tải dữ liệu lộ trình từ tệp đã chọn hoặc tệp không hợp lệ.");
                 clearRoute();
-                updateDynamicRouteInfo("Tổng quãng đường: 0 km", null);
+                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
             }
         }
     }
@@ -780,53 +818,6 @@ public class MainController {
                 statusLabel.setText("Đã xóa tất cả địa điểm."); // Cập nhật nhãn trạng thái.
             }
             // System.out.println("All places cleared."); // Removed log
-        }
-    }
-
-    /**
-     * Cập nhật thông tin lộ trình động (tổng quãng đường và hướng dẫn từng chặng)
-     * trên giao diện người dùng.
-     * @param distanceInfo Chuỗi thông tin tổng quãng đường.
-     * @param turnByTurnInstructions Chuỗi chứa hướng dẫn từng chặng (có thể là null hoặc rỗng).
-     */
-    private void updateDynamicRouteInfo(String distanceInfo, String turnByTurnInstructions) {
-        // System.out.println("MainController: updateDynamicRouteInfo called."); // Removed log
-        // System.out.println("MainController: Distance Info: " + distanceInfo); // Removed log
-        // System.out.println("MainController: Turn-by-turn (raw): " + turnByTurnInstructions); // Removed log
-
-        StringBuilder infoBuilder = new StringBuilder();
-        if (distanceInfo != null && !distanceInfo.isEmpty()) {
-            infoBuilder.append(distanceInfo).append("\\n\\n");
-        } else {
-            infoBuilder.append("Tổng quãng đường: Chưa xác định\\n\\n");
-        }
-
-        if (turnByTurnInstructions != null && !turnByTurnInstructions.trim().isEmpty()) {
-            // System.out.println("MainController: Appending turn-by-turn instructions."); // Removed log
-            infoBuilder.append("Hướng dẫn chi tiết:\\n");
-            infoBuilder.append(turnByTurnInstructions.trim()); // Trim to remove any leading/trailing newlines from the source
-        } else {
-            // System.out.println("MainController: No turn-by-turn instructions to display."); // Removed log
-            if (currentRoutePlaces.size() >= 2) { // Only show "not available" if a route was expected
-                infoBuilder.append("Hướng dẫn chi tiết không có sẵn.");
-            }
-        }
-
-        String finalText = infoBuilder.toString();
-        // System.out.println("MainController: Final text for TextArea: " + finalText); // Removed log
-
-        if (dynamicRouteInfoTextArea != null) {
-            dynamicRouteInfoTextArea.setText(finalText);
-        }
-
-        if (dynamicRouteInfoScrollPane != null) {
-            // Show the scroll pane only if there's meaningful content (more than just default distance)
-            // or if there are at least two places (implying a route was attempted).
-            boolean shouldBeVisible = (currentRoutePlaces.size() >= 2) || (turnByTurnInstructions != null && !turnByTurnInstructions.trim().isEmpty());
-            
-            dynamicRouteInfoScrollPane.setVisible(shouldBeVisible);
-            dynamicRouteInfoScrollPane.setManaged(shouldBeVisible);
-            // System.out.println("MainController: ScrollPane visibility set to: " + shouldBeVisible); // Removed log
         }
     }
 }
