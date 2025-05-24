@@ -23,7 +23,6 @@ import tourrouteplanner.model.Place;
 import tourrouteplanner.model.Route;
 import tourrouteplanner.service.RouteService;
 import tourrouteplanner.service.StorageService;
-import tourrouteplanner.util.Constants;
 import tourrouteplanner.util.Utils;
 
 import java.io.File;
@@ -35,7 +34,10 @@ import java.util.ArrayList; // Thêm import ArrayList
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.ResourceBundle;
+import java.util.Set;
+
+import org.controlsfx.control.textfield.TextFields;
 
 /**
  * Controller chính cho giao diện người dùng của ứng dụng Tour Route Planner.
@@ -108,10 +110,82 @@ public class MainController {
         // Thiết lập ListView cho kết quả tìm kiếm địa điểm.
         placeListView.setItems(searchResults);
         placeListView.setCellFactory(param -> new ListCell<Place>() {
+            private Tooltip tooltip = new Tooltip(); // Tooltip for each cell
+
             @Override
             protected void updateItem(Place item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName());
+                if (empty || item == null) {
+                    setText(null);
+                    setTooltip(null);
+                } else {
+                    // Hiển thị tên và địa chỉ đầy đủ hơn
+                    String displayText = item.getName();
+                    String address = item.getAddress();
+
+                    if (address != null && !address.isEmpty() && !address.equalsIgnoreCase(item.getName())) {
+                        // Nếu tên địa điểm không chứa phần đầu của địa chỉ (tránh lặp lại)
+                        // Ví dụ: Tên: "Hồ Gươm", Địa chỉ: "Hồ Gươm, Quận Hoàn Kiếm, Hà Nội"
+                        // thì không cần thêm "Hồ Gươm" vào nữa.
+                        String lowerCaseName = item.getName().toLowerCase();
+                        String lowerCaseAddress = address.toLowerCase();
+                        
+                        // Kiểm tra xem tên có phải là một phần của địa chỉ không
+                        boolean nameIsPartOfAddress = lowerCaseAddress.contains(lowerCaseName);
+
+                        if (nameIsPartOfAddress) {
+                            // Nếu tên là một phần của địa chỉ, chỉ hiển thị địa chỉ
+                            // (vì địa chỉ thường đầy đủ hơn tên)
+                            // Tuy nhiên, nếu tên và địa chỉ gần giống nhau, ưu tiên tên cho ngắn gọn
+                            if (address.length() > item.getName().length() + 5) { // +5 để cho phép một chút khác biệt nhỏ
+                                displayText = address; // Hiển thị địa chỉ đầy đủ nếu nó dài hơn tên đáng kể
+                            } else {
+                                // Nếu không, giữ nguyên tên và có thể thêm một phần nhỏ của địa chỉ nếu khác biệt
+                                String remainingAddress = address.replace(item.getName(), "").trim();
+                                if (remainingAddress.startsWith(",")) {
+                                    remainingAddress = remainingAddress.substring(1).trim();
+                                }
+                                if (!remainingAddress.isEmpty()) {
+                                    displayText += ", " + remainingAddress;
+                                }
+                            }
+                        } else {
+                            // Nếu tên không phải là một phần của địa chỉ, ghép cả hai
+                            displayText = item.getName() + " - " + address;
+                        }
+                    } 
+                    // Giới hạn độ dài hiển thị tổng thể nếu cần, nhưng ưu tiên hiển thị nhiều thông tin hơn
+                    int maxLength = 100; // Tăng giới hạn độ dài
+                    if (displayText.length() > maxLength) {
+                        displayText = displayText.substring(0, maxLength - 3) + "...";
+                    }
+
+                    setText(displayText);
+                    tooltip.setText(item.getName() + "\n" + item.getAddress()); // Tooltip vẫn hiển thị đầy đủ
+                    setTooltip(tooltip);
+                }
+            }
+        });
+
+        // Thêm listener để pan bản đồ khi một địa điểm được chọn trong placeListView.
+        placeListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                double[] boundingBox = newSelection.getBoundingBox();
+                if (boundingBox != null && boundingBox.length == 4) {
+                    // Ưu tiên zoom tới bounding box nếu có
+                    // Bounding box từ Nominatim là [southLat, northLat, westLon, eastLon]
+                    // Hàm JS zoomToBoundingBox cũng nhận theo thứ tự này
+                    zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                    highlightBoundingBoxOnMap(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                } else {
+                    // Nếu không có bounding box, pan tới điểm trung tâm với mức zoom mặc định
+                    int defaultZoomLevelForPlace = 15;
+                    // Gọi panTo với Integer cho zoomLevel
+                    panTo(newSelection.getLatitude(), newSelection.getLongitude(), Integer.valueOf(defaultZoomLevelForPlace));
+                    clearMapHighlight(); // Xóa highlight cũ nếu địa điểm mới không có bounding box
+                }
+            } else {
+                clearMapHighlight(); // Xóa highlight nếu không có địa điểm nào được chọn
             }
         });
 
@@ -176,26 +250,29 @@ public class MainController {
                 } catch (Exception e) {
                     System.err.println("Error retrieving URL in LoadFinished: " + e.getMessage());
                 }
-                System.out.println("LoadFinished event. URL: " + loadedUrl);
+                System.out.println("JxBrowser LoadFinished event. URL: \"" + loadedUrl + "\""); // Diagnostic log
 
-                // Inject MapTiler API Key vào JavaScript sau khi map.html đã tải xong.
                 if (loadedUrl.endsWith("map.html")) {
+                    System.out.println("map.html loaded. Proceeding with API key injection."); // Diagnostic log
                     String maptilerApiKey = Utils.loadConfigProperty("maptiler.api.key");
                     if (maptilerApiKey != null && !maptilerApiKey.trim().isEmpty()) {
                         browser.mainFrame().ifPresent(frame -> {
                             // Tạo script để gán API key và gọi hàm khởi tạo bản đồ trong JavaScript.
-                            String script = String.format("window.MAPTILER_API_KEY = '%s'; if(typeof initializeMapWithApiKey === 'function') { initializeMapWithApiKey(); } else { console.error('initializeMapWithApiKey function not found in map.html'); }", Utils.escapeJavaScriptString(maptilerApiKey));
+                            String script = String.format("window.MAPTILER_API_KEY = \'%s\'; if(typeof initializeMapWithApiKey === \'function\') { console.log(\'Calling initializeMapWithApiKey from Java\'); initializeMapWithApiKey(); } else { console.error(\'initializeMapWithApiKey function not found in map.html\'); }", Utils.escapeJavaScriptString(maptilerApiKey));
                             frame.executeJavaScript(script);
-                            System.out.println("MapTiler API Key injected into map.html.");
+                            System.out.println("MapTiler API Key injected and initializeMapWithApiKey called.");
                         });
                     } else {
                         Utils.showAlert(Alert.AlertType.ERROR, "Lỗi API Key", "Không thể tải MapTiler API Key từ config.properties.");
                         System.err.println("MapTiler API Key is missing or empty in config.properties.");
                         // Nếu không có API key, thử khởi tạo bản đồ ở chế độ fallback (ví dụ: OSM mặc định).
                         browser.mainFrame().ifPresent(frame -> {
-                            frame.executeJavaScript("if(typeof initializeMapWithApiKey === 'function') { initializeMapWithApiKey(true); } else { console.error('initializeMapWithApiKey function not found for fallback.'); }"); // Gọi với cờ fallback.
+                            frame.executeJavaScript("if(typeof initializeMapWithApiKey === \'function\') { initializeMapWithApiKey(true); } else { console.error(\'initializeMapWithApiKey function not found for fallback.\'); }"); // Gọi với cờ fallback.
                         });
                     }
+                } else {
+                    // Added more verbose logging here
+                    System.err.println("LoadFinished: Loaded URL does NOT end with map.html. URL: \"" + loadedUrl + "\". Map specific initialization will be skipped.");
                 }
             });
 
@@ -226,6 +303,7 @@ public class MainController {
     @FXML
     private void handleSearch() {
         String query = searchBox.getText();
+        clearMapHighlight(); // Xóa highlight cũ khi bắt đầu tìm kiếm mới
         if (query == null || query.trim().isEmpty()) {
             searchResults.clear(); // Xóa kết quả cũ nếu query rỗng.
             return;
@@ -235,10 +313,46 @@ public class MainController {
             searchResults.setAll(places); // Cập nhật danh sách kết quả.
             if (!places.isEmpty()) {
                 placeListView.getSelectionModel().selectFirst(); // Chọn kết quả đầu tiên.
-                Place firstPlace = places.get(0);
-                // Di chuyển (pan) bản đồ đến tọa độ của địa điểm đầu tiên.
-                panTo(firstPlace.getLatitude(), firstPlace.getLongitude());
+                // Place firstPlace = places.get(0);
+                // Việc pan bản đồ sẽ được xử lý bởi listener của placeListView
+                // panTo(firstPlace.getLatitude(), firstPlace.getLongitude());
             }
+
+            // Diagnostic logging for map visibility
+            Platform.runLater(() -> {
+                System.out.println("--- After handleSearch ---");
+                if (mapPane != null) {
+                    System.out.println("MapPane visible: " + mapPane.isVisible() + ", managed: " + mapPane.isManaged() +
+                                       ", width: " + mapPane.getWidth() + ", height: " + mapPane.getHeight());
+                    if (mapPane.getChildren().isEmpty()) {
+                        System.err.println("MapPane has NO children.");
+                    } else {
+                         System.out.println("MapPane children count: " + mapPane.getChildren().size());
+                    }
+                } else {
+                     System.err.println("MapPane is NULL.");
+                }
+
+                if (browserView != null) {
+                    System.out.println("BrowserView visible: " + browserView.isVisible() + ", managed: " + browserView.isManaged() +
+                                       ", width: " + browserView.getBoundsInLocal().getWidth() + 
+                                       ", height: " + browserView.getBoundsInLocal().getHeight());
+                    if (mapPane != null && !mapPane.getChildren().contains(browserView)) {
+                        System.err.println("CRITICAL: BrowserView is NOT a child of mapPane!");
+                    }
+                     // Check if browser is still valid
+                    if (browser != null && browser.isClosed()) {
+                        System.err.println("CRITICAL: Browser instance is CLOSED after search!");
+                    } else if (browser == null) {
+                        System.err.println("CRITICAL: Browser instance is NULL after search!");
+                    }
+
+                } else {
+                    System.err.println("CRITICAL: browserView is NULL after search.");
+                }
+                System.out.println("--- End of handleSearch diagnostics ---");
+            });
+
         } catch (IOException e) {
             e.printStackTrace();
             Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm kiếm", "Không thể thực hiện tìm kiếm: " + e.getMessage());
@@ -268,10 +382,17 @@ public class MainController {
         // Lấy địa điểm được chọn từ bảng các điểm trong lộ trình.
         Place selectedRoutePlace = routeTableView.getSelectionModel().getSelectedItem();
         if (selectedRoutePlace != null) {
+            // Kiểm tra xem địa điểm bị xóa có phải là địa điểm đang được highlight không
+            Place currentlySelectedInList = placeListView.getSelectionModel().getSelectedItem();
+            boolean wasHighlightTarget = selectedRoutePlace.equals(currentlySelectedInList);
+
             currentRoutePlaces.remove(selectedRoutePlace); // Xóa khỏi danh sách lộ trình.
-            // Cập nhật bản đồ: xóa tất cả marker cũ và vẽ lại các marker còn lại.
             clearAllMarkers();
             currentRoutePlaces.forEach(p -> addMapMarker(p.getName(), p.getLatitude(), p.getLongitude(), p.getAddress()));
+
+            if (wasHighlightTarget) {
+                clearMapHighlight(); // Xóa highlight nếu địa điểm bị xóa đang được chọn trong placeListView
+            }
 
             if (currentRoutePlaces.size() > 1) {
                 handleFindRoute(); // Tính toán lại lộ trình nếu còn ít nhất 2 điểm.
@@ -348,6 +469,7 @@ public class MainController {
     private void handleLoadRoute() {
         File file = storageService.showOpenFileDialog(mapPane.getScene().getWindow());
         if (file != null) {
+            clearMapHighlight(); // Xóa highlight cũ trước khi tải lộ trình mới
             StorageService.LoadedRouteData loadedData = storageService.loadRoute(file);
             // Kiểm tra dữ liệu tải về và danh sách địa điểm không null.
             if (loadedData != null && loadedData.getPlaces() != null) {
@@ -366,7 +488,9 @@ public class MainController {
                     // Di chuyển bản đồ đến địa điểm đầu tiên trong lộ trình.
                     if (!currentRoutePlaces.isEmpty() && currentRoutePlaces.get(0) != null) {
                         Place firstPlace = currentRoutePlaces.get(0);
-                        panTo(firstPlace.getLatitude(), firstPlace.getLongitude());
+                        int defaultZoomLevelForRoute = 12; // Mức zoom phù hợp hơn khi hiển thị lộ trình
+                        // Gọi panTo với Integer cho zoomLevel
+                        panTo(firstPlace.getLatitude(), firstPlace.getLongitude(), Integer.valueOf(defaultZoomLevelForRoute));
                     }
                 } else if (currentRoutePlaces.size() > 1) {
                     // Nếu không có thông tin lộ trình được lưu nhưng có đủ điểm, thử tính lại lộ trình.
@@ -387,11 +511,87 @@ public class MainController {
      * @param script Đoạn mã JavaScript cần thực thi.
      */
     private void executeJavaScript(String script) {
-        Optional<Frame> mainFrameOptional = browser.mainFrame();
-        if (mainFrameOptional.isPresent()) {
-            mainFrameOptional.get().executeJavaScript(script);
+        // Đảm bảo browser và mainFrame khả dụng trước khi thực thi.
+        if (browser != null && browser.mainFrame().isPresent()) {
+            browser.mainFrame().get().executeJavaScript(script);
         } else {
-             System.err.println("Không thể thực thi JavaScript, khung chính chưa sẵn sàng. Script: " + script);
+             System.err.println("Không thể thực thi JavaScript, browser hoặc khung chính chưa sẵn sàng. Script: " + script);
+        }
+    }
+
+    /**
+     * Gọi hàm JavaScript panTo trên bản đồ để di chuyển đến tọa độ và mức zoom cụ thể.
+     * @param latitude Vĩ độ.
+     * @param longitude Kinh độ.
+     * @param zoomLevel Mức zoom (tùy chọn, nếu null thì giữ nguyên zoom hiện tại).
+     */
+    private void panTo(double latitude, double longitude, Integer zoomLevel) {
+        // Không cần kiểm tra browser và mainFrame ở đây nữa vì executeJavaScript đã làm.
+        String script;
+        if (zoomLevel != null) {
+            script = String.format(Locale.US, "if(typeof panTo === 'function') { panTo(%.8f, %.8f, %d); } else { console.error('panTo function not found in map.html'); }", latitude, longitude, zoomLevel.intValue());
+        } else {
+            // JavaScript panTo function expects zoomLevel to be either a number or undefined.
+            // Passing null from Java might be interpreted differently by JavaScript depending on JxBrowser marshalling.
+            // It's safer to call a version of panTo in JS that doesn't expect a zoom level, or explicitly pass undefined.
+            // For now, assuming the JS panTo handles `null` for zoomLevel gracefully or we ensure it does.
+            // Let's call it without the zoomLevel argument if it's null, to match the JS function signature if it has an optional param.
+            // However, the current JS panTo(lat, lng, zoomLevel) expects zoomLevel or it will be undefined.
+            // So, if zoomLevel is null, we should call a JS variant or ensure current panTo handles it.
+            // The JS `panTo` is defined as `function panTo(latitude, longitude, zoomLevel)`
+            // If `zoomLevel` is `undefined` in JS, it works as intended (keeps current zoom).
+            // If `zoomLevel` is a number, it logs: `Animating to center [...] and zoom ...`
+            // So, if Java `zoomLevel` is null, we want JS `zoomLevel` to be `undefined`.
+            // One way is to format the script differently.
+            script = String.format(Locale.US, "if(typeof panTo === 'function') { panTo(%.8f, %.8f, undefined); } else { console.error('panTo function not found in map.html'); }", latitude, longitude);
+        }
+        executeJavaScript(script);
+    }
+
+    /**
+     * Gọi hàm JavaScript zoomToBoundingBox trên bản đồ.
+     * @param southLat Vĩ độ Nam của bounding box.
+     * @param northLat Vĩ độ Bắc của bounding box.
+     * @param westLon Kinh độ Tây của bounding box.
+     * @param eastLon Kinh độ Đông của bounding box.
+     */
+    private void zoomToBoundingBox(double southLat, double northLat, double westLon, double eastLon) {
+        if (browser != null && browser.mainFrame().isPresent()) {
+            String script = String.format(Locale.US, 
+                "if(typeof zoomToBoundingBox === 'function') { zoomToBoundingBox(%.8f, %.8f, %.8f, %.8f); } else { console.error('zoomToBoundingBox function not found in map.html'); }",
+                southLat, northLat, westLon, eastLon);
+            executeJavaScript(script);
+        } else {
+            System.err.println("Không thể gọi zoomToBoundingBox: browser hoặc mainFrame không khả dụng.");
+        }
+    }
+
+    /**
+     * Gọi hàm JavaScript để highlight một bounding box trên bản đồ.
+     * @param southLat Vĩ độ Nam của bounding box.
+     * @param northLat Vĩ độ Bắc của bounding box.
+     * @param westLon Kinh độ Tây của bounding box.
+     * @param eastLon Kinh độ Đông của bounding box.
+     */
+    private void highlightBoundingBoxOnMap(double southLat, double northLat, double westLon, double eastLon) {
+        if (browser != null && browser.mainFrame().isPresent()) {
+            String script = String.format(Locale.US,
+                "if(typeof highlightBoundingBox === 'function') { highlightBoundingBox(%.8f, %.8f, %.8f, %.8f); } else { console.error('highlightBoundingBox function not found in map.html'); }",
+                southLat, northLat, westLon, eastLon);
+            executeJavaScript(script);
+        } else {
+            System.err.println("Không thể gọi highlightBoundingBoxOnMap: browser hoặc mainFrame không khả dụng.");
+        }
+    }
+
+    /**
+     * Gọi hàm JavaScript để xóa highlight trên bản đồ.
+     */
+    private void clearMapHighlight() {
+        if (browser != null && browser.mainFrame().isPresent()) {
+            executeJavaScript("if(typeof clearHighlight === 'function') { clearHighlight(); } else { console.error('clearHighlight function not found in map.html'); }");
+        } else {
+            System.err.println("Không thể gọi clearMapHighlight: browser hoặc mainFrame không khả dụng.");
         }
     }
 
@@ -448,17 +648,22 @@ public class MainController {
      * Gọi hàm JavaScript 'clearRoute' trong map.html.
      */
     public void clearRoute() {
-        executeJavaScript("clearRoute();");
+        if (browser != null && browser.mainFrame().isPresent()) {
+            executeJavaScript("if(typeof clearRoute === 'function') { clearRoute(); } else { console.error('clearRoute function not found in map.html'); }");
+        } else {
+            System.err.println("Không thể gọi clearRoute: browser hoặc mainFrame không khả dụng.");
+        }
     }
 
     /**
-     * Di chuyển (pan) tâm bản đồ đến tọa độ (lat, lng) cho trước.
+     * Di chuyển (pan) bản đồ đến tọa độ (lat, lng) cho trước với một mức zoom cụ thể.
      * Gọi hàm JavaScript 'panTo' trong map.html.
-     * @param lat Vĩ độ mới của tâm bản đồ.
-     * @param lng Kinh độ mới của tâm bản đồ.
+     * @param lat Vĩ độ của địa điểm.
+     * @param lng Kinh độ của địa điểm.
+     * @param zoomLevel Mức zoom mong muốn (ví dụ: 15 cho chi tiết, 10 cho ευρύτερη περιοχή).
      */
-    public void panTo(double lat, double lng) {
-        String script = String.format(Locale.US, "panTo(%f, %f);", lat, lng);
+    private void panTo(double lat, double lng, int zoomLevel) {
+        String script = String.format(Locale.US, "panTo(%f, %f, %d);", lat, lng, zoomLevel);
         executeJavaScript(script);
     }
 

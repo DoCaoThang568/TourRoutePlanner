@@ -1,5 +1,6 @@
 package tourrouteplanner.model;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Locale;
 
@@ -17,9 +18,33 @@ public class Place {
     private double longitude;
     /** Địa chỉ đầy đủ, dễ đọc của địa điểm. */
     private String address;
+    /** 
+     * Khung giới hạn của địa điểm, nếu có. 
+     * Lưu dưới dạng [minLatitude, maxLatitude, minLongitude, maxLongitude]
+     * hoặc [southLat, northLat, westLon, eastLon].
+     */
+    private double[] boundingBox; // Ví dụ: [southLat, northLat, westLon, eastLon]
 
     /**
-     * Khởi tạo một đối tượng Place mới với đầy đủ thông tin.
+     * Khởi tạo một đối tượng Place mới với đầy đủ thông tin, bao gồm cả bounding box.
+     * @param placeId ID duy nhất của địa điểm.
+     * @param name Tên của địa điểm.
+     * @param latitude Vĩ độ của địa điểm.
+     * @param longitude Kinh độ của địa điểm.
+     * @param address Địa chỉ đầy đủ của địa điểm.
+     * @param boundingBox Khung giới hạn của địa điểm [minLat, maxLat, minLon, maxLon]. Có thể là null.
+     */
+    public Place(String placeId, String name, double latitude, double longitude, String address, double[] boundingBox) {
+        this.placeId = placeId;
+        this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.address = address;
+        this.boundingBox = boundingBox;
+    }
+    
+    /**
+     * Khởi tạo một đối tượng Place mới với đầy đủ thông tin (không có bounding box).
      * @param placeId ID duy nhất của địa điểm.
      * @param name Tên của địa điểm.
      * @param latitude Vĩ độ của địa điểm.
@@ -27,24 +52,19 @@ public class Place {
      * @param address Địa chỉ đầy đủ của địa điểm.
      */
     public Place(String placeId, String name, double latitude, double longitude, String address) {
-        this.placeId = placeId;
-        this.name = name;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.address = address;
+        this(placeId, name, latitude, longitude, address, null); // Gọi constructor chính với boundingBox là null
     }
 
     /**
      * Khởi tạo một đối tượng Place mới với tên, vĩ độ và kinh độ.
-     * ID địa điểm và địa chỉ sẽ được đặt là null ban đầu.
+     * ID địa điểm, địa chỉ và boundingBox sẽ được đặt là null ban đầu.
      * @param name Tên của địa điểm.
      * @param latitude Vĩ độ của địa điểm.
      * @param longitude Kinh độ của địa điểm.
      */
     public Place(String name, double latitude, double longitude) {
-        this(null, name, latitude, longitude, null); // Gọi hàm khởi tạo chính với placeId và address là null
+        this(null, name, latitude, longitude, null, null); // Gọi hàm khởi tạo chính
     }
-
 
     /**
      * Lấy ID của địa điểm.
@@ -126,37 +146,73 @@ public class Place {
         this.address = address;
     }
 
-    @Override
-    public String toString() {
-        // Định dạng chuỗi biểu diễn đối tượng Place, hữu ích cho việc hiển thị trong ListView hoặc logs.
-        return name + (address != null && !address.isEmpty() ? " (" + address + ")" : "") +
-               " [" + String.format(Locale.US, "%.5f, %.5f", latitude, longitude) + "]";
+    /**
+     * Lấy khung giới hạn (bounding box) của địa điểm.
+     * @return Mảng double chứa [minLat, maxLat, minLon, maxLon], hoặc null nếu không có.
+     */
+    public double[] getBoundingBox() {
+        return boundingBox;
     }
 
+    /**
+     * Đặt khung giới hạn (bounding box) cho địa điểm.
+     * @param boundingBox Mảng double chứa [minLat, maxLat, minLon, maxLon].
+     */
+    public void setBoundingBox(double[] boundingBox) {
+        this.boundingBox = boundingBox;
+    }
+
+    /**
+     * Trả về một chuỗi đại diện cho đối tượng Place.
+     * Chủ yếu dùng cho mục đích gỡ lỗi và hiển thị trong ListView/TableView (nếu không có cell factory tùy chỉnh).
+     * @return Chuỗi đại diện cho đối tượng Place.
+     */
+    @Override
+    public String toString() {
+        // Định dạng tọa độ với số chữ số thập phân cố định để dễ đọc hơn
+        String latStr = String.format(Locale.US, "%.5f", latitude);
+        String lonStr = String.format(Locale.US, "%.5f", longitude);
+        String bboxStr = boundingBox != null ? Arrays.toString(boundingBox) : "N/A";
+        return String.format("%s (ID: %s, Lat: %s, Lon: %s, Address: %s, BBox: %s)", 
+                             name, placeId, latStr, lonStr, address, bboxStr);
+    }
+
+    /**
+     * So sánh đối tượng này với một đối tượng khác để xem chúng có bằng nhau không.
+     * Hai đối tượng Place được coi là bằng nhau nếu chúng có cùng placeId (nếu cả hai đều không null),
+     * hoặc nếu placeId là null thì so sánh dựa trên tên, vĩ độ và kinh độ.
+     * @param o Đối tượng cần so sánh.
+     * @return true nếu các đối tượng bằng nhau, false nếu ngược lại.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Place place = (Place) o;
-        // Ưu tiên so sánh bằng placeId nếu có, vì nó thường là duy nhất
+        // Nếu cả hai placeId đều có và bằng nhau thì coi là bằng nhau
         if (placeId != null && place.placeId != null) {
             return placeId.equals(place.placeId);
         }
-        // Nếu một trong hai hoặc cả hai placeId là null, so sánh dựa trên tên, vĩ độ và kinh độ.
+        // Nếu một trong hai hoặc cả hai placeId là null, so sánh dựa trên các thuộc tính khác
+        // Điều này quan trọng để tránh việc thêm các địa điểm giống hệt nhau vào danh sách nếu ID không có sẵn
         return Double.compare(place.latitude, latitude) == 0 &&
                Double.compare(place.longitude, longitude) == 0 &&
-               Objects.equals(name, place.name) && // Thêm so sánh địa chỉ nếu cần độ chính xác cao hơn
-               Objects.equals(address, place.address); // Cân nhắc: việc so sánh địa chỉ có thể quá nghiêm ngặt
+               Objects.equals(name, place.name) &&
+               Objects.equals(address, place.address); // Thêm address vào so sánh để tăng độ chính xác
     }
 
+    /**
+     * Trả về mã hash cho đối tượng này.
+     * Tính toán dựa trên placeId nếu có, nếu không thì dựa trên tên, vĩ độ và kinh độ.
+     * @return Mã hash.
+     */
     @Override
     public int hashCode() {
-        // Ưu tiên sử dụng hashCode từ placeId nếu có, vì nó đảm bảo tính duy nhất tốt hơn.
+        // Sử dụng placeId cho hashCode nếu nó không null để đảm bảo tính nhất quán với equals
         if (placeId != null) {
             return Objects.hash(placeId);
         }
-        // Nếu không có placeId, tính hashCode dựa trên tên, vĩ độ, kinh độ và địa chỉ.
-        // Việc thêm địa chỉ vào hashCode phụ thuộc vào logic của phương thức equals.
-        return Objects.hash(name, latitude, longitude, address);
+        // Nếu placeId là null, sử dụng các thuộc tính khác
+        return Objects.hash(name, latitude, longitude, address); // Thêm address
     }
 }

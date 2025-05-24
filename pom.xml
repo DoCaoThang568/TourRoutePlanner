@@ -58,6 +58,12 @@
         <!-- Nếu bạn muốn ứng dụng chạy được trên nhiều nền tảng, bạn có thể cần thêm
              các dependency platform-specific khác như jxbrowser-linux64, jxbrowser-mac, jxbrowser-mac-arm -->
 
+        <!-- ControlsFX Dependency -->
+        <dependency>
+            <groupId>org.controlsfx</groupId>
+            <artifactId>controlsfx</artifactId>
+            <version>11.1.2</version> <!-- Hoặc phiên bản ControlsFX mới nhất tương thích -->
+        </dependency>
     </dependencies>
 
     <build>

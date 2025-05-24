@@ -113,7 +113,7 @@
                         <Insets top="10.0" />
                      </VBox.margin>
                   </Label>
-                  <ListView fx:id="placeListView" prefHeight="150.0" styleClass="places-list">
+                  <ListView fx:id="placeListView" prefHeight="200.0" styleClass="places-list" VBox.vgrow="SOMETIMES">
                      <VBox.margin>
                         <Insets top="8.0" bottom="10.0" />
                      </VBox.margin>

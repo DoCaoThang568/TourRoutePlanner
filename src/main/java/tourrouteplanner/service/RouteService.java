@@ -202,11 +202,16 @@ public class RouteService {
         // Mã hóa URL query để đảm bảo tính hợp lệ
         String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString());
 
-        // Sử dụng endpoint /search cho Nominatim (thường là /search.php hoặc /search tùy cấu hình máy chủ)
-        // Tăng giới hạn kết quả (limit) để có nhiều lựa chọn hơn
+        // Xác định đường dẫn API dựa trên URL máy chủ Nominatim
+        String searchPath = "/search";
+        if (nominatimServerUrl != null && nominatimServerUrl.startsWith("http://localhost")) {
+            searchPath = "/search.php"; // Sử dụng .php cho localhost
+        }
+
         String apiUrl = String.format(Locale.US,
-                "%s/search?q=%s&format=json&limit=10&addressdetails=1&accept-language=vi,en", // Thêm accept-language
+                "%s%s?q=%s&format=json&limit=10&addressdetails=1&accept-language=vi,en",
                 nominatimServerUrl,
+                searchPath, // Sử dụng đường dẫn đã xác định
                 encodedQuery);
         
         // Đối với Nominatim công cộng, cần User-Agent
@@ -268,6 +273,21 @@ public class RouteService {
             double lat = placeObject.get("lat").getAsDouble();
             double lon = placeObject.get("lon").getAsDouble();
             
+            // Lấy boundingbox nếu có
+            double[] boundingBox = null;
+            if (placeObject.has("boundingbox") && placeObject.get("boundingbox").isJsonArray()) {
+                JsonArray bboxArray = placeObject.getAsJsonArray("boundingbox");
+                if (bboxArray.size() == 4) {
+                    // Nominatim trả về: [southLat, northLat, westLon, eastLon]
+                    // hoặc đôi khi là [minLat, maxLat, minLon, maxLon]
+                    boundingBox = new double[4];
+                    boundingBox[0] = bboxArray.get(0).getAsDouble(); // minLat (South)
+                    boundingBox[1] = bboxArray.get(1).getAsDouble(); // maxLat (North)
+                    boundingBox[2] = bboxArray.get(2).getAsDouble(); // minLon (West)
+                    boundingBox[3] = bboxArray.get(3).getAsDouble(); // maxLon (East)
+                }
+            }
+
             // Xác định placeId: ưu tiên osm_id nếu có, nếu không dùng place_id
             String placeId = "unknown_id";
             if (placeObject.has("osm_type") && placeObject.has("osm_id")) {
@@ -335,7 +355,7 @@ public class RouteService {
                     address = tempAddress;
                 }
             }
-            foundPlaces.add(new Place(placeId, name, lat, lon, address));
+            foundPlaces.add(new Place(placeId, name, lat, lon, address, boundingBox)); // Thêm boundingBox vào constructor
         }
         
         // Hậu xử lý: Sắp xếp kết quả để ưu tiên các địa điểm có tên bắt đầu bằng hoặc chứa chuỗi truy vấn đã chuẩn hóa.
@@ -405,11 +425,19 @@ public class RouteService {
             throw new IllegalStateException("URL của Nominatim server chưa được cấu hình.");
         }
 
+        // Xác định đường dẫn API dựa trên URL máy chủ Nominatim
+        String reversePath = "/reverse";
+        if (nominatimServerUrl != null && nominatimServerUrl.startsWith("http://localhost")) {
+            reversePath = "/reverse.php"; // Sử dụng .php cho localhost
+        }
+
         // Sử dụng endpoint /reverse cho Nominatim (thường là /reverse.php hoặc /reverse)
         // zoom=18 để yêu cầu kết quả chi tiết ở mức độ đường phố/tòa nhà
         String apiUrl = String.format(Locale.US,
-                "%s/reverse?lat=%f&lon=%f&format=json&addressdetails=1&zoom=18&accept-language=vi,en", // Thêm accept-language
-                nominatimServerUrl, lat, lng);
+                "%s%s?lat=%f&lon=%f&format=json&addressdetails=1&zoom=18&accept-language=vi,en", // Thêm accept-language
+                nominatimServerUrl,
+                reversePath, // Sử dụng đường dẫn đã xác định
+                lat, lng);
 
         HttpURLConnection connection = (HttpURLConnection) URI.create(apiUrl).toURL().openConnection();
         connection.setRequestMethod("GET");
@@ -458,6 +486,19 @@ public class RouteService {
         double lon = resultObject.has("lon") ? resultObject.get("lon").getAsDouble() : originalLng;
         String displayName = resultObject.has("display_name") ? resultObject.get("display_name").getAsString() : "Không có tên hiển thị";
         
+        // Lấy boundingbox nếu có từ reverse geocoding (ít phổ biến hơn nhưng có thể có)
+        double[] boundingBox = null;
+        if (resultObject.has("boundingbox") && resultObject.get("boundingbox").isJsonArray()) {
+            JsonArray bboxArray = resultObject.getAsJsonArray("boundingbox");
+            if (bboxArray.size() == 4) {
+                boundingBox = new double[4];
+                boundingBox[0] = bboxArray.get(0).getAsDouble();
+                boundingBox[1] = bboxArray.get(1).getAsDouble();
+                boundingBox[2] = bboxArray.get(2).getAsDouble();
+                boundingBox[3] = bboxArray.get(3).getAsDouble();
+            }
+        }
+
         String placeId = "unknown_id_reverse";
          if (resultObject.has("osm_type") && resultObject.has("osm_id")) {
             placeId = resultObject.get("osm_type").getAsString().substring(0,1).toUpperCase() + resultObject.get("osm_id").getAsString();
@@ -484,19 +525,29 @@ public class RouteService {
             else if (addressObject.has("tourism")) name = addressObject.get("tourism").getAsString();
             // ... (thêm các trường khác nếu cần, tương tự parseNominatimResponse) ...
             else if (addressObject.has("city")) name = addressObject.get("city").getAsString(); // Fallback cuối cùng có thể là tên thành phố
-            
-            if (name.equals(displayName) && displayName.contains(",")) {
-                 name = displayName.substring(0, displayName.indexOf(",")).trim();
+            else if (addressObject.has("county")) name = addressObject.get("county").getAsString();
+            else if (addressObject.has("state")) name = addressObject.get("state").getAsString();
+            else if (addressObject.has("country")) name = addressObject.get("country").getAsString();
+            else { // Nếu không có tên cụ thể, dùng phần đầu của display_name
+                if (displayName.contains(",")) {
+                    name = displayName.substring(0, displayName.indexOf(",")).trim();
+                } else {
+                    name = displayName;
+                }
             }
 
-            // Xây dựng lại địa chỉ đầy đủ (tương tự như trong parseNominatimResponse)
+            // Xây dựng lại địa chỉ chi tiết từ các thành phần có sẵn
             StringBuilder detailedAddressBuilder = new StringBuilder();
-            appendAddressComponent(detailedAddressBuilder, addressObject, "house_number");
             appendAddressComponent(detailedAddressBuilder, addressObject, "road");
-            // ... (thêm các thành phần khác) ...
+            appendAddressComponent(detailedAddressBuilder, addressObject, "house_number");
+            appendAddressComponent(detailedAddressBuilder, addressObject, "suburb");
+            appendAddressComponent(detailedAddressBuilder, addressObject, "city_district");
             appendAddressComponent(detailedAddressBuilder, addressObject, "city");
+            appendAddressComponent(detailedAddressBuilder, addressObject, "county");
+            appendAddressComponent(detailedAddressBuilder, addressObject, "state");
+            appendAddressComponent(detailedAddressBuilder, addressObject, "postcode");
             appendAddressComponent(detailedAddressBuilder, addressObject, "country");
-            
+
             String tempAddress = detailedAddressBuilder.toString().trim();
             if (tempAddress.endsWith(",")) {
                 tempAddress = tempAddress.substring(0, tempAddress.length() - 1).trim();
@@ -505,7 +556,8 @@ public class RouteService {
                 address = tempAddress;
             }
         }
-        return new Place(placeId, name, lat, lon, address);
+
+        return new Place(placeId, name, lat, lon, address, boundingBox); // Thêm boundingBox vào constructor
     }
 
     /**

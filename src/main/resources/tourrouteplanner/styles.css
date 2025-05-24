@@ -70,6 +70,12 @@
     -fx-border-width: 0 0 0 4;
 }
 
+/* Hiệu ứng khi di chuột qua một mục trong danh sách kết quả tìm kiếm */
+.places-list .list-cell:filled:hover {
+    -fx-background-color: #dbeafe; /* Màu nền nhạt hơn khi hover */
+    -fx-text-fill: #1e3a8a; /* Màu chữ đậm hơn một chút khi hover */
+}
+
 /* Button Styles */
 .button {
     -fx-background-radius: 24;
@@ -81,6 +87,11 @@
     -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 4, 0, 0, 2);
     -fx-font-weight: bold;
     -fx-border-width: 0;
+}
+
+/* Kiểu riêng cho các nút hành động (ví dụ: nút chỉ có icon) */
+.action-button {
+    -fx-padding: 8px; /* Điều chỉnh padding cho nút chỉ chứa icon */
 }
 
 .find-route-button {
