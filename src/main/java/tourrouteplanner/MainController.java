@@ -34,10 +34,6 @@ import java.util.ArrayList; // Thêm import ArrayList
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
-
-import org.controlsfx.control.textfield.TextFields;
 
 /**
  * Controller chính cho giao diện người dùng của ứng dụng Tour Route Planner.
