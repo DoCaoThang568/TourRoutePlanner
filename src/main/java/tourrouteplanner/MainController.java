@@ -170,19 +170,27 @@ public class MainController {
         // Thêm listener để pan bản đồ khi một địa điểm được chọn trong placeListView.
         placeListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
+                String geoJson = newSelection.getGeoJson();
                 double[] boundingBox = newSelection.getBoundingBox();
-                if (boundingBox != null && boundingBox.length == 4) {
-                    // Ưu tiên zoom tới bounding box nếu có
-                    // Bounding box từ Nominatim là [southLat, northLat, westLon, eastLon]
-                    // Hàm JS zoomToBoundingBox cũng nhận theo thứ tự này
-                    zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+
+                if (geoJson != null && !geoJson.trim().isEmpty()) {
+                    // Ưu tiên highlight GeoJSON nếu có
+                    highlightGeoJsonOnMap(geoJson);
+                    // Vẫn zoom tới bounding box nếu có, vì GeoJSON có thể là điểm hoặc vùng nhỏ
+                    if (boundingBox != null && boundingBox.length == 4) {
+                        zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                    } else {
+                        // Nếu không có bounding box, pan tới điểm trung tâm với mức zoom mặc định
+                        panTo(newSelection.getLatitude(), newSelection.getLongitude(), 15); // Sử dụng int trực tiếp
+                    }
+                } else if (boundingBox != null && boundingBox.length == 4) {
+                    // Nếu không có GeoJSON nhưng có bounding box, highlight bounding box
                     highlightBoundingBoxOnMap(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                    zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
                 } else {
-                    // Nếu không có bounding box, pan tới điểm trung tâm với mức zoom mặc định
-                    int defaultZoomLevelForPlace = 15;
-                    // Gọi panTo với Integer cho zoomLevel
-                    panTo(newSelection.getLatitude(), newSelection.getLongitude(), Integer.valueOf(defaultZoomLevelForPlace));
-                    clearMapHighlight(); // Xóa highlight cũ nếu địa điểm mới không có bounding box
+                    // Nếu không có cả GeoJSON và bounding box, pan tới điểm trung tâm
+                    panTo(newSelection.getLatitude(), newSelection.getLongitude(), 15); // Sử dụng int trực tiếp
+                    clearMapHighlight(); // Xóa highlight cũ
                 }
             } else {
                 clearMapHighlight(); // Xóa highlight nếu không có địa điểm nào được chọn
@@ -519,73 +527,71 @@ public class MainController {
         }
     }
 
+    // --- Các phương thức giao tiếp với JavaScript trên bản đồ ---
+
     /**
-     * Gọi hàm JavaScript panTo trên bản đồ để di chuyển đến tọa độ và mức zoom cụ thể.
-     * @param latitude Vĩ độ.
-     * @param longitude Kinh độ.
-     * @param zoomLevel Mức zoom (tùy chọn, nếu null thì giữ nguyên zoom hiện tại).
+     * Di chuyển và zoom bản đồ đến một tọa độ và mức zoom cụ thể.
+     * Được gọi từ Java để điều khiển bản đồ JavaScript.
+     *
+     * @param latitude Vĩ độ của điểm đến.
+     * @param longitude Kinh độ của điểm đến.
+     * @param zoomLevel Mức zoom (số nguyên).
      */
-    private void panTo(double latitude, double longitude, Integer zoomLevel) {
-        // Không cần kiểm tra browser và mainFrame ở đây nữa vì executeJavaScript đã làm.
-        String script;
-        if (zoomLevel != null) {
-            script = String.format(Locale.US, "if(typeof panTo === 'function') { panTo(%.8f, %.8f, %d); } else { console.error('panTo function not found in map.html'); }", latitude, longitude, zoomLevel.intValue());
-        } else {
-            // JavaScript panTo function expects zoomLevel to be either a number or undefined.
-            // Passing null from Java might be interpreted differently by JavaScript depending on JxBrowser marshalling.
-            // It's safer to call a version of panTo in JS that doesn't expect a zoom level, or explicitly pass undefined.
-            // For now, assuming the JS panTo handles `null` for zoomLevel gracefully or we ensure it does.
-            // Let's call it without the zoomLevel argument if it's null, to match the JS function signature if it has an optional param.
-            // However, the current JS panTo(lat, lng, zoomLevel) expects zoomLevel or it will be undefined.
-            // So, if zoomLevel is null, we should call a JS variant or ensure current panTo handles it.
-            // The JS `panTo` is defined as `function panTo(latitude, longitude, zoomLevel)`
-            // If `zoomLevel` is `undefined` in JS, it works as intended (keeps current zoom).
-            // If `zoomLevel` is a number, it logs: `Animating to center [...] and zoom ...`
-            // So, if Java `zoomLevel` is null, we want JS `zoomLevel` to be `undefined`.
-            // One way is to format the script differently.
-            script = String.format(Locale.US, "if(typeof panTo === 'function') { panTo(%.8f, %.8f, undefined); } else { console.error('panTo function not found in map.html'); }", latitude, longitude);
+    @JsAccessible
+    public void panTo(double latitude, double longitude, int zoomLevel) { 
+        if (browser != null && browser.mainFrame().isPresent()) {
+            // Đảm bảo rằng zoomLevel là một số nguyên khi truyền vào JavaScript.
+            String script = String.format(Locale.US, "if(typeof panTo === 'function') { panTo(%f, %f, %d); } else { console.error('JavaScript function panTo not found.'); }", latitude, longitude, zoomLevel);
+            browser.mainFrame().get().executeJavaScript(script);
         }
-        executeJavaScript(script);
     }
 
     /**
-     * Gọi hàm JavaScript zoomToBoundingBox trên bản đồ.
-     * @param southLat Vĩ độ Nam của bounding box.
-     * @param northLat Vĩ độ Bắc của bounding box.
-     * @param westLon Kinh độ Tây của bounding box.
-     * @param eastLon Kinh độ Đông của bounding box.
+     * Yêu cầu JavaScript zoom bản đồ tới một bounding box.
+     * @param southLat Vĩ độ Nam
+     * @param northLat Vĩ độ Bắc
+     * @param westLon Kinh độ Tây
+     * @param eastLon Kinh độ Đông
      */
     private void zoomToBoundingBox(double southLat, double northLat, double westLon, double eastLon) {
         if (browser != null && browser.mainFrame().isPresent()) {
-            String script = String.format(Locale.US, 
-                "if(typeof zoomToBoundingBox === 'function') { zoomToBoundingBox(%.8f, %.8f, %.8f, %.8f); } else { console.error('zoomToBoundingBox function not found in map.html'); }",
-                southLat, northLat, westLon, eastLon);
-            executeJavaScript(script);
-        } else {
-            System.err.println("Không thể gọi zoomToBoundingBox: browser hoặc mainFrame không khả dụng.");
+            String script = String.format(Locale.US, "if(typeof zoomToBoundingBox === 'function') { zoomToBoundingBox(%f, %f, %f, %f); } else { console.error('JavaScript function zoomToBoundingBox not found.'); }",
+                                          southLat, northLat, westLon, eastLon);
+            browser.mainFrame().get().executeJavaScript(script);
         }
     }
 
     /**
-     * Gọi hàm JavaScript để highlight một bounding box trên bản đồ.
-     * @param southLat Vĩ độ Nam của bounding box.
-     * @param northLat Vĩ độ Bắc của bounding box.
-     * @param westLon Kinh độ Tây của bounding box.
-     * @param eastLon Kinh độ Đông của bounding box.
+     * Yêu cầu JavaScript highlight một bounding box trên bản đồ.
+     * @param southLat Vĩ độ Nam
+     * @param northLat Vĩ độ Bắc
+     * @param westLon Kinh độ Tây
+     * @param eastLon Kinh độ Đông
      */
     private void highlightBoundingBoxOnMap(double southLat, double northLat, double westLon, double eastLon) {
         if (browser != null && browser.mainFrame().isPresent()) {
-            String script = String.format(Locale.US,
-                "if(typeof highlightBoundingBox === 'function') { highlightBoundingBox(%.8f, %.8f, %.8f, %.8f); } else { console.error('highlightBoundingBox function not found in map.html'); }",
-                southLat, northLat, westLon, eastLon);
-            executeJavaScript(script);
-        } else {
-            System.err.println("Không thể gọi highlightBoundingBoxOnMap: browser hoặc mainFrame không khả dụng.");
+            String script = String.format(Locale.US, "if(typeof highlightBoundingBox === 'function') { highlightBoundingBox(%f, %f, %f, %f); } else { console.error('JavaScript function highlightBoundingBox not found.'); }",
+                                          southLat, northLat, westLon, eastLon);
+            browser.mainFrame().get().executeJavaScript(script);
         }
     }
 
     /**
-     * Gọi hàm JavaScript để xóa highlight trên bản đồ.
+     * Yêu cầu JavaScript highlight một đối tượng địa lý từ chuỗi GeoJSON.
+     * @param geoJsonString Chuỗi GeoJSON của đối tượng.
+     */
+    private void highlightGeoJsonOnMap(String geoJsonString) {
+        if (browser != null && browser.mainFrame().isPresent()) {
+            // Cần escape chuỗi GeoJSON để nó hợp lệ trong một chuỗi JavaScript
+            String escapedGeoJson = Utils.escapeJavaScriptString(geoJsonString);
+            String script = String.format("if(typeof highlightGeoJsonFeature === 'function') { highlightGeoJsonFeature('%s'); } else { console.error('JavaScript function highlightGeoJsonFeature not found.'); }",
+                                          escapedGeoJson);
+            browser.mainFrame().get().executeJavaScript(script);
+        }
+    }
+
+    /**
+     * Yêu cầu JavaScript xóa mọi highlight hiện tại trên bản đồ.
      */
     private void clearMapHighlight() {
         if (browser != null && browser.mainFrame().isPresent()) {
@@ -653,18 +659,6 @@ public class MainController {
         } else {
             System.err.println("Không thể gọi clearRoute: browser hoặc mainFrame không khả dụng.");
         }
-    }
-
-    /**
-     * Di chuyển (pan) bản đồ đến tọa độ (lat, lng) cho trước với một mức zoom cụ thể.
-     * Gọi hàm JavaScript 'panTo' trong map.html.
-     * @param lat Vĩ độ của địa điểm.
-     * @param lng Kinh độ của địa điểm.
-     * @param zoomLevel Mức zoom mong muốn (ví dụ: 15 cho chi tiết, 10 cho ευρύτερη περιοχή).
-     */
-    private void panTo(double lat, double lng, int zoomLevel) {
-        String script = String.format(Locale.US, "panTo(%f, %f, %d);", lat, lng, zoomLevel);
-        executeJavaScript(script);
     }
 
     /**
@@ -773,6 +767,7 @@ public class MainController {
             currentRoutePlaces.clear(); // Xóa tất cả địa điểm khỏi danh sách.
             clearAllMarkers(); // Xóa tất cả marker trên bản đồ.
             clearRoute(); // Xóa lộ trình trên bản đồ.
+            clearMapHighlight(); // Xóa cả highlight khi xóa hết các điểm
             totalDistanceLabel.setText("Tổng quãng đường: 0 km"); // Reset nhãn quãng đường.
             if (statusLabel != null) {
                 statusLabel.setText("Đã xóa tất cả địa điểm."); // Cập nhật nhãn trạng thái.

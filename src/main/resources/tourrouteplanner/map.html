@@ -262,7 +262,45 @@
             console.log('map.html: OpenLayers map initialized with new base layer and popup.'); // Log: Bản đồ OpenLayers đã được khởi tạo
         }
 
-        // Hàm mới để highlight một bounding box trên bản đồ
+        // Hàm mới để highlight một đối tượng địa lý từ chuỗi GeoJSON
+        // Chuỗi GeoJSON được kỳ vọng ở định dạng EPSG:4326
+        function highlightGeoJsonFeature(geoJsonString) {
+            console.log("map.html: highlightGeoJsonFeature called with GeoJSON string:", geoJsonString);
+            if (!mapInstance || !highlightLayer) {
+                console.error("map.html: highlightGeoJsonFeature - mapInstance or highlightLayer is not initialized.");
+                return;
+            }
+            clearHighlight(); // Xóa các highlight cũ
+
+            if (!geoJsonString || geoJsonString.trim() === "") {
+                console.log("map.html: highlightGeoJsonFeature - GeoJSON string is empty, nothing to highlight.");
+                return;
+            }
+
+            try {
+                const geoJsonFormat = new ol.format.GeoJSON();
+                // Đọc feature từ chuỗi GeoJSON. Dữ liệu từ Nominatim là EPSG:4326.
+                // Cần transform feature sang projection của bản đồ.
+                const feature = geoJsonFormat.readFeature(geoJsonString, {
+                    dataProjection: 'EPSG:4326', // Projection của dữ liệu GeoJSON đầu vào
+                    featureProjection: mapInstance.getView().getProjection() // Projection của bản đồ hiện tại
+                });
+
+                if (feature) {
+                    highlightLayer.getSource().addFeature(feature);
+                    console.log("map.html: GeoJSON feature highlighted successfully.");
+                } else {
+                    console.warn("map.html: Could not parse GeoJSON string into a feature.");
+                }
+            } catch (error) {
+                console.error("map.html: Error in highlightGeoJsonFeature:", error);
+                // Có thể thử highlight bounding box như một fallback nếu có thông tin
+                // Hoặc thông báo lỗi cho người dùng qua javaConnector nếu cần
+            }
+        }
+
+        // Hàm để highlight một bounding box trên bản đồ
+        // s: southLat, n: northLat, w: westLon, e: eastLon
         function highlightBoundingBox(southLat, northLat, westLon, eastLon) {
             console.log(`map.html: highlightBoundingBox called with S:${southLat}, N:${northLat}, W:${westLon}, E:${eastLon}`);
             if (!mapInstance || !highlightLayer) {

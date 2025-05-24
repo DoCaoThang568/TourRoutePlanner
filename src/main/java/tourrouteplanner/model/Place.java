@@ -26,7 +26,35 @@ public class Place {
     private double[] boundingBox; // Ví dụ: [southLat, northLat, westLon, eastLon]
 
     /**
+     * Chuỗi JSON đại diện cho đối tượng địa lý (geometry) của địa điểm.
+     * Có thể là Point, LineString, Polygon, v.v.
+     * Được sử dụng để vẽ hình dạng chi tiết của địa điểm trên bản đồ.
+     */
+    private String geoJson; // Thêm trường geoJson
+
+    /**
+     * Khởi tạo một đối tượng Place mới với đầy đủ thông tin, bao gồm cả bounding box và GeoJSON.
+     * @param placeId ID duy nhất của địa điểm.
+     * @param name Tên của địa điểm.
+     * @param latitude Vĩ độ của địa điểm.
+     * @param longitude Kinh độ của địa điểm.
+     * @param address Địa chỉ đầy đủ của địa điểm.
+     * @param boundingBox Khung giới hạn của địa điểm [minLat, maxLat, minLon, maxLon]. Có thể là null.
+     * @param geoJson Chuỗi GeoJSON mô tả hình dạng của địa điểm. Có thể là null.
+     */
+    public Place(String placeId, String name, double latitude, double longitude, String address, double[] boundingBox, String geoJson) {
+        this.placeId = placeId;
+        this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.address = address;
+        this.boundingBox = boundingBox;
+        this.geoJson = geoJson; // Khởi tạo geoJson
+    }
+
+    /**
      * Khởi tạo một đối tượng Place mới với đầy đủ thông tin, bao gồm cả bounding box.
+     * GeoJSON sẽ được đặt là null.
      * @param placeId ID duy nhất của địa điểm.
      * @param name Tên của địa điểm.
      * @param latitude Vĩ độ của địa điểm.
@@ -35,26 +63,9 @@ public class Place {
      * @param boundingBox Khung giới hạn của địa điểm [minLat, maxLat, minLon, maxLon]. Có thể là null.
      */
     public Place(String placeId, String name, double latitude, double longitude, String address, double[] boundingBox) {
-        this.placeId = placeId;
-        this.name = name;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.address = address;
-        this.boundingBox = boundingBox;
+        this(placeId, name, latitude, longitude, address, boundingBox, null); // Gọi constructor chính với geoJson là null
     }
     
-    /**
-     * Khởi tạo một đối tượng Place mới với đầy đủ thông tin (không có bounding box).
-     * @param placeId ID duy nhất của địa điểm.
-     * @param name Tên của địa điểm.
-     * @param latitude Vĩ độ của địa điểm.
-     * @param longitude Kinh độ của địa điểm.
-     * @param address Địa chỉ đầy đủ của địa điểm.
-     */
-    public Place(String placeId, String name, double latitude, double longitude, String address) {
-        this(placeId, name, latitude, longitude, address, null); // Gọi constructor chính với boundingBox là null
-    }
-
     /**
      * Khởi tạo một đối tượng Place mới với tên, vĩ độ và kinh độ.
      * ID địa điểm, địa chỉ và boundingBox sẽ được đặt là null ban đầu.
@@ -163,6 +174,22 @@ public class Place {
     }
 
     /**
+     * Lấy chuỗi GeoJSON của địa điểm.
+     * @return Chuỗi GeoJSON, hoặc null nếu không có.
+     */
+    public String getGeoJson() {
+        return geoJson;
+    }
+
+    /**
+     * Đặt chuỗi GeoJSON cho địa điểm.
+     * @param geoJson Chuỗi GeoJSON.
+     */
+    public void setGeoJson(String geoJson) {
+        this.geoJson = geoJson;
+    }
+
+    /**
      * Trả về một chuỗi đại diện cho đối tượng Place.
      * Chủ yếu dùng cho mục đích gỡ lỗi và hiển thị trong ListView/TableView (nếu không có cell factory tùy chỉnh).
      * @return Chuỗi đại diện cho đối tượng Place.
@@ -173,8 +200,9 @@ public class Place {
         String latStr = String.format(Locale.US, "%.5f", latitude);
         String lonStr = String.format(Locale.US, "%.5f", longitude);
         String bboxStr = boundingBox != null ? Arrays.toString(boundingBox) : "N/A";
-        return String.format("%s (ID: %s, Lat: %s, Lon: %s, Address: %s, BBox: %s)", 
-                             name, placeId, latStr, lonStr, address, bboxStr);
+        String geoJsonStr = geoJson != null && !geoJson.isEmpty() ? "Present" : "N/A"; // Chỉ báo có GeoJSON hay không
+        return String.format("%s (ID: %s, Lat: %s, Lon: %s, Address: %s, BBox: %s, GeoJSON: %s)", 
+                             name, placeId, latStr, lonStr, address, bboxStr, geoJsonStr);
     }
 
     /**
