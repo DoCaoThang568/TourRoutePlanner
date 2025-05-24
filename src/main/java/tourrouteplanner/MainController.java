@@ -253,7 +253,7 @@ public class MainController {
                 JsObject window = frame.executeJavaScript("window");
                 if (window != null) {
                     window.putProperty("javaConnector", MainController.this);
-                    System.out.println("Java object 'javaConnector' exposed to JavaScript."); // Restored log
+                    // System.out.println("Java object \'javaConnector\' exposed to JavaScript."); // Removed log
                 } else {
                     System.err.println("Could not get window object from frame.");
                 }
@@ -276,18 +276,18 @@ public class MainController {
                 } catch (Exception e) {
                     System.err.println("Error retrieving URL in LoadFinished: " + e.getMessage());
                 }
-                System.out.println("JxBrowser LoadFinished event. URL: \"" + loadedUrl + "\""); // Restored diagnostic log
+                // System.out.println("JxBrowser LoadFinished event. URL: \\"" + loadedUrl + "\\""); // Removed diagnostic log
 
                 if (loadedUrl.endsWith("map.html")) {
-                    System.out.println("map.html loaded. Proceeding with API key injection."); // Restored diagnostic log
+                    // System.out.println("map.html loaded. Proceeding with API key injection."); // Removed diagnostic log
                     String maptilerApiKey = Utils.loadConfigProperty("maptiler.api.key");
                     if (maptilerApiKey != null && !maptilerApiKey.trim().isEmpty()) {
                         browser.mainFrame().ifPresent(frame -> {
                             // Tạo script để gán API key và gọi hàm khởi tạo bản đồ trong JavaScript.
-                            String script = String.format("window.MAPTILER_API_KEY = '%s'; if(typeof initializeMapWithApiKey === 'function') { console.log('Calling initializeMapWithApiKey from Java'); initializeMapWithApiKey(); } else { console.error('initializeMapWithApiKey function not found in map.html'); }", Utils.escapeJavaScriptString(maptilerApiKey));
-                            System.out.println("Executing script: " + script); // Log the script
+                            String script = String.format("window.MAPTILER_API_KEY = '%s'; if(typeof initializeMapWithApiKey === \'function\') { console.log(\'Calling initializeMapWithApiKey from Java\'); initializeMapWithApiKey(); } else { console.error(\'initializeMapWithApiKey function not found in map.html\'); }", Utils.escapeJavaScriptString(maptilerApiKey));
+                            // System.out.println("Executing script: " + script); // Removed log
                             frame.executeJavaScript(script);
-                            System.out.println("MapTiler API Key injected and initializeMapWithApiKey called."); // Restored log
+                            // System.out.println("MapTiler API Key injected and initializeMapWithApiKey called."); // Removed log
                         });
                     } else {
                         Utils.showAlert(Alert.AlertType.ERROR, "Lỗi API Key", "Không thể tải MapTiler API Key từ config.properties.");
@@ -678,7 +678,7 @@ public class MainController {
     @JsAccessible
     public void handleMapClick(double lat, double lng) {
         Platform.runLater(() -> { // Đảm bảo các thay đổi UI được thực hiện trên JavaFX Application Thread.
-            System.out.println("Map clicked at Lat: " + lat + ", Lng: " + lng);
+            // System.out.println("Map clicked at Lat: " + lat + ", Lng: " + lng); // Removed log
             try {
                 Place clickedPlace = routeService.reverseGeocode(lat, lng); // Lấy thông tin địa điểm.
                 if (clickedPlace != null) {
@@ -779,7 +779,7 @@ public class MainController {
             if (statusLabel != null) {
                 statusLabel.setText("Đã xóa tất cả địa điểm."); // Cập nhật nhãn trạng thái.
             }
-            System.out.println("All places cleared.");
+            // System.out.println("All places cleared."); // Removed log
         }
     }
 
