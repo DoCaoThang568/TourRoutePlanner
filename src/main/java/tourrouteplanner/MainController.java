@@ -253,7 +253,7 @@ public class MainController {
                 JsObject window = frame.executeJavaScript("window");
                 if (window != null) {
                     window.putProperty("javaConnector", MainController.this);
-                    System.out.println("Java object 'javaConnector' exposed to JavaScript.");
+                    System.out.println("Java object 'javaConnector' exposed to JavaScript."); // Restored log
                 } else {
                     System.err.println("Could not get window object from frame.");
                 }
@@ -263,7 +263,7 @@ public class MainController {
             // Lắng nghe và ghi lại các thông điệp từ console của JavaScript.
             browser.on(ConsoleMessageReceived.class, event -> {
                 String message = "[JS " + event.consoleMessage().level() + "] " + event.consoleMessage().message();
-                System.out.println(message);
+                System.out.println(message); // Keep this for JS console messages
             });
 
             // Xử lý sự kiện khi trang web (map.html) đã tải xong.
@@ -276,17 +276,18 @@ public class MainController {
                 } catch (Exception e) {
                     System.err.println("Error retrieving URL in LoadFinished: " + e.getMessage());
                 }
-                System.out.println("JxBrowser LoadFinished event. URL: \"" + loadedUrl + "\""); // Diagnostic log
+                System.out.println("JxBrowser LoadFinished event. URL: \"" + loadedUrl + "\""); // Restored diagnostic log
 
                 if (loadedUrl.endsWith("map.html")) {
-                    System.out.println("map.html loaded. Proceeding with API key injection."); // Diagnostic log
+                    System.out.println("map.html loaded. Proceeding with API key injection."); // Restored diagnostic log
                     String maptilerApiKey = Utils.loadConfigProperty("maptiler.api.key");
                     if (maptilerApiKey != null && !maptilerApiKey.trim().isEmpty()) {
                         browser.mainFrame().ifPresent(frame -> {
                             // Tạo script để gán API key và gọi hàm khởi tạo bản đồ trong JavaScript.
-                            String script = String.format("window.MAPTILER_API_KEY = \'%s\'; if(typeof initializeMapWithApiKey === \'function\') { console.log(\'Calling initializeMapWithApiKey from Java\'); initializeMapWithApiKey(); } else { console.error(\'initializeMapWithApiKey function not found in map.html\'); }", Utils.escapeJavaScriptString(maptilerApiKey));
+                            String script = String.format("window.MAPTILER_API_KEY = '%s'; if(typeof initializeMapWithApiKey === 'function') { console.log('Calling initializeMapWithApiKey from Java'); initializeMapWithApiKey(); } else { console.error('initializeMapWithApiKey function not found in map.html'); }", Utils.escapeJavaScriptString(maptilerApiKey));
+                            System.out.println("Executing script: " + script); // Log the script
                             frame.executeJavaScript(script);
-                            System.out.println("MapTiler API Key injected and initializeMapWithApiKey called.");
+                            System.out.println("MapTiler API Key injected and initializeMapWithApiKey called."); // Restored log
                         });
                     } else {
                         Utils.showAlert(Alert.AlertType.ERROR, "Lỗi API Key", "Không thể tải MapTiler API Key từ config.properties.");
@@ -344,7 +345,8 @@ public class MainController {
                 // panTo(firstPlace.getLatitude(), firstPlace.getLongitude());
             }
 
-            // Diagnostic logging for map visibility
+            // Diagnostic logging for map visibility - REMOVE THIS BLOCK
+            /*
             Platform.runLater(() -> {
                 System.out.println("--- After handleSearch ---");
                 if (mapPane != null) {
@@ -378,6 +380,7 @@ public class MainController {
                 }
                 System.out.println("--- End of handleSearch diagnostics ---");
             });
+            */
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -786,32 +789,44 @@ public class MainController {
      * @param distanceInfo Chuỗi thông tin tổng quãng đường.
      * @param turnByTurnInstructions Chuỗi chứa hướng dẫn từng chặng (có thể là null hoặc rỗng).
      */
-    private void updateDynamicRouteInfo(String distanceInfo, String turnByTurnInstructions) { // Parameter type changed
-        if (dynamicRouteInfoScrollPane != null && dynamicRouteInfoTextArea != null) {
-            StringBuilder infoText = new StringBuilder();
-            boolean hasContent = false;
+    private void updateDynamicRouteInfo(String distanceInfo, String turnByTurnInstructions) {
+        // System.out.println("MainController: updateDynamicRouteInfo called."); // Removed log
+        // System.out.println("MainController: Distance Info: " + distanceInfo); // Removed log
+        // System.out.println("MainController: Turn-by-turn (raw): " + turnByTurnInstructions); // Removed log
 
-            if (distanceInfo != null && !distanceInfo.isEmpty()) {
-                infoText.append(distanceInfo).append("\\n\\n");
-                hasContent = true;
-            }
+        StringBuilder infoBuilder = new StringBuilder();
+        if (distanceInfo != null && !distanceInfo.isEmpty()) {
+            infoBuilder.append(distanceInfo).append("\\n\\n");
+        } else {
+            infoBuilder.append("Tổng quãng đường: Chưa xác định\\n\\n");
+        }
 
-            if (turnByTurnInstructions != null && !turnByTurnInstructions.trim().isEmpty()) {
-                // Assuming turnByTurnInstructions is a single string with newline characters for each instruction
-                infoText.append("Hướng dẫn từng chặng:\\n");
-                infoText.append(turnByTurnInstructions); // Append the string directly
-                hasContent = true;
+        if (turnByTurnInstructions != null && !turnByTurnInstructions.trim().isEmpty()) {
+            // System.out.println("MainController: Appending turn-by-turn instructions."); // Removed log
+            infoBuilder.append("Hướng dẫn chi tiết:\\n");
+            infoBuilder.append(turnByTurnInstructions.trim()); // Trim to remove any leading/trailing newlines from the source
+        } else {
+            // System.out.println("MainController: No turn-by-turn instructions to display."); // Removed log
+            if (currentRoutePlaces.size() >= 2) { // Only show "not available" if a route was expected
+                infoBuilder.append("Hướng dẫn chi tiết không có sẵn.");
             }
+        }
 
-            if (hasContent) {
-                dynamicRouteInfoTextArea.setText(infoText.toString().trim());
-                dynamicRouteInfoScrollPane.setVisible(true);
-                dynamicRouteInfoScrollPane.setManaged(true);
-            } else {
-                dynamicRouteInfoTextArea.setText(""); // Clear text
-                dynamicRouteInfoScrollPane.setVisible(false);
-                dynamicRouteInfoScrollPane.setManaged(false);
-            }
+        String finalText = infoBuilder.toString();
+        // System.out.println("MainController: Final text for TextArea: " + finalText); // Removed log
+
+        if (dynamicRouteInfoTextArea != null) {
+            dynamicRouteInfoTextArea.setText(finalText);
+        }
+
+        if (dynamicRouteInfoScrollPane != null) {
+            // Show the scroll pane only if there's meaningful content (more than just default distance)
+            // or if there are at least two places (implying a route was attempted).
+            boolean shouldBeVisible = (currentRoutePlaces.size() >= 2) || (turnByTurnInstructions != null && !turnByTurnInstructions.trim().isEmpty());
+            
+            dynamicRouteInfoScrollPane.setVisible(shouldBeVisible);
+            dynamicRouteInfoScrollPane.setManaged(shouldBeVisible);
+            // System.out.println("MainController: ScrollPane visibility set to: " + shouldBeVisible); // Removed log
         }
     }
 }

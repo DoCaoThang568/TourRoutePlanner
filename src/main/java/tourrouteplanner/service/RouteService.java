@@ -190,19 +190,162 @@ public class RouteService {
                     JsonArray stepsArray = legObject.getAsJsonArray("steps");
                     for (int j = 0; j < stepsArray.size(); j++) {
                         JsonObject stepObject = stepsArray.get(j).getAsJsonObject();
-                        if (stepObject.has("maneuver") && stepObject.getAsJsonObject("maneuver").has("instruction")) {
-                            String instruction = stepObject.getAsJsonObject("maneuver").get("instruction").getAsString();
-                            turnByTurnInstructionsBuilder.append(instruction).append("\\n");
+                        
+                        String streetNameForStep = "";
+                        if (stepObject.has("name") && !stepObject.get("name").isJsonNull()) {
+                            streetNameForStep = stepObject.get("name").getAsString();
+                        }
+                        String rotaryNameForStep = "";
+                        if (stepObject.has("rotary_name") && !stepObject.get("rotary_name").isJsonNull()) {
+                            rotaryNameForStep = stepObject.get("rotary_name").getAsString();
+                        }
+
+                        if (stepObject.has("maneuver")) { // Check if maneuver object exists
+                            JsonObject maneuverObj = stepObject.getAsJsonObject("maneuver");
+                            if (maneuverObj.has("instruction") && !maneuverObj.get("instruction").isJsonNull()) {
+                                String instruction = maneuverObj.get("instruction").getAsString();
+                                // Only append if the instruction string is not null and not blank after trimming
+                                if (instruction != null && !instruction.trim().isEmpty()) {
+                                    turnByTurnInstructionsBuilder.append(instruction.trim()).append("\n"); // Corrected newline
+                                }
+                            } else {
+                                // Fallback: Generate instruction from type, modifier, and name
+                                String generatedInstruction = generateSimpleInstruction(maneuverObj, streetNameForStep, rotaryNameForStep);
+                                if (generatedInstruction != null && !generatedInstruction.isEmpty()) {
+                                    turnByTurnInstructionsBuilder.append(generatedInstruction).append("\n"); // Corrected newline
+                                } else {
+                                    // System.out.println("RouteService: Maneuver object found, but \'instruction\' field missing/null, and could not generate simple instruction. Maneuver: " + maneuverObj.toString() + ", Street: " + streetNameForStep); // LOGGING: Fallback failure REMOVED
+                                }
+                            }
+                        } else {
+                             // System.out.println("RouteService: Step object does not have a \'maneuver\' field. Step: " + stepObject.toString()); // LOGGING: No maneuver object REMOVED
                         }
                     }
                 }
             }
         }
-        String turnByTurnInstructions = turnByTurnInstructionsBuilder.toString().trim();
 
-        // Tạo đối tượng Route với các thông tin đã phân tích và danh sách waypoints gốc
-        // Bao gồm cả hướng dẫn từng chặng
-        return new Route(originalWaypoints, polyline, totalDistanceMeters / 1000.0, totalDurationSeconds / 60.0, turnByTurnInstructions);
+        return new Route(originalWaypoints, polyline, totalDistanceMeters, totalDurationSeconds, turnByTurnInstructionsBuilder.toString());
+    }
+
+    private String generateSimpleInstruction(JsonObject maneuverObj, String streetName, String rotaryName) {
+        if (maneuverObj == null) return "";
+
+        String type = maneuverObj.has("type") ? maneuverObj.get("type").getAsString() : "";
+        String modifier = maneuverObj.has("modifier") ? maneuverObj.get("modifier").getAsString() : "";
+
+        StringBuilder instruction = new StringBuilder();
+
+        switch (type.toLowerCase()) {
+            case "depart":
+                instruction.append("Khởi hành");
+                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                break;
+            case "turn":
+                instruction.append("Rẽ");
+                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                else instruction.append(" theo hướng không xác định"); 
+                if (!streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                break;
+            case "continue":
+                instruction.append("Tiếp tục đi thẳng");
+                if (!modifier.isEmpty() && !modifier.equalsIgnoreCase("straight")) {
+                     instruction.append(" ").append(translateModifier(modifier));
+                }
+                if (!streetName.isEmpty()) instruction.append(" trên ").append(streetName);
+                break;
+            case "new name":
+                instruction.append("Đi vào đường mới");
+                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty()) instruction.append(": ").append(streetName);
+                break;
+            case "arrive":
+                instruction.append("Đến nơi");
+                if (!streetName.isEmpty()) instruction.append(" tại ").append(streetName);
+                if (!modifier.isEmpty() && (modifier.equalsIgnoreCase("left") || modifier.equalsIgnoreCase("right"))) {
+                    instruction.append(" (phía ").append(translateModifier(modifier)).append(")");
+                }
+                break;
+            case "merge":
+                instruction.append("Nhập làn");
+                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                break;
+            case "fork":
+                instruction.append("Đi theo nhánh");
+                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                else instruction.append(" không xác định");
+                if (!streetName.isEmpty()) instruction.append(" trên ").append(streetName);
+                break;
+            case "end of road":
+                instruction.append("Cuối đường, rẽ");
+                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                break;
+            case "use lane":
+                instruction.append("Sử dụng làn đường");
+                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty()) instruction.append(" trên ").append(streetName);
+                break;
+            case "roundabout":
+            case "rotary":
+                instruction.append("Đi vào ");
+                if (rotaryName != null && !rotaryName.isEmpty()) {
+                    instruction.append(rotaryName);
+                } else {
+                    instruction.append("vòng xuyến");
+                }
+                if (maneuverObj.has("exit") && !maneuverObj.get("exit").isJsonNull()) {
+                    instruction.append(" và ra ở lối thoát thứ ").append(maneuverObj.get("exit").getAsInt());
+                }
+                if (streetName != null && !streetName.isEmpty() && (rotaryName == null || rotaryName.isEmpty() || !streetName.equals(rotaryName))) { 
+                    instruction.append(" vào ").append(streetName);
+                }
+                break;
+            case "exit roundabout":
+            case "exit rotary":
+                 instruction.append("Ra khỏi ");
+                 if (rotaryName != null && rotaryName.isEmpty()) {
+                    instruction.append(rotaryName);
+                } else {
+                    instruction.append("vòng xuyến");
+                }
+                 if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                 if (streetName != null && !streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                 break;
+            default:
+                if (!type.isEmpty()) instruction.append(capitalize(type));
+                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
+                if (streetName != null && !streetName.isEmpty()) instruction.append(" trên ").append(streetName);
+                if (instruction.length() == 0) {
+                    return ""; 
+                }
+                break;
+        }
+        return instruction.toString().trim();
+    }
+
+    private String translateModifier(String osrmModifier) {
+        if (osrmModifier == null) return "";
+        switch (osrmModifier.toLowerCase()) {
+            case "uturn": return "quay đầu";
+            case "sharp right": return "gấp sang phải";
+            case "right": return "phải";
+            case "slight right": return "hơi sang phải";
+            case "straight": return "thẳng";
+            case "slight left": return "hơi sang trái";
+            case "left": return "trái";
+            case "sharp left": return "gấp sang trái";
+            default: return osrmModifier; 
+        }
+    }
+
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     /**
