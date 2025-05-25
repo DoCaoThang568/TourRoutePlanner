@@ -460,46 +460,73 @@ public class MainController {
     }
 
     private void fetchSearchSuggestions(String query) {
-        if (query == null || query.trim().length() < 3) {
-            Platform.runLater(() -> {
-                searchSuggestions.clear();
-                suggestionsListView.setVisible(false);
-                suggestionsListView.setManaged(false);
-            });
+        if (query.isEmpty()) {
+            suggestionsListView.setVisible(false);
+            suggestionsListView.setManaged(false);
             return;
         }
 
-        try {
-            List<Place> suggestedPlaces = routeService.searchPlaces(query);
+        // Cancel any previous suggestion tasks
+        if (suggestionsScheduler != null && !suggestionsScheduler.isShutdown()) {
+            suggestionsScheduler.shutdownNow();
+        }
+        suggestionsScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            return thread;
+        });
 
-            List<String> suggestionNames = suggestedPlaces.stream()
-                                                      .map(Place::getName) 
-                                                      .distinct()
-                                                      .limit(7) 
-                                                      .collect(Collectors.toList());
+        suggestionsScheduler.schedule(() -> {
+            try {
+                List<Place> suggestedPlaces = routeService.searchPlaces(query); // Vẫn dùng query gốc cho API
 
-            Platform.runLater(() -> {
-                if (!suggestionNames.isEmpty()) {
-                    searchSuggestions.setAll(suggestionNames);
-                    suggestionsListView.setVisible(true);
-                    suggestionsListView.setManaged(true);
-                    int itemCount = Math.min(suggestionNames.size(), 7);
-                    double itemHeight = 25; 
-                    suggestionsListView.setPrefHeight(itemCount * itemHeight);
-                } else {
-                    searchSuggestions.clear();
+                String normalizedUserQuery = Utils.normalizeForSearch(query);
+                if (normalizedUserQuery == null || normalizedUserQuery.isEmpty()) {
+                    Platform.runLater(() -> {
+                        suggestionsListView.setVisible(false);
+                        suggestionsListView.setManaged(false);
+                    });
+                    return;
+                }
+
+                List<String> suggestionNames = suggestedPlaces.stream()
+                        .filter(place -> {
+                            String placeName = place.getName();
+                            String placeAddress = place.getAddress();
+                            String combinedInfo = (placeName != null ? placeName : "") + (placeAddress != null ? " " + placeAddress : "");
+                            String normalizedPlaceInfo = Utils.normalizeForSearch(combinedInfo);
+                            return normalizedPlaceInfo != null && normalizedPlaceInfo.contains(normalizedUserQuery);
+                        })
+                        .map(place -> {
+                            String name = place.getName() != null ? place.getName() : "N/A";
+                            String address = place.getAddress();
+                            if (address != null && !address.isEmpty() && !address.equalsIgnoreCase(name)) {
+                                return name + ", " + address;
+                            }
+                            return name;
+                        })
+                        .distinct()
+                        .limit(10)
+                        .collect(Collectors.toList());
+
+                Platform.runLater(() -> {
+                    if (!suggestionNames.isEmpty()) {
+                        searchSuggestions.setAll(suggestionNames);
+                        suggestionsListView.setVisible(true);
+                        suggestionsListView.setManaged(true);
+                    } else {
+                        suggestionsListView.setVisible(false);
+                        suggestionsListView.setManaged(false);
+                    }
+                });
+            } catch (IOException e) {
+                Platform.runLater(() -> {
+                    System.err.println("Lỗi khi tìm kiếm gợi ý: " + e.getMessage());
                     suggestionsListView.setVisible(false);
                     suggestionsListView.setManaged(false);
-                }
-            });
-        } catch (IOException e) {
-            System.err.println("Lỗi khi lấy gợi ý tìm kiếm: " + e.getMessage());
-            Platform.runLater(() -> {
-                searchSuggestions.clear();
-                suggestionsListView.setVisible(false);
-                suggestionsListView.setManaged(false);
-            });
-        }
+                });
+            }
+        }, 300, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -559,7 +586,7 @@ public class MainController {
         if (currentRoutePlaces.size() < 2) {
             Utils.showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Cần ít nhất 2 địa điểm để tìm đường đi.");
             clearRoute(); // Xóa lộ trình cũ (nếu có).
-            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
+            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), ""); // Sửa ở đây, truyền chuỗi rỗng thay vì null
             return;
         }
         try {
@@ -568,18 +595,18 @@ public class MainController {
                 drawRoute(route.getCoordinates()); // Vẽ lộ trình lên bản đồ.
                 updateDynamicRouteInfo(
                     String.format(Locale.US, "Tổng quãng đường: %.2f km", route.getTotalDistanceKm()),
-                    route.getTurnByTurnInstructions()
+                    route.getTurnByTurnInstructions() // Chỗ này đúng, không cần sửa
                 );
             } else {
                 Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm đường", "Không thể tìm thấy đường đi cho các địa điểm đã chọn.");
                 clearRoute();
-                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
+                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), ""); // Sửa ở đây
             }
         } catch (IOException e) {
             e.printStackTrace();
             Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm đường", "Lỗi khi kết nối dịch vụ tìm đường: " + e.getMessage());
             clearRoute();
-            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
+            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), ""); // Sửa ở đây
         }
     }
 

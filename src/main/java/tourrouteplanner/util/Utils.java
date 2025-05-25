@@ -10,6 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.text.Normalizer; // Added import
+import java.util.regex.Pattern; // Added import
+import java.util.Locale;
 
 /**
  * Lớp tiện ích chứa các hàm thường dùng.
@@ -108,7 +111,7 @@ public class Utils {
         }
         return value.replace("\\", "\\\\") // Escape backslashes first
                     .replace("'", "\\'")
-                    .replace("\"", "\\\"") // Corrected line
+                    .replace("\"", "\\\"") // Corrected line: ensure this is a character replacement or use string replacement
                     .replace("\n", "\\n")
                     .replace("\r", "\\r")
                     .replace("\t", "\\t")
@@ -116,4 +119,37 @@ public class Utils {
                     .replace("\f", "\\f");
     }
 
+    /**
+     * Loại bỏ dấu khỏi một chuỗi ký tự.
+     * Ví dụ: "Hà Nội" sẽ trở thành "Ha Noi".
+     * @param input Chuỗi đầu vào.
+     * @return Chuỗi đã được loại bỏ dấu.
+     */
+    public static String removeAccents(String input) {
+        if (input == null) {
+            return null;
+        }
+        String nfdNormalizedString = Normalizer.normalize(input, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        return pattern.matcher(nfdNormalizedString).replaceAll("");
+    }
+
+    /**
+     * Chuẩn hóa chuỗi cho mục đích tìm kiếm.
+     * Chuyển thành chữ thường, loại bỏ dấu và loại bỏ tất cả khoảng trắng.
+     * Ví dụ: "Hà Nội" -> "hanoi"
+     * @param input Chuỗi đầu vào.
+     * @return Chuỗi đã được chuẩn hóa cho tìm kiếm.
+     */
+    public static String normalizeForSearch(String input) {
+        if (input == null) {
+            return null;
+        }
+        String lowercased = input.toLowerCase(Locale.ROOT);
+        String accentRemoved = removeAccents(lowercased);
+        if (accentRemoved == null) {
+            return null;
+        }
+        return accentRemoved.replaceAll("\\s+", "");
+    }
 }
