@@ -81,11 +81,20 @@
                   </Label>
                   <HBox alignment="CENTER_LEFT" spacing="12.0">
                      <children>
-                        <TextField fx:id="searchBox" onAction="#handleSearch" promptText="Nhập tên địa điểm..." styleClass="search-field" HBox.hgrow="ALWAYS">
-                           <tooltip>
-                              <Tooltip text="Nhập ít nhất 2 ký tự để tìm kiếm địa điểm" />
-                           </tooltip>
-                        </TextField>
+                        <StackPane HBox.hgrow="ALWAYS">
+                           <children>
+                              <VBox spacing="0">
+                                 <children>
+                                    <TextField fx:id="searchBox" onAction="#handleSearch" promptText="Nhập tên địa điểm..." styleClass="search-field">
+                                       <tooltip>
+                                          <Tooltip text="Nhập ít nhất 2 ký tự để tìm kiếm địa điểm" />
+                                       </tooltip>
+                                    </TextField>
+                                    <ListView fx:id="suggestionsListView" prefHeight="150.0" visible="false" managed="false" styleClass="suggestions-list" />
+                                 </children>
+                              </VBox>
+                           </children>
+                        </StackPane>
                         <Button mnemonicParsing="false" onAction="#handleAddSelected" styleClass="action-button">
                            <tooltip>
                               <Tooltip text="Thêm địa điểm từ kết quả tìm kiếm" />

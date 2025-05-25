@@ -36,6 +36,10 @@ import java.util.ArrayList; // Thêm import ArrayList
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Controller chính cho giao diện người dùng của ứng dụng Tour Route Planner.
@@ -48,6 +52,8 @@ public class MainController {
     private TextField searchBox; // Trường nhập liệu để tìm kiếm địa điểm.
     @FXML
     private ListView<Place> placeListView; // Danh sách hiển thị kết quả tìm kiếm địa điểm.
+    @FXML
+    private ListView<String> suggestionsListView; // Danh sách hiển thị gợi ý tìm kiếm.
     @FXML
     private TableView<Place> routeTableView; // Bảng hiển thị các địa điểm đã chọn trong lộ trình hiện tại.
     @FXML
@@ -85,6 +91,10 @@ public class MainController {
     // Dịch vụ xử lý logic lưu và tải lộ trình.
     private StorageService storageService;
 
+    // Timer for debouncing search suggestions
+    private ScheduledExecutorService suggestionsScheduler;
+    private final ObservableList<String> searchSuggestions = FXCollections.observableArrayList();
+
     // Các thành phần của JxBrowser để hiển thị bản đồ.
     private Engine engine;
     private Browser browser;
@@ -111,6 +121,11 @@ public class MainController {
         // Khởi tạo các dịch vụ. RouteService không còn nhận API key qua constructor.
         routeService = new RouteService();
         storageService = new StorageService();
+        suggestionsScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true); // Allow application to exit even if this thread is running
+            return thread;
+        });
 
         // Thiết lập ListView cho kết quả tìm kiếm địa điểm.
         placeListView.setItems(searchResults);
@@ -206,6 +221,55 @@ public class MainController {
         routePlaceNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         routePlaceAddressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
         routeTableView.setItems(currentRoutePlaces);
+
+        // Initialize suggestions ListView
+        suggestionsListView.setItems(searchSuggestions);
+        suggestionsListView.setOnMouseClicked(event -> {
+            String selectedSuggestion = suggestionsListView.getSelectionModel().getSelectedItem();
+            if (selectedSuggestion != null && !selectedSuggestion.isEmpty()) {
+                searchBox.setText(selectedSuggestion);
+                suggestionsListView.setVisible(false);
+                suggestionsListView.setManaged(false);
+                handleSearch(); // Optionally, trigger search immediately
+            }
+        });
+
+        // Add listener to searchBox text property for suggestions
+        searchBox.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (suggestionsScheduler != null && !suggestionsScheduler.isShutdown()) {
+                suggestionsScheduler.shutdownNow(); // Cancel previous tasks
+            }
+            suggestionsScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+                Thread thread = new Thread(runnable);
+                thread.setDaemon(true);
+                return thread;
+            });
+
+            if (newValue == null || newValue.trim().length() < 3) {
+                searchSuggestions.clear();
+                suggestionsListView.setVisible(false);
+                suggestionsListView.setManaged(false);
+                return;
+            }
+
+            suggestionsScheduler.schedule(() -> {
+                fetchSearchSuggestions(newValue.trim());
+            }, 500, TimeUnit.MILLISECONDS); // 500ms debounce
+        });
+
+        // Hide suggestions when searchBox loses focus, unless focus moves to suggestionsListView
+        searchBox.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (!isFocused) {
+                // Add a small delay to allow click on suggestionsListView to register
+                // This is a common trick to handle focus transfer between related controls
+                Platform.runLater(() -> {
+                    if (!suggestionsListView.isFocused() && !searchBox.isFocused()) { 
+                        suggestionsListView.setVisible(false);
+                        suggestionsListView.setManaged(false);
+                    }
+                });
+            }
+        });
 
         // Khởi tạo JxBrowser để hiển thị bản đồ.
         initializeJxBrowser();
@@ -331,6 +395,13 @@ public class MainController {
     private void handleSearch() {
         String query = searchBox.getText();
         clearMapHighlight(); // Xóa highlight cũ khi bắt đầu tìm kiếm mới
+
+        // Hide suggestions when a search is explicitly triggered
+        if (suggestionsListView != null) {
+            suggestionsListView.setVisible(false);
+            suggestionsListView.setManaged(false);
+        }
+
         if (query == null || query.trim().isEmpty()) {
             searchResults.clear(); // Xóa kết quả cũ nếu query rỗng.
             return;
@@ -385,6 +456,49 @@ public class MainController {
         } catch (IOException e) {
             e.printStackTrace();
             Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm kiếm", "Không thể thực hiện tìm kiếm: " + e.getMessage());
+        }
+    }
+
+    private void fetchSearchSuggestions(String query) {
+        if (query == null || query.trim().length() < 3) {
+            Platform.runLater(() -> {
+                searchSuggestions.clear();
+                suggestionsListView.setVisible(false);
+                suggestionsListView.setManaged(false);
+            });
+            return;
+        }
+
+        try {
+            List<Place> suggestedPlaces = routeService.searchPlaces(query);
+
+            List<String> suggestionNames = suggestedPlaces.stream()
+                                                      .map(Place::getName) 
+                                                      .distinct()
+                                                      .limit(7) 
+                                                      .collect(Collectors.toList());
+
+            Platform.runLater(() -> {
+                if (!suggestionNames.isEmpty()) {
+                    searchSuggestions.setAll(suggestionNames);
+                    suggestionsListView.setVisible(true);
+                    suggestionsListView.setManaged(true);
+                    int itemCount = Math.min(suggestionNames.size(), 7);
+                    double itemHeight = 25; 
+                    suggestionsListView.setPrefHeight(itemCount * itemHeight);
+                } else {
+                    searchSuggestions.clear();
+                    suggestionsListView.setVisible(false);
+                    suggestionsListView.setManaged(false);
+                }
+            });
+        } catch (IOException e) {
+            System.err.println("Lỗi khi lấy gợi ý tìm kiếm: " + e.getMessage());
+            Platform.runLater(() -> {
+                searchSuggestions.clear();
+                suggestionsListView.setVisible(false);
+                suggestionsListView.setManaged(false);
+            });
         }
     }
 
@@ -480,17 +594,15 @@ public class MainController {
             infoBuilder.append(totalDistanceText);
 
             if (turnByTurnInstructions != null && !turnByTurnInstructions.trim().isEmpty()) {
-                infoBuilder.append("\n\nHướng dẫn chi tiết:\n"); // Thêm một dòng mới trước "Hướng dẫn chi tiết"
+                infoBuilder.append("\n\nHướng dẫn chi tiết:\n");
                 infoBuilder.append(turnByTurnInstructions);
             } else {
-                // Nếu không có hướng dẫn, có thể không cần hiển thị phần "Hướng dẫn chi tiết"
-                // hoặc hiển thị một thông báo như "Không có hướng dẫn chi tiết."
-                // Hiện tại, nếu không có hướng dẫn, sẽ không có gì được thêm vào sau tổng quãng đường.
+                // Optionally, add a message if there are no turn-by-turn instructions
+                // infoBuilder.append("\n\n(Không có hướng dẫn chi tiết)");
             }
 
             dynamicRouteInfoTextArea.setText(infoBuilder.toString());
 
-            // Chỉ hiển thị ScrollPane nếu có nội dung (ít nhất là tổng quãng đường)
             boolean hasContent = totalDistanceText != null && !totalDistanceText.trim().isEmpty();
             dynamicRouteInfoScrollPane.setVisible(hasContent);
             dynamicRouteInfoScrollPane.setManaged(hasContent);
@@ -800,7 +912,6 @@ public class MainController {
             return;
         }
 
-        // Hiển thị dialog xác nhận.
         Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
         confirmDialog.setTitle("Xác nhận xóa");
         confirmDialog.setHeaderText("Xóa tất cả các địa điểm đã chọn?");
@@ -808,16 +919,14 @@ public class MainController {
         Optional<ButtonType> result = confirmDialog.showAndWait();
 
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            currentRoutePlaces.clear(); // Xóa tất cả địa điểm khỏi danh sách.
-            clearAllMarkers(); // Xóa tất cả marker trên bản đồ.
-            clearRoute(); // Xóa lộ trình trên bản đồ.
-            clearMapHighlight(); // Xóa cả highlight khi xóa hết các điểm
-            // totalDistanceLabel.setText("Tổng quãng đường: 0 km"); // Reset nhãn quãng đường. // totalDistanceLabel removed
-            updateDynamicRouteInfo("Tổng quãng đường: 0 km", null);
+            currentRoutePlaces.clear(); 
+            clearAllMarkers(); 
+            clearRoute(); 
+            clearMapHighlight(); 
+            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null);
             if (statusLabel != null) {
-                statusLabel.setText("Đã xóa tất cả địa điểm."); // Cập nhật nhãn trạng thái.
+                statusLabel.setText("Đã xóa tất cả các điểm. Lộ trình trống.");
             }
-            // System.out.println("All places cleared."); // Removed log
         }
     }
 }
