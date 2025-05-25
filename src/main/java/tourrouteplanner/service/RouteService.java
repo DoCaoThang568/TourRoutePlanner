@@ -358,36 +358,34 @@ public class RouteService {
      */
     public List<Place> searchPlaces(String query) throws IOException {
         if (query == null || query.trim().isEmpty()) {
-            throw new IllegalArgumentException("Chuỗi truy vấn tìm kiếm không được để trống.");
+            throw new IllegalArgumentException("Chuỗi truy vấn không được rỗng.");
         }
-        // Chuẩn hóa và lưu trữ query để sử dụng trong việc sắp xếp kết quả sau này
-        String normalizedQuery = normalizeString(query);
-        RouteService.lastNormalizedQuery = normalizedQuery;
+        if (nominatimServerUrl == null || nominatimServerUrl.trim().isEmpty()) {
+            System.err.println("Nominatim server URL is not configured. Returning empty list.");
+            return new ArrayList<>(); // Trả về danh sách rỗng thay vì ném lỗi ở đây
+        }
 
-        // Mã hóa URL query để đảm bảo tính hợp lệ
+        // Chuẩn hóa query cho URL (UTF-8 encoding)
         String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString());
 
-        // Xác định đường dẫn API dựa trên URL máy chủ Nominatim
-        String searchPath = "/search";
-        if (nominatimServerUrl != null && nominatimServerUrl.startsWith("http://localhost")) {
-            searchPath = "/search.php"; // Sử dụng .php cho localhost
-        }
+        // Xây dựng URL cho API Nominatim
+        // Thêm addressdetails=1 để lấy chi tiết địa chỉ
+        // Thêm format=json để nhận kết quả dưới dạng JSON
+        // Thêm limit=20 để giới hạn số lượng kết quả (có thể điều chỉnh)
+        // Thêm polygon_geojson=1 để lấy chi tiết GeoJSON cho các polygon
+        // Thêm lại countrycodes=vn và accept-language=vi
+        String apiUrl = String.format("%s/search?q=%s&format=json&addressdetails=1&limit=20&polygon_geojson=1&countrycodes=vn&accept-language=vi",
+                                    nominatimServerUrl, encodedQuery);
 
-        String apiUrl = String.format(Locale.US,
-                "%s%s?q=%s&format=json&limit=10&addressdetails=1&accept-language=vi,en&polygon_geojson=1", // Thêm polygon_geojson=1
-                nominatimServerUrl,
-                searchPath, // Sử dụng đường dẫn đã xác định
-                encodedQuery);
-        
-        // Đối với Nominatim công cộng, cần User-Agent
-        // Đối với Docker instance tự host, có thể không bắt buộc nhưng nên có.
-        // URL cho Docker instance thường là http://localhost:8080/search hoặc tương tự
+        // Lưu trữ query đã chuẩn hóa để có thể sử dụng sau này (ví dụ: để sắp xếp kết quả)
+        // Cân nhắc: việc chuẩn hóa ở đây có thể khác với chuẩn hóa cho việc hiển thị/so sánh gợi ý
+        lastNormalizedQuery = normalizeString(query);
 
         HttpURLConnection connection = (HttpURLConnection) URI.create(apiUrl).toURL().openConnection();
         connection.setRequestMethod("GET");
-        connection.setRequestProperty("Accept", "application/json");
-        // User-Agent rất quan trọng khi sử dụng Nominatim công cộng để tránh bị chặn.
-        connection.setRequestProperty("User-Agent", "TourRoutePlannerApp/1.0 (your-contact-email@example.com)");
+        // Thêm User-Agent để tuân thủ quy định của một số dịch vụ công cộng
+        connection.setRequestProperty("User-Agent", "TourRoutePlannerApp/1.0 (your-contact-email@example.com)"); 
+        connection.setRequestProperty("Accept-Charset", StandardCharsets.UTF_8.toString());
 
         int responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -454,6 +452,11 @@ public class RouteService {
                 geoJsonString = geoJsonObject.toString(); 
             }
 
+            double importance = 0.0;
+            if (placeObject.has("importance") && placeObject.get("importance").isJsonPrimitive() && placeObject.get("importance").getAsJsonPrimitive().isNumber()) {
+                importance = placeObject.get("importance").getAsDouble();
+            }
+
             String placeId = "unknown_id";
             if (placeObject.has("osm_type") && placeObject.has("osm_id")) {
                 placeId = placeObject.get("osm_type").getAsString().substring(0,1).toUpperCase() + placeObject.get("osm_id").getAsString(); // Ví dụ: N123, W456, R789
@@ -462,53 +465,62 @@ public class RouteService {
             }
 
             String name = displayName; // Tên mặc định là display_name
-            String address = displayName; // Địa chỉ mặc định cũng là display_name
+            String constructedAddress = displayName; // Địa chỉ mặc định cũng là display_name, đổi tên biến để tránh trùng lặp
 
-            // Cố gắng trích xuất tên ngắn gọn hơn từ addressdetails nếu có
+            // Cố gắng trích xuất tên ngắn gọn hơn và xây dựng địa chỉ từ addressdetails nếu có
             if (placeObject.has("addressdetails") && placeObject.get("addressdetails").isJsonObject()) {
-                JsonObject addressDetails = placeObject.getAsJsonObject("addressdetails");
+                JsonObject addressDetailsObj = placeObject.getAsJsonObject("addressdetails"); // Đổi tên biến này
                 // Ưu tiên lấy tên từ các trường cụ thể như name, road, amenity, shop, v.v.
                 // Thứ tự ưu tiên có thể cần điều chỉnh tùy theo loại địa điểm mong muốn
-                if (addressDetails.has("name")) {
-                    name = addressDetails.get("name").getAsString();
-                } else if (addressDetails.has("road") && addressDetails.has("house_number")) {
-                    name = addressDetails.get("road").getAsString() + " " + addressDetails.get("house_number").getAsString();
-                } else if (addressDetails.has("road")) {
-                    name = addressDetails.get("road").getAsString();
-                } else if (addressDetails.has("amenity")) {
-                    name = addressDetails.get("amenity").getAsString();
-                } else if (addressDetails.has("shop")) {
-                    name = addressDetails.get("shop").getAsString();
-                } else if (addressDetails.has("tourism")) {
-                    name = addressDetails.get("tourism").getAsString();
-                } // Có thể thêm các trường khác như "historic", "office", "leisure", v.v.
-            }
-            // Nếu tên vẫn giống display_name và display_name chứa dấu phẩy, thử lấy phần đầu tiên làm tên
-            if (name.equals(displayName) && displayName.contains(",")) {
-                name = displayName.substring(0, displayName.indexOf(',')).trim();
-            }
+                if (addressDetailsObj.has("name")) {
+                    name = addressDetailsObj.get("name").getAsString();
+                } else if (addressDetailsObj.has("road") && addressDetailsObj.has("house_number")) {
+                    name = addressDetailsObj.get("road").getAsString() + " " + addressDetailsObj.get("house_number").getAsString();
+                } else if (addressDetailsObj.has("road")) {
+                    name = addressDetailsObj.get("road").getAsString();
+                } else if (addressDetailsObj.has("amenity")) {
+                    name = addressDetailsObj.get("amenity").getAsString();
+                } else if (addressDetailsObj.has("shop")) {
+                    name = addressDetailsObj.get("shop").getAsString();
+                } else if (addressDetailsObj.has("tourism")) {
+                    name = addressDetailsObj.get("tourism").getAsString();
+                } // Thêm các trường khác nếu cần: village, town, city, county, state, country
 
-            // Tạo đối tượng Place với đầy đủ thông tin, bao gồm cả boundingBox và geoJsonString
-            foundPlaces.add(new Place(placeId, name, lat, lon, address, boundingBox, geoJsonString));
+                // Xây dựng lại địa chỉ từ các thành phần chi tiết hơn
+                StringBuilder sb = new StringBuilder();
+                appendAddressComponent(sb, addressDetailsObj, "house_number");
+                appendAddressComponent(sb, addressDetailsObj, "road");
+                appendAddressComponent(sb, addressDetailsObj, "suburb"); // hoặc "neighbourhood", "quarter"
+                appendAddressComponent(sb, addressDetailsObj, "village");
+                appendAddressComponent(sb, addressDetailsObj, "town");
+                appendAddressComponent(sb, addressDetailsObj, "city_district");
+                appendAddressComponent(sb, addressDetailsObj, "city");
+                appendAddressComponent(sb, addressDetailsObj, "county"); // (Huyện/Quận ở VN)
+                appendAddressComponent(sb, addressDetailsObj, "state_district");
+                appendAddressComponent(sb, addressDetailsObj, "state"); // (Tỉnh/Thành phố ở VN)
+                appendAddressComponent(sb, addressDetailsObj, "postcode");
+                appendAddressComponent(sb, addressDetailsObj, "country");
+
+                if (sb.length() > 0) {
+                    constructedAddress = sb.toString().trim();
+                    // Loại bỏ dấu phẩy thừa ở cuối nếu có
+                    if (constructedAddress.endsWith(",")) {
+                        constructedAddress = constructedAddress.substring(0, constructedAddress.length() - 1);
+                    }
+                }
+            } // Kết thúc khối if (placeObject.has("addressdetails"))
+
+            // Sử dụng constructor mới bao gồm cả importance
+            foundPlaces.add(new Place(placeId, name, lat, lon, constructedAddress, boundingBox, geoJsonString, importance));
         }
 
-        // Hậu xử lý: Sắp xếp kết quả để ưu tiên các địa điểm có tên bắt đầu bằng hoặc chứa chuỗi truy vấn đã chuẩn hóa.
-        String lastQuery = RouteService.lastNormalizedQuery;
-        if (lastQuery != null && !lastQuery.isEmpty()) {
-            foundPlaces.sort((p1, p2) -> { // Sử dụng sort thay vì stream().toList() để sửa đổi trực tiếp danh sách
-                String n1 = normalizeString(p1.getName());
-                String n2 = normalizeString(p2.getName());
-                boolean p1Starts = n1.startsWith(lastQuery);
-                boolean p2Starts = n2.startsWith(lastQuery);
-                if (p1Starts && !p2Starts) return -1;
-                if (!p1Starts && p2Starts) return 1;
-                boolean p1Contains = n1.contains(lastQuery);
-                boolean p2Contains = n2.contains(lastQuery);
-                if (p1Contains && !p2Contains) return -1;
-                if (!p1Contains && p2Contains) return 1;
-                return 0;
-            });
-        }
+        // Sắp xếp kết quả dựa trên 'importance' giảm dần
+        // và sau đó theo sự tương đồng của tên với truy vấn gốc (nếu cần thiết và có thể triển khai)
+        // Hiện tại, chỉ sắp xếp theo importance.
+        // Cân nhắc: việc so sánh tên ở đây cần logic phức tạp hơn để xử lý tiếng Việt có dấu và không dấu.
+        // RouteService.lastNormalizedQuery có thể được sử dụng ở đây.
+        foundPlaces.sort((p1, p2) -> Double.compare(p2.getImportance(), p1.getImportance()));
+
         return foundPlaces;
     }
     
@@ -568,7 +580,7 @@ public class RouteService {
         // Sử dụng endpoint /reverse cho Nominatim (thường là /reverse.php hoặc /reverse)
         // zoom=18 để yêu cầu kết quả chi tiết ở mức độ đường phố/tòa nhà
         String apiUrl = String.format(Locale.US,
-                "%s%s?lat=%f&lon=%f&format=json&addressdetails=1&zoom=18&accept-language=vi,en", // Thêm accept-language
+                "%s%s?lat=%f&lon=%f&format=json&addressdetails=1&zoom=18&accept-language=vi", // Thêm accept-language
                 nominatimServerUrl,
                 reversePath, // Sử dụng đường dẫn đã xác định
                 lat, lng);

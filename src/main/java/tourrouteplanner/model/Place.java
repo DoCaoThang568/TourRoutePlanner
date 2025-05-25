@@ -31,9 +31,33 @@ public class Place {
      * Được sử dụng để vẽ hình dạng chi tiết của địa điểm trên bản đồ.
      */
     private String geoJson; // Thêm trường geoJson
+    private double importance; // Thêm trường importance
+
+    /**
+     * Khởi tạo một đối tượng Place mới với đầy đủ thông tin, bao gồm cả bounding box, GeoJSON và importance.
+     * @param placeId ID duy nhất của địa điểm.
+     * @param name Tên của địa điểm.
+     * @param latitude Vĩ độ của địa điểm.
+     * @param longitude Kinh độ của địa điểm.
+     * @param address Địa chỉ đầy đủ của địa điểm.
+     * @param boundingBox Khung giới hạn của địa điểm [minLat, maxLat, minLon, maxLon]. Có thể là null.
+     * @param geoJson Chuỗi GeoJSON mô tả hình dạng của địa điểm. Có thể là null.
+     * @param importance Mức độ quan trọng của địa điểm do Nominatim cung cấp.
+     */
+    public Place(String placeId, String name, double latitude, double longitude, String address, double[] boundingBox, String geoJson, double importance) {
+        this.placeId = placeId;
+        this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.address = address;
+        this.boundingBox = boundingBox;
+        this.geoJson = geoJson;
+        this.importance = importance;
+    }
 
     /**
      * Khởi tạo một đối tượng Place mới với đầy đủ thông tin, bao gồm cả bounding box và GeoJSON.
+     * Importance sẽ được đặt giá trị mặc định (ví dụ: 0.0).
      * @param placeId ID duy nhất của địa điểm.
      * @param name Tên của địa điểm.
      * @param latitude Vĩ độ của địa điểm.
@@ -43,27 +67,7 @@ public class Place {
      * @param geoJson Chuỗi GeoJSON mô tả hình dạng của địa điểm. Có thể là null.
      */
     public Place(String placeId, String name, double latitude, double longitude, String address, double[] boundingBox, String geoJson) {
-        this.placeId = placeId;
-        this.name = name;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.address = address;
-        this.boundingBox = boundingBox;
-        this.geoJson = geoJson; // Khởi tạo geoJson
-    }
-
-    /**
-     * Khởi tạo một đối tượng Place mới với đầy đủ thông tin, bao gồm cả bounding box.
-     * GeoJSON sẽ được đặt là null.
-     * @param placeId ID duy nhất của địa điểm.
-     * @param name Tên của địa điểm.
-     * @param latitude Vĩ độ của địa điểm.
-     * @param longitude Kinh độ của địa điểm.
-     * @param address Địa chỉ đầy đủ của địa điểm.
-     * @param boundingBox Khung giới hạn của địa điểm [minLat, maxLat, minLon, maxLon]. Có thể là null.
-     */
-    public Place(String placeId, String name, double latitude, double longitude, String address, double[] boundingBox) {
-        this(placeId, name, latitude, longitude, address, boundingBox, null); // Gọi constructor chính với geoJson là null
+        this(placeId, name, latitude, longitude, address, boundingBox, geoJson, 0.0); // Gọi constructor chính với importance mặc định
     }
     
     /**
@@ -74,7 +78,7 @@ public class Place {
      * @param longitude Kinh độ của địa điểm.
      */
     public Place(String name, double latitude, double longitude) {
-        this(null, name, latitude, longitude, null, null); // Gọi hàm khởi tạo chính
+        this(null, name, latitude, longitude, null, null, null, 0.0); // Gọi hàm khởi tạo chính với các giá trị mặc định
     }
 
     /**
@@ -187,6 +191,22 @@ public class Place {
      */
     public void setGeoJson(String geoJson) {
         this.geoJson = geoJson;
+    }
+
+    /**
+     * Lấy mức độ quan trọng của địa điểm.
+     * @return Mức độ quan trọng.
+     */
+    public double getImportance() {
+        return importance;
+    }
+
+    /**
+     * Đặt mức độ quan trọng cho địa điểm.
+     * @param importance Mức độ quan trọng mới.
+     */
+    public void setImportance(double importance) {
+        this.importance = importance;
     }
 
     /**
