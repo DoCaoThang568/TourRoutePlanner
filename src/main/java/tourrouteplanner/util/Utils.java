@@ -145,11 +145,14 @@ public class Utils {
         if (input == null) {
             return null;
         }
-        String lowercased = input.toLowerCase(Locale.ROOT);
-        String accentRemoved = removeAccents(lowercased);
-        if (accentRemoved == null) {
-            return null;
-        }
-        return accentRemoved.replaceAll("\\s+", "");
+        // 1. Chuyển sang chữ thường
+        String lowercased = input.toLowerCase(Locale.ROOT); // Sử dụng Locale.ROOT cho tính nhất quán
+        // 2. Loại bỏ dấu
+        String noAccents = removeAccents(lowercased);
+        // 3. Loại bỏ tất cả khoảng trắng (kể cả ở giữa)
+        // String noSpaces = noAccents.replaceAll("\\s+", ""); // Loại bỏ tất cả các ký tự khoảng trắng
+        // return noSpaces;
+        // Giữ lại số và chữ cái, loại bỏ các ký tự khác và khoảng trắng
+        return noAccents.replaceAll("[^a-z0-9]", "");
     }
 }
