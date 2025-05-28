@@ -739,12 +739,14 @@ public class MainController {
     /**
      * Xử lý sự kiện xóa địa điểm được chọn từ routeTableView.
      * Xóa marker tương ứng và cập nhật lại lộ trình trên bản đồ.
-     */
-    @FXML
+     */    @FXML
     private void handleRemoveSelected() {
         // Lấy địa điểm được chọn từ bảng các điểm trong lộ trình.
         Place selectedRoutePlace = routeTableView.getSelectionModel().getSelectedItem();
         if (selectedRoutePlace != null) {
+            // Lưu lại vị trí của item được chọn để có thể chọn lại item khác sau khi xóa
+            int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
+            
             // Kiểm tra xem địa điểm bị xóa có phải là địa điểm đang được highlight không
             Place currentlySelectedInList = placeListView.getSelectionModel().getSelectedItem();
             boolean wasHighlightTarget = selectedRoutePlace.equals(currentlySelectedInList);
@@ -753,9 +755,22 @@ public class MainController {
             clearAllMarkers();
             currentRoutePlaces.forEach(p -> addMapMarker(p.getName(), p.getLatitude(), p.getLongitude(), p.getAddress()));
 
-            if (wasHighlightTarget) {
-                clearMapHighlight(); // Xóa highlight nếu địa điểm bị xóa đang được chọn trong placeListView
-            }            if (routeCalculated && currentRoutePlaces.size() > 1) {
+            // Chọn một địa điểm mới trong bảng sau khi xóa, nếu còn địa điểm nào
+            if (!currentRoutePlaces.isEmpty()) {
+                // Nếu có item ở vị trí cũ, chọn item đó; nếu không thì chọn item trước đó
+                if (selectedIndex < currentRoutePlaces.size()) {
+                    routeTableView.getSelectionModel().select(selectedIndex);
+                } else {
+                    routeTableView.getSelectionModel().select(currentRoutePlaces.size() - 1);
+                }
+            } else {
+                // Nếu không còn địa điểm nào, xóa highlight
+                if (wasHighlightTarget) {
+                    clearMapHighlight();
+                }
+            }
+            
+            if (routeCalculated && currentRoutePlaces.size() > 1) {
                 // Chỉ tính toán lại lộ trình nếu đã tính trước đó và còn ít nhất 2 điểm
                 handleFindRoute();
             } else if (currentRoutePlaces.size() <= 1) {
@@ -1046,6 +1061,41 @@ public class MainController {
     }
 
     /**
+     * Hiển thị và highlight địa điểm được chọn trên bản đồ.
+     * @param place Địa điểm cần hiển thị và highlight
+     */
+    private void showSelectedPlaceOnMap(Place place) {
+        if (place != null) {
+            String geoJson = place.getGeoJson();
+            double[] boundingBox = place.getBoundingBox();
+
+            // Hiển thị địa điểm được chọn trên bản đồ
+            if (geoJson != null && !geoJson.trim().isEmpty()) {
+                // Ưu tiên highlight GeoJSON nếu có
+                highlightGeoJsonOnMap(geoJson);
+                // Vẫn zoom tới bounding box nếu có, vì GeoJSON có thể là điểm hoặc vùng nhỏ
+                if (boundingBox != null && boundingBox.length == 4) {
+                    zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                } else {
+                    // Nếu không có bounding box, pan tới điểm trung tâm với mức zoom mặc định
+                    panTo(place.getLatitude(), place.getLongitude(), 15); 
+                }
+            } else if (boundingBox != null && boundingBox.length == 4) {
+                // Nếu không có GeoJSON nhưng có bounding box, highlight bounding box
+                highlightBoundingBoxOnMap(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+            } else {
+                // Nếu không có cả GeoJSON và bounding box, pan tới điểm trung tâm
+                panTo(place.getLatitude(), place.getLongitude(), 15);
+                clearMapHighlight(); // Xóa highlight cũ
+            }
+            
+            // Hiển thị thông báo cho người dùng
+            statusLabel.setText("Đã di chuyển đến địa điểm: " + place.getName());
+        }
+    }
+
+    /**
      * Xử lý sự kiện khi người dùng nhấp chuột vào bản đồ.
      * Phương thức này được gọi từ JavaScript thông qua 'javaConnector'.
      * Thực hiện reverse geocoding để lấy thông tin địa điểm tại vị trí nhấp chuột
@@ -1159,8 +1209,7 @@ public class MainController {
     }    /**
      * Xử lý sự kiện khi người dùng nhấn nút mũi tên lên.
      * Di chuyển địa điểm được chọn lên trên một vị trí trong danh sách lộ trình.
-     */
-    @FXML
+     */    @FXML
     private void handleMoveUp() {
         int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
         if (selectedIndex > 0) { // Đảm bảo không phải địa điểm đầu tiên
@@ -1171,11 +1220,13 @@ public class MainController {
             currentRoutePlaces.remove(selectedIndex);
             currentRoutePlaces.add(selectedIndex - 1, selectedPlace);
             
-            // Cập nhật lại bảng và chọn lại địa điểm vừa di chuyển
-            routeTableView.getSelectionModel().select(selectedIndex - 1);
-            
             // Cập nhật lại hiển thị các marker trên bản đồ
             refreshMapMarkers();
+            
+            // Cập nhật lại bảng và chọn lại địa điểm vừa di chuyển
+            routeTableView.getSelectionModel().select(selectedIndex - 1);
+              // Đảm bảo địa điểm được chọn được highlight trên bản đồ
+            showSelectedPlaceOnMap(selectedPlace);
             
             // Nếu đã tính lộ trình trước đó, thì tính toán lại lộ trình
             if (routeCalculated && currentRoutePlaces.size() > 1) {
@@ -1188,8 +1239,7 @@ public class MainController {
     }    /**
      * Xử lý sự kiện khi người dùng nhấn nút mũi tên xuống.
      * Di chuyển địa điểm được chọn xuống dưới một vị trí trong danh sách lộ trình.
-     */
-    @FXML
+     */    @FXML
     private void handleMoveDown() {
         int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
         if (selectedIndex >= 0 && selectedIndex < currentRoutePlaces.size() - 1) { // Đảm bảo không phải địa điểm cuối cùng
@@ -1200,11 +1250,14 @@ public class MainController {
             currentRoutePlaces.remove(selectedIndex);
             currentRoutePlaces.add(selectedIndex + 1, selectedPlace);
             
+            // Cập nhật lại hiển thị các marker trên bản đồ
+            refreshMapMarkers();
+            
             // Cập nhật lại bảng và chọn lại địa điểm vừa di chuyển
             routeTableView.getSelectionModel().select(selectedIndex + 1);
             
-            // Cập nhật lại hiển thị các marker trên bản đồ
-            refreshMapMarkers();
+            // Đảm bảo địa điểm được chọn được highlight trên bản đồ
+            showSelectedPlaceOnMap(selectedPlace);
             
             // Nếu đã tính lộ trình trước đó, thì tính toán lại lộ trình
             if (routeCalculated && currentRoutePlaces.size() > 1) {
