@@ -223,11 +223,39 @@ public class MainController {
         routePlaceNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         routePlaceAddressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
         routeTableView.setItems(currentRoutePlaces);
+          // Đặt độ rộng cột và các thuộc tính quan trọng khác
+        routeTableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);        // Thiết lập cấu hình chiều rộng cột để đảm bảo cột tên không chiếm quá nhiều không gian
+        routePlaceNameColumn.setMinWidth(100);
+        routePlaceNameColumn.setPrefWidth(180);  // Giá trị mặc định, sẽ được điều chỉnh dựa trên nội dung
+        routePlaceNameColumn.setMaxWidth(250);    // Giới hạn kích thước tối đa
         
-        // Đặt độ rộng cột và các thuộc tính quan trọng khác
-        routeTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        routePlaceNameColumn.setMinWidth(150);  
-        routePlaceAddressColumn.setMinWidth(150);
+        // Cột địa chỉ sẽ linh hoạt hơn và giãn ra để lấp đầy phần còn lại
+        routePlaceAddressColumn.setMinWidth(200);
+        
+        // Sử dụng chính sách điều chỉnh chiều rộng của TableView
+        routeTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_SUBSEQUENT_COLUMNS);
+        
+        // Bắt sự kiện khi dữ liệu thay đổi để tự động điều chỉnh chiều rộng cột tên
+        currentRoutePlaces.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
+            if (!currentRoutePlaces.isEmpty()) {
+                Platform.runLater(() -> {
+                    // Tính toán chiều rộng tối ưu cho cột tên dựa trên nội dung hiện tại
+                    double prefWidth = computePrefColumnWidth(routePlaceNameColumn, currentRoutePlaces);
+                    if (prefWidth > 0) {
+                        // Đặt chiều rộng cho cột tên trong giới hạn đã định
+                        routePlaceNameColumn.setPrefWidth(Math.max(100, Math.min(prefWidth + 10, 250)));
+                    }
+                });
+            }
+        });
+        
+        // Thêm listener cho kích thước TableView để điều chỉnh tương đối khi thay đổi kích thước cửa sổ
+        routeTableView.widthProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.doubleValue() > 0) {
+                double tableWidth = newVal.doubleValue();
+                routePlaceNameColumn.setMaxWidth(tableWidth * 0.4); // Chiếm tối đa 40% chiều rộng bảng
+            }
+        });
         
         // CellFactory đơn giản chỉ để hiển thị text với wrap
         routePlaceNameColumn.setCellFactory(tc -> {
@@ -565,6 +593,41 @@ public class MainController {
                 });
             }
         }, 300, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Tính toán chiều rộng phù hợp cho một cột dựa trên nội dung của nó
+     * @param column Cột cần tính toán chiều rộng
+     * @param items Danh sách các mục dữ liệu
+     * @return Độ rộng phù hợp cho cột
+     */
+    private double computePrefColumnWidth(TableColumn<Place, String> column, ObservableList<Place> items) {
+        double maxWidth = 50; // Chiều rộng tối thiểu
+
+        // Tạo một Text tạm thời để đo chiều rộng
+        javafx.scene.text.Text text = new javafx.scene.text.Text();
+        
+        // Lặp qua từng mục để đo chiều rộng
+        for (Place item : items) {
+            String value = "";
+            if (column == routePlaceNameColumn && item.getName() != null) {
+                value = item.getName();
+            } else if (column == routePlaceAddressColumn && item.getAddress() != null) {
+                value = item.getAddress();
+            }
+            
+            // Đo chiều rộng của văn bản
+            text.setText(value);
+            double width = text.getBoundsInLocal().getWidth();
+            
+            // Cập nhật chiều rộng tối đa
+            if (width > maxWidth) {
+                maxWidth = width;
+            }
+        }
+        
+        // Thêm một khoảng trống cho thanh cuộn
+        return maxWidth + 20;
     }
 
     /**
