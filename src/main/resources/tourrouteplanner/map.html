@@ -332,6 +332,38 @@
             }
         }
 
+        // Zoom đến vừa đủ để hiển thị toàn bộ tuyến đường
+        function fitToRoute() {
+            console.log("map.html: fitToRoute called.");
+            if (!mapInstance || !routeLayer || !routeLayer.getSource()) {
+                console.error('Map or routeLayer not initialized yet or no route available. Cannot fit to route.');
+                return;
+            }
+            
+            try {
+                const extent = routeLayer.getSource().getExtent();
+                // Kiểm tra xem extent có hợp lệ không (không phải infinity)
+                if (extent && extent[0] !== Infinity && extent[1] !== Infinity && 
+                    extent[2] !== -Infinity && extent[3] !== -Infinity) {
+                    
+                    console.log("map.html: Fitting map to route extent:", extent);
+                    mapInstance.getView().fit(extent, {
+                        padding: [80, 80, 80, 80], // Thêm padding để đường không sát cạnh màn hình
+                        duration: 1000, // Thời gian animation (ms)
+                        maxZoom: 16 // Giới hạn mức zoom tối đa
+                    });
+                    console.log("map.html: Map fitted to route extent.");
+                    return true;
+                } else {
+                    console.warn("map.html: Invalid route extent, cannot fit map.");
+                    return false;
+                }
+            } catch (e) {
+                console.error("map.html: Error in fitToRoute: ", e);
+                return false;
+            }
+        }
+
         // Thêm một điểm đánh dấu (marker) mới vào bản đồ.
         // Hàm này được gọi từ Java thông qua javaConnector.
         function addMapMarker(name, lat, lng, description) {

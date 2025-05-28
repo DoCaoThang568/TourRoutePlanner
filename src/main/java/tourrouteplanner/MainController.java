@@ -797,13 +797,16 @@ public class MainController {
             updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), ""); // Sửa ở đây, truyền chuỗi rỗng thay vì null
             return;
         }
-        try {
-            Route route = routeService.getRoute(new ArrayList<>(currentRoutePlaces));
+        try {            Route route = routeService.getRoute(new ArrayList<>(currentRoutePlaces));
             if (route != null && route.getCoordinates() != null && !route.getCoordinates().isEmpty()) {
                 drawRoute(route.getCoordinates()); // Vẽ lộ trình lên bản đồ.
+                
+                // Tự động zoom để hiển thị toàn bộ lộ trình
+                fitToRoute();
+                
                 updateDynamicRouteInfo(
                     String.format(Locale.US, "Tổng quãng đường: %.2f km", route.getTotalDistanceKm()),
-                    route.getTurnByTurnInstructions() // Chỗ này đúng, không cần sửa
+                    route.getTurnByTurnInstructions()
                 );
                 routeCalculated = true;
             } else {
@@ -1058,6 +1061,14 @@ public class MainController {
         } else {
             System.err.println("Không thể gọi clearRoute: browser hoặc mainFrame không khả dụng.");
         }
+    }
+
+    /**
+     * Tự động zoom bản đồ để hiển thị toàn bộ lộ trình.
+     * Gọi hàm JavaScript 'fitToRoute' trong map.html.
+     */
+    public void fitToRoute() {
+        executeJavaScript("if(typeof fitToRoute === 'function') { fitToRoute(); } else { console.error('JavaScript function fitToRoute not found.'); }");
     }
 
     /**
