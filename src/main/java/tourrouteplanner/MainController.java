@@ -70,6 +70,10 @@ public class MainController {
     private Button saveRouteButton; // Nút để lưu lộ trình hiện tại ra tệp.
     @FXML
     private Button loadRouteButton; // Nút để tải lộ trình từ tệp.
+    @FXML
+    private Button moveUpButton; // Nút mũi tên lên để di chuyển địa điểm lên trên
+    @FXML
+    private Button moveDownButton; // Nút mũi tên xuống để di chuyển địa điểm xuống dưới
     // @FXML private Label totalDistanceLabel; // Removed field
 
     @FXML
@@ -102,6 +106,9 @@ public class MainController {
 
     @FXML
     private Label statusLabel; // Nhãn hiển thị thông báo trạng thái cho người dùng.
+
+    // Theo dõi xem đã tính lộ trình chưa
+    private boolean routeCalculated = false;
 
     /**
      * Constructor mặc định cho MainController.
@@ -453,6 +460,19 @@ public class MainController {
     }
 
     /**
+     * Khởi tạo lại tất cả các marker trên bản đồ theo thứ tự hiện tại của các địa điểm trong lộ trình.
+     */
+    private void refreshMapMarkers() {
+        clearAllMarkers();
+        
+        // Thêm lại marker cho tất cả các địa điểm theo thứ tự mới
+        for (Place place : currentRoutePlaces) {
+            addMapMarker(place.getName(), place.getLatitude(), 
+                         place.getLongitude(), place.getAddress());
+        }
+    }
+
+    /**
      * Xử lý sự kiện tìm kiếm địa điểm khi người dùng nhập vào searchBox.
      * Gọi RouteService để tìm kiếm và cập nhật placeListView.
      * Di chuyển bản đồ đến vị trí của kết quả đầu tiên (nếu có).
@@ -705,13 +725,13 @@ public class MainController {
 
             if (wasHighlightTarget) {
                 clearMapHighlight(); // Xóa highlight nếu địa điểm bị xóa đang được chọn trong placeListView
-            }
-
-            if (currentRoutePlaces.size() > 1) {
-                handleFindRoute(); // Tính toán lại lộ trình nếu còn ít nhất 2 điểm.
-            } else {
+            }            if (routeCalculated && currentRoutePlaces.size() > 1) {
+                // Chỉ tính toán lại lộ trình nếu đã tính trước đó và còn ít nhất 2 điểm
+                handleFindRoute();
+            } else if (currentRoutePlaces.size() <= 1) {
                 clearRoute(); // Xóa lộ trình trên bản đồ nếu không còn đủ điểm.
-                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
+                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null);
+                routeCalculated = false;
             }
         } else {
             // Thông báo nếu không có điểm nào được chọn trong TableView.
@@ -740,6 +760,7 @@ public class MainController {
                     String.format(Locale.US, "Tổng quãng đường: %.2f km", route.getTotalDistanceKm()),
                     route.getTurnByTurnInstructions() // Chỗ này đúng, không cần sửa
                 );
+                routeCalculated = true;
             } else {
                 Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm đường", "Không thể tìm thấy đường đi cho các địa điểm đã chọn.");
                 clearRoute();
@@ -751,14 +772,21 @@ public class MainController {
             clearRoute();
             updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), ""); // Sửa ở đây
         }
-    }
-
-    /**
+    }    /**
      * Cập nhật vùng hiển thị thông tin lộ trình động.
      * @param totalDistanceText Chuỗi hiển thị tổng quãng đường.
      * @param turnByTurnInstructions Chuỗi hướng dẫn chi tiết từng chặng.
      */
     private void updateDynamicRouteInfo(String totalDistanceText, String turnByTurnInstructions) {
+        // Đặt giá trị biến routeCalculated
+        if (totalDistanceText != null && !totalDistanceText.equals(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0))) {
+            // Nếu có thông tin quãng đường thì đã tính lộ trình
+            routeCalculated = true;
+        } else {
+            // Nếu không có thông tin quãng đường hoặc quãng đường = 0.0
+            routeCalculated = false;
+        }
+        
         if (dynamicRouteInfoScrollPane != null && dynamicRouteInfoTextArea != null) {
             StringBuilder infoBuilder = new StringBuilder();
             infoBuilder.append(totalDistanceText);
@@ -1097,6 +1125,64 @@ public class MainController {
             if (statusLabel != null) {
                 statusLabel.setText("Đã xóa tất cả các điểm. Lộ trình trống.");
             }
+        }
+    }    /**
+     * Xử lý sự kiện khi người dùng nhấn nút mũi tên lên.
+     * Di chuyển địa điểm được chọn lên trên một vị trí trong danh sách lộ trình.
+     */
+    @FXML
+    private void handleMoveUp() {
+        int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
+        if (selectedIndex > 0) { // Đảm bảo không phải địa điểm đầu tiên
+            // Lưu lại địa điểm được chọn
+            Place selectedPlace = currentRoutePlaces.get(selectedIndex);
+            
+            // Thực hiện hoán đổi vị trí
+            currentRoutePlaces.remove(selectedIndex);
+            currentRoutePlaces.add(selectedIndex - 1, selectedPlace);
+            
+            // Cập nhật lại bảng và chọn lại địa điểm vừa di chuyển
+            routeTableView.getSelectionModel().select(selectedIndex - 1);
+            
+            // Cập nhật lại hiển thị các marker trên bản đồ
+            refreshMapMarkers();
+            
+            // Nếu đã tính lộ trình trước đó, thì tính toán lại lộ trình
+            if (routeCalculated && currentRoutePlaces.size() > 1) {
+                handleFindRoute();
+            }
+        } else {
+            // Thông báo nếu không thể di chuyển lên (đã ở đầu danh sách)
+            statusLabel.setText("Địa điểm này đã ở vị trí đầu tiên trong lộ trình.");
+        }
+    }    /**
+     * Xử lý sự kiện khi người dùng nhấn nút mũi tên xuống.
+     * Di chuyển địa điểm được chọn xuống dưới một vị trí trong danh sách lộ trình.
+     */
+    @FXML
+    private void handleMoveDown() {
+        int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
+        if (selectedIndex >= 0 && selectedIndex < currentRoutePlaces.size() - 1) { // Đảm bảo không phải địa điểm cuối cùng
+            // Lưu lại địa điểm được chọn
+            Place selectedPlace = currentRoutePlaces.get(selectedIndex);
+            
+            // Thực hiện hoán đổi vị trí
+            currentRoutePlaces.remove(selectedIndex);
+            currentRoutePlaces.add(selectedIndex + 1, selectedPlace);
+            
+            // Cập nhật lại bảng và chọn lại địa điểm vừa di chuyển
+            routeTableView.getSelectionModel().select(selectedIndex + 1);
+            
+            // Cập nhật lại hiển thị các marker trên bản đồ
+            refreshMapMarkers();
+            
+            // Nếu đã tính lộ trình trước đó, thì tính toán lại lộ trình
+            if (routeCalculated && currentRoutePlaces.size() > 1) {
+                handleFindRoute();
+            }
+        } else if (selectedIndex == currentRoutePlaces.size() - 1) {
+            // Thông báo nếu không thể di chuyển xuống (đã ở cuối danh sách)
+            statusLabel.setText("Địa điểm này đã ở vị trí cuối cùng trong lộ trình.");
         }
     }
 }

@@ -135,16 +135,52 @@
                      <VBox.margin>
                         <Insets top="10.0" />
                      </VBox.margin>
-                  </Label>
-                  <TableView fx:id="routeTableView" prefHeight="250.0" styleClass="route-table" VBox.vgrow="ALWAYS">
-                    <columns>
-                      <TableColumn fx:id="routePlaceNameColumn" prefWidth="150.0" text="Tên địa điểm" />
-                      <TableColumn fx:id="routePlaceAddressColumn" prefWidth="200.0" text="Địa chỉ" />
-                    </columns>
+                  </Label>                  <!-- Sử dụng HBox để chứa TableView và các nút lên/xuống -->
+                  <HBox spacing="5.0">
+                     <children>
+                        <TableView fx:id="routeTableView" prefHeight="250.0" styleClass="route-table" HBox.hgrow="ALWAYS">
+                          <columns>
+                            <TableColumn fx:id="routePlaceNameColumn" prefWidth="150.0" text="Tên địa điểm" />
+                            <TableColumn fx:id="routePlaceAddressColumn" prefWidth="200.0" text="Địa chỉ" />
+                          </columns>
+                        </TableView>
+                        <!-- Các nút di chuyển lên/xuống -->
+                        <VBox alignment="CENTER" spacing="10.0">
+                           <padding>
+                              <Insets left="5.0" right="5.0" />
+                           </padding>
+                           <children>
+                              <Button fx:id="moveUpButton" mnemonicParsing="false" onAction="#handleMoveUp" styleClass="move-button">
+                                 <graphic>
+                                    <ImageView fitHeight="20.0" fitWidth="20.0">
+                                       <image>
+                                          <Image url="@icons/arrow-up.png" />
+                                       </image>
+                                    </ImageView>
+                                 </graphic>
+                                 <tooltip>
+                                    <Tooltip text="Di chuyển địa điểm lên trên" />
+                                 </tooltip>
+                              </Button>
+                              <Button fx:id="moveDownButton" mnemonicParsing="false" onAction="#handleMoveDown" styleClass="move-button">
+                                 <graphic>
+                                    <ImageView fitHeight="20.0" fitWidth="20.0">
+                                       <image>
+                                          <Image url="@icons/arrow-down.png" />
+                                       </image>
+                                    </ImageView>
+                                 </graphic>
+                                 <tooltip>
+                                    <Tooltip text="Di chuyển địa điểm xuống dưới" />
+                                 </tooltip>
+                              </Button>
+                           </children>
+                        </VBox>
+                     </children>
                      <VBox.margin>
                         <Insets top="8.0" />
                      </VBox.margin>
-                  </TableView>
+                  </HBox>
 
                   <!-- Các nút thao tác với danh sách điểm đã chọn -->
                   <HBox alignment="CENTER" spacing="15.0">
