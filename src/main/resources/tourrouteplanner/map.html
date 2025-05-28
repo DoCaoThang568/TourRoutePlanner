@@ -384,9 +384,7 @@
             } catch (e) {
                 console.error("map.html: Error in addMapMarker: ", e);
             }
-        }
-
-        // Vẽ một tuyến đường trên bản đồ dựa trên danh sách các tọa độ.
+        }        // Vẽ một tuyến đường trên bản đồ dựa trên danh sách các tọa độ.
         // Hàm này được gọi từ Java.
         function drawRoute(routeCoordinates) {
             console.log("map.html: drawRoute called with " + routeCoordinates.length + " coordinates."); // Log số lượng tọa độ
@@ -400,11 +398,103 @@
                 if (routeCoordinates && routeCoordinates.length > 0) {
                     const olCoordinates = routeCoordinates.map(coord => ol.proj.fromLonLat([coord.lng, coord.lat])); // Chuyển đổi tất cả tọa độ
                     
-                    const routeFeature = new ol.Feature({
-                        geometry: new ol.geom.LineString(olCoordinates) // Tạo LineString từ các tọa độ đã chuyển đổi
-                    });
-                    routeLayer.getSource().addFeature(routeFeature); // Thêm feature tuyến đường vào source của layer
-                    console.log("map.html: Route drawn successfully.");
+                    // Tìm các điểm đánh dấu hiện tại (marker) trên bản đồ
+                    let markerCoordinates = [];
+                    if (markerLayer && markerLayer.getSource()) {
+                        markerLayer.getSource().getFeatures().forEach(feature => {
+                            if (feature.getGeometry() instanceof ol.geom.Point) {
+                                markerCoordinates.push(feature.getGeometry().getCoordinates());
+                            }
+                        });
+                    }
+                    
+                    // Định nghĩa các màu sắc cho từng đoạn đường
+                    const routeColors = [
+                        '#2563eb', // Xanh dương
+                        '#059669', // Xanh lá
+                        '#d97706', // Cam
+                        '#be123c', // Đỏ
+                        '#7c3aed', // Tím
+                        '#0369a1', // Xanh nước biển
+                        '#16a34a', // Xanh lá đậm
+                        '#c2410c', // Cam đậm
+                        '#b91c1c', // Đỏ đậm
+                        '#6d28d9'  // Tím đậm
+                    ];
+
+                    // Nếu có nhiều marker, chia nhỏ đường đi thành các đoạn giữa các marker
+                    if (markerCoordinates.length > 1) {
+                        console.log("map.html: Multiple markers detected. Drawing multi-segment route.");
+                        
+                        // Tìm các điểm trong tuyến đường gần nhất với mỗi marker
+                        const markerPoints = [];
+                        markerCoordinates.forEach(markerCoord => {
+                            let closestIdx = 0;
+                            let minDistance = Infinity;
+                            
+                            // Tìm điểm gần nhất trong tuyến đường cho mỗi marker
+                            olCoordinates.forEach((routeCoord, idx) => {
+                                const dist = Math.sqrt(
+                                    Math.pow(routeCoord[0] - markerCoord[0], 2) +
+                                    Math.pow(routeCoord[1] - markerCoord[1], 2)
+                                );
+                                if (dist < minDistance) {
+                                    minDistance = dist;
+                                    closestIdx = idx;
+                                }
+                            });
+                            
+                            markerPoints.push({
+                                index: closestIdx,
+                                coordinate: olCoordinates[closestIdx]
+                            });
+                        });
+                        
+                        // Sắp xếp các điểm theo thứ tự trên tuyến đường
+                        markerPoints.sort((a, b) => a.index - b.index);
+                        
+                        // Tạo các đoạn đường giữa các marker
+                        for (let i = 0; i < markerPoints.length - 1; i++) {
+                            const startIdx = markerPoints[i].index;
+                            const endIdx = markerPoints[i + 1].index;
+                            const segmentCoordinates = olCoordinates.slice(startIdx, endIdx + 1);
+                            
+                            if (segmentCoordinates.length > 1) {
+                                const colorIndex = i % routeColors.length;
+                                
+                                // Tạo feature cho đoạn đường này
+                                const segmentFeature = new ol.Feature({
+                                    geometry: new ol.geom.LineString(segmentCoordinates)
+                                });
+                                
+                                // Đặt style với màu sắc khác nhau cho mỗi đoạn
+                                segmentFeature.setStyle(new ol.style.Style({
+                                    stroke: new ol.style.Stroke({
+                                        color: routeColors[colorIndex],
+                                        width: 4
+                                    })
+                                }));
+                                
+                                routeLayer.getSource().addFeature(segmentFeature);
+                            }
+                        }
+                    } else {
+                        // Nếu chỉ có một hoặc không có marker nào, vẽ đường đi bình thường với một màu
+                        console.log("map.html: Single route segment detected.");
+                        const routeFeature = new ol.Feature({
+                            geometry: new ol.geom.LineString(olCoordinates)
+                        });
+                        
+                        routeFeature.setStyle(new ol.style.Style({
+                            stroke: new ol.style.Stroke({
+                                color: routeColors[0], // Màu mặc định cho đường đơn
+                                width: 4
+                            })
+                        }));
+                        
+                        routeLayer.getSource().addFeature(routeFeature);
+                    }
+                      console.log("map.html: Route drawn successfully.");
                 } else {
                     console.log("map.html: No coordinates provided to drawRoute, route cleared.");
                 }
