@@ -130,7 +130,16 @@ public class MainController {
         // Thiết lập ListView cho kết quả tìm kiếm địa điểm.
         placeListView.setItems(searchResults);
         placeListView.setCellFactory(param -> new ListCell<Place>() {
-            private Tooltip tooltip = new Tooltip(); // Tooltip for each cell
+            private final Label label = new Label();
+            private final Tooltip tooltip = new Tooltip();
+
+            { // Instance initializer block for the ListCell
+                label.setWrapText(true);
+                // Bind the label's preferred width to the cell's width minus some padding
+                // This allows the label to resize and wrap text correctly.
+                label.prefWidthProperty().bind(this.widthProperty().subtract(15)); // e.g., 15 for padding
+                this.setPrefWidth(0); // Allow the cell to shrink or grow as needed by content and listview width
+            }
 
             @Override
             protected void updateItem(Place item, boolean empty) {
@@ -138,50 +147,45 @@ public class MainController {
                 if (empty || item == null) {
                     setText(null);
                     setTooltip(null);
+                    setGraphic(null);
                 } else {
-                    // Hiển thị tên và địa chỉ đầy đủ hơn
                     String displayText = item.getName();
                     String address = item.getAddress();
 
+                    // Consolidate and simplify displayText logic
                     if (address != null && !address.isEmpty() && !address.equalsIgnoreCase(item.getName())) {
-                        // Nếu tên địa điểm không chứa phần đầu của địa chỉ (tránh lặp lại)
-                        // Ví dụ: Tên: "Hồ Gươm", Địa chỉ: "Hồ Gươm, Quận Hoàn Kiếm, Hà Nội"
-                        // thì không cần thêm "Hồ Gươm" vào nữa.
-                        String lowerCaseName = item.getName().toLowerCase();
-                        String lowerCaseAddress = address.toLowerCase();
+                        String lowerCaseName = item.getName().toLowerCase(Locale.ROOT);
+                        String lowerCaseAddress = address.toLowerCase(Locale.ROOT);
                         
-                        // Kiểm tra xem tên có phải là một phần của địa chỉ không
-                        boolean nameIsPartOfAddress = lowerCaseAddress.contains(lowerCaseName);
-
-                        if (nameIsPartOfAddress) {
-                            // Nếu tên là một phần của địa chỉ, chỉ hiển thị địa chỉ
-                            // (vì địa chỉ thường đầy đủ hơn tên)
-                            // Tuy nhiên, nếu tên và địa chỉ gần giống nhau, ưu tiên tên cho ngắn gọn
-                            if (address.length() > item.getName().length() + 5) { // +5 để cho phép một chút khác biệt nhỏ
-                                displayText = address; // Hiển thị địa chỉ đầy đủ nếu nó dài hơn tên đáng kể
-                            } else {
-                                // Nếu không, giữ nguyên tên và có thể thêm một phần nhỏ của địa chỉ nếu khác biệt
-                                String remainingAddress = address.replace(item.getName(), "").trim();
-                                if (remainingAddress.startsWith(",")) {
-                                    remainingAddress = remainingAddress.substring(1).trim();
+                        if (lowerCaseAddress.contains(lowerCaseName)) { // If name is part of address
+                            // If address is significantly longer, prefer address
+                            if (address.length() > item.getName().length() + 10) { 
+                                displayText = address;
+                            } else { // Otherwise, try to append distinct part of address to name
+                                String remainingAddress = address;
+                                // Attempt to remove the name part from address if it's a prefix or clearly contained
+                                if (lowerCaseAddress.startsWith(lowerCaseName)) {
+                                    remainingAddress = address.substring(item.getName().length());
+                                    if (remainingAddress.startsWith(",")) remainingAddress = remainingAddress.substring(1);
+                                    remainingAddress = remainingAddress.trim();
                                 }
-                                if (!remainingAddress.isEmpty()) {
-                                    displayText += ", " + remainingAddress;
+                                // If a distinct part of the address remains, append it
+                                if (!remainingAddress.isEmpty() && !lowerCaseName.equals(remainingAddress.toLowerCase(Locale.ROOT)) && !item.getName().equals(remainingAddress)) {
+                                    displayText = item.getName() + ", " + remainingAddress;
+                                } else {
+                                    displayText = item.getName(); // Default to name if address part is not distinct enough
                                 }
                             }
-                        } else {
-                            // Nếu tên không phải là một phần của địa chỉ, ghép cả hai
+                        } else { // Name and address are distinct
                             displayText = item.getName() + " - " + address;
                         }
-                    } 
-                    // Giới hạn độ dài hiển thị tổng thể nếu cần, nhưng ưu tiên hiển thị nhiều thông tin hơn
-                    int maxLength = 100; // Tăng giới hạn độ dài
-                    if (displayText.length() > maxLength) {
-                        displayText = displayText.substring(0, maxLength - 3) + "...";
                     }
-
-                    setText(displayText);
-                    tooltip.setText(item.getName() + "\n" + item.getAddress()); // Tooltip vẫn hiển thị đầy đủ
+                    
+                    label.setText(displayText);
+                    setGraphic(label); // Use the label as the graphic content of the cell
+                    setText(null); // Clear direct text setting for the cell
+                    
+                    tooltip.setText(item.getName() + "\\n" + (item.getAddress() != null ? item.getAddress() : ""));
                     setTooltip(tooltip);
                 }
             }
@@ -215,12 +219,46 @@ public class MainController {
             } else {
                 clearMapHighlight(); // Xóa highlight nếu không có địa điểm nào được chọn
             }
-        });
-
-        // Cấu hình cho TableView các địa điểm đã chọn trong lộ trình.
+        });        // Cấu hình cho TableView các địa điểm đã chọn trong lộ trình.
         routePlaceNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         routePlaceAddressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
         routeTableView.setItems(currentRoutePlaces);
+        
+        // Đặt độ rộng cột và các thuộc tính quan trọng khác
+        routeTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        routePlaceNameColumn.setMinWidth(150);  
+        routePlaceAddressColumn.setMinWidth(150);
+        
+        // CellFactory đơn giản chỉ để hiển thị text với wrap
+        routePlaceNameColumn.setCellFactory(tc -> {
+            TableCell<Place, String> cell = new TableCell<Place, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(item);
+                    }
+                    setWrapText(true);
+                }
+            };
+            return cell;
+        });
+          routePlaceAddressColumn.setCellFactory(tc -> {
+            TableCell<Place, String> cell = new TableCell<Place, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(item);
+                    }
+                    setWrapText(true);
+                }            };
+            return cell;
+        });
 
         // Initialize suggestions ListView
         suggestionsListView.setItems(searchSuggestions);
@@ -532,14 +570,56 @@ public class MainController {
     /**
      * Xử lý sự kiện thêm địa điểm được chọn từ placeListView vào routeTableView.
      * Thêm marker cho địa điểm mới trên bản đồ.
-     */
-    @FXML
+     */    @FXML
     private void handleAddSelected() {
         Place selectedPlace = placeListView.getSelectionModel().getSelectedItem();
         if (selectedPlace != null && !currentRoutePlaces.contains(selectedPlace)) {
-            currentRoutePlaces.add(selectedPlace); // Thêm vào danh sách lộ trình.
-            // Thêm marker trên bản đồ cho địa điểm vừa thêm.
-            addMapMarker(selectedPlace.getName(), selectedPlace.getLatitude(), selectedPlace.getLongitude(), selectedPlace.getAddress());
+            // Tạo bản sao của selectedPlace để đảm bảo các trường đều có giá trị hợp lệ
+            String name = selectedPlace.getName();
+            String address = selectedPlace.getAddress();
+            
+            // Đảm bảo địa chỉ không bị null
+            if (address == null || address.trim().isEmpty()) {
+                String displayName = name;
+                if (displayName != null && displayName.contains(",")) {
+                    int firstCommaIndex = displayName.indexOf(",");
+                    if (firstCommaIndex > 0) {
+                        name = displayName.substring(0, firstCommaIndex).trim();
+                        address = displayName.substring(firstCommaIndex + 1).trim();
+                    } else {
+                        address = "Việt Nam"; // Giá trị mặc định
+                    }
+                } else {
+                    address = "Việt Nam"; // Giá trị mặc định
+                }
+            }
+            
+            // In thông tin cho việc debug
+            System.out.println("DEBUG - Thêm địa điểm: name=" + name + ", address=" + address);
+            
+            // Tạo đối tượng Place mới với các giá trị đã được xử lý
+            Place enhancedPlace = new Place(
+                selectedPlace.getPlaceId(),
+                name,
+                selectedPlace.getLatitude(),
+                selectedPlace.getLongitude(),
+                address,
+                selectedPlace.getBoundingBox(),
+                selectedPlace.getGeoJson(),
+                selectedPlace.getImportance()
+            );
+            
+            // Thêm vào danh sách lộ trình
+            currentRoutePlaces.add(enhancedPlace);
+            
+            // Đảm bảo UI được cập nhật
+            Platform.runLater(() -> {
+                routeTableView.refresh();
+            });
+            
+            // Thêm marker trên bản đồ cho địa điểm vừa thêm
+            addMapMarker(enhancedPlace.getName(), enhancedPlace.getLatitude(), 
+                         enhancedPlace.getLongitude(), enhancedPlace.getAddress());
         }
     }
 

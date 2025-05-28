@@ -464,61 +464,95 @@ public class RouteService {
                  placeId = "nominatim_" + placeObject.get("place_id").getAsString();
             }
 
-            String name = displayName; // Tên mặc định là display_name
-            String constructedAddress = displayName; // Địa chỉ mặc định cũng là display_name, đổi tên biến để tránh trùng lặp
-
-            // Cố gắng trích xuất tên ngắn gọn hơn và xây dựng địa chỉ từ addressdetails nếu có
+            // Phân tách displayName thành hai phần: tên và địa chỉ
+            String name = null;
+            String address = null;
+            
+            // Phần 1: Thử phân tách displayName theo dấu phẩy
+            int firstCommaIndex = displayName.indexOf(',');
+            if (firstCommaIndex > 0) {
+                // Mặc định: phần đầu tiên là tên
+                name = displayName.substring(0, firstCommaIndex).trim();
+                // Phần còn lại là địa chỉ
+                if (firstCommaIndex + 1 < displayName.length()) {
+                    address = displayName.substring(firstCommaIndex + 1).trim();
+                }
+            } else {
+                // Nếu không có dấu phẩy, toàn bộ displayName là tên
+                name = displayName;
+                address = ""; // Địa chỉ rỗng
+            }
+            
+            // Phần 2: Cố gắng trích xuất tên ngắn gọn hơn và địa chỉ chi tiết từ addressdetails nếu có
             if (placeObject.has("addressdetails") && placeObject.get("addressdetails").isJsonObject()) {
-                JsonObject addressDetailsObj = placeObject.getAsJsonObject("addressdetails"); // Đổi tên biến này
-                // Ưu tiên lấy tên từ các trường cụ thể như name, road, amenity, shop, v.v.
-                // Thứ tự ưu tiên có thể cần điều chỉnh tùy theo loại địa điểm mong muốn
+                JsonObject addressDetailsObj = placeObject.getAsJsonObject("addressdetails");
+                
+                // Thử lấy tên từ các trường cụ thể
+                String extractedName = null;
                 if (addressDetailsObj.has("name")) {
-                    name = addressDetailsObj.get("name").getAsString();
+                    extractedName = addressDetailsObj.get("name").getAsString();
                 } else if (addressDetailsObj.has("road") && addressDetailsObj.has("house_number")) {
-                    name = addressDetailsObj.get("road").getAsString() + " " + addressDetailsObj.get("house_number").getAsString();
+                    extractedName = addressDetailsObj.get("house_number").getAsString() + " " + addressDetailsObj.get("road").getAsString();
                 } else if (addressDetailsObj.has("road")) {
-                    name = addressDetailsObj.get("road").getAsString();
+                    extractedName = addressDetailsObj.get("road").getAsString();
                 } else if (addressDetailsObj.has("amenity")) {
-                    name = addressDetailsObj.get("amenity").getAsString();
+                    extractedName = addressDetailsObj.get("amenity").getAsString();
                 } else if (addressDetailsObj.has("shop")) {
-                    name = addressDetailsObj.get("shop").getAsString();
+                    extractedName = addressDetailsObj.get("shop").getAsString();
                 } else if (addressDetailsObj.has("tourism")) {
-                    name = addressDetailsObj.get("tourism").getAsString();
-                } // Thêm các trường khác nếu cần: village, town, city, county, state, country
+                    extractedName = addressDetailsObj.get("tourism").getAsString();
+                }
+                
+                if (extractedName != null && !extractedName.isEmpty()) {
+                    name = extractedName; // Cập nhật tên nếu tìm được cái tốt hơn
+                }
 
-                // Xây dựng lại địa chỉ từ các thành phần chi tiết hơn
+                // Xây dựng địa chỉ chi tiết từ các thành phần
                 StringBuilder sb = new StringBuilder();
                 appendAddressComponent(sb, addressDetailsObj, "house_number");
                 appendAddressComponent(sb, addressDetailsObj, "road");
-                appendAddressComponent(sb, addressDetailsObj, "suburb"); // hoặc "neighbourhood", "quarter"
+                appendAddressComponent(sb, addressDetailsObj, "suburb");
                 appendAddressComponent(sb, addressDetailsObj, "village");
                 appendAddressComponent(sb, addressDetailsObj, "town");
                 appendAddressComponent(sb, addressDetailsObj, "city_district");
                 appendAddressComponent(sb, addressDetailsObj, "city");
-                appendAddressComponent(sb, addressDetailsObj, "county"); // (Huyện/Quận ở VN)
+                appendAddressComponent(sb, addressDetailsObj, "county");
                 appendAddressComponent(sb, addressDetailsObj, "state_district");
-                appendAddressComponent(sb, addressDetailsObj, "state"); // (Tỉnh/Thành phố ở VN)
+                appendAddressComponent(sb, addressDetailsObj, "state");
                 appendAddressComponent(sb, addressDetailsObj, "postcode");
                 appendAddressComponent(sb, addressDetailsObj, "country");
 
-                if (sb.length() > 0) {
-                    constructedAddress = sb.toString().trim();
+                String constructedAddress = sb.toString().trim();
+                if (!constructedAddress.isEmpty()) {
                     // Loại bỏ dấu phẩy thừa ở cuối nếu có
                     if (constructedAddress.endsWith(",")) {
                         constructedAddress = constructedAddress.substring(0, constructedAddress.length() - 1);
                     }
+                    address = constructedAddress; // Cập nhật địa chỉ nếu xây dựng được
                 }
-            } // Kết thúc khối if (placeObject.has("addressdetails"))
+            }
 
-            // Sử dụng constructor mới bao gồm cả importance
-            foundPlaces.add(new Place(placeId, name, lat, lon, constructedAddress, boundingBox, geoJsonString, importance));
+            // Đảm bảo name và address không giống nhau một cách không cần thiết
+            if (name != null && address != null && name.equalsIgnoreCase(address)) {
+                // Nếu name và address giống hệt nhau, giữ name và đặt address là chuỗi rỗng
+                address = "";
+            }
+            
+            // Đảm bảo name không null và không rỗng
+            if (name == null || name.trim().isEmpty()) {
+                name = displayName; // Dùng displayName nếu không tìm được tên phù hợp
+            }
+            
+            // Đảm bảo address không null 
+            if (address == null) {
+                address = ""; // Đặt thành chuỗi rỗng nếu null
+            }
+
+            // Sử dụng constructor bao gồm cả importance
+            foundPlaces.add(new Place(placeId, name, lat, lon, address, boundingBox, geoJsonString, importance));
         }
 
         // Sắp xếp kết quả dựa trên 'importance' giảm dần
-        // và sau đó theo sự tương đồng của tên với truy vấn gốc (nếu cần thiết và có thể triển khai)
-        // Hiện tại, chỉ sắp xếp theo importance.
-        // Cân nhắc: việc so sánh tên ở đây cần logic phức tạp hơn để xử lý tiếng Việt có dấu và không dấu.
-        // RouteService.lastNormalizedQuery có thể được sử dụng ở đây.
         foundPlaces.sort((p1, p2) -> Double.compare(p2.getImportance(), p1.getImportance()));
 
         return foundPlaces;
