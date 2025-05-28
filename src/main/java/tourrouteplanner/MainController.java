@@ -230,17 +230,48 @@ public class MainController {
         routePlaceNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         routePlaceAddressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
         routeTableView.setItems(currentRoutePlaces);
-          // Đặt độ rộng cột và các thuộc tính quan trọng khác
-        routeTableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);        // Thiết lập cấu hình chiều rộng cột để đảm bảo cột tên không chiếm quá nhiều không gian
+        
+        // Thêm listener để pan bản đồ khi một địa điểm được chọn trong bảng lộ trình
+        routeTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                String geoJson = newSelection.getGeoJson();
+                double[] boundingBox = newSelection.getBoundingBox();
+
+                // Hiển thị địa điểm được chọn trên bản đồ
+                if (geoJson != null && !geoJson.trim().isEmpty()) {
+                    // Ưu tiên highlight GeoJSON nếu có
+                    highlightGeoJsonOnMap(geoJson);
+                    // Vẫn zoom tới bounding box nếu có, vì GeoJSON có thể là điểm hoặc vùng nhỏ
+                    if (boundingBox != null && boundingBox.length == 4) {
+                        zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                    } else {
+                        // Nếu không có bounding box, pan tới điểm trung tâm với mức zoom mặc định
+                        panTo(newSelection.getLatitude(), newSelection.getLongitude(), 15); 
+                    }
+                } else if (boundingBox != null && boundingBox.length == 4) {
+                    // Nếu không có GeoJSON nhưng có bounding box, highlight bounding box
+                    highlightBoundingBoxOnMap(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                    zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                } else {
+                    // Nếu không có cả GeoJSON và bounding box, pan tới điểm trung tâm
+                    panTo(newSelection.getLatitude(), newSelection.getLongitude(), 15);
+                    clearMapHighlight(); // Xóa highlight cũ
+                }
+                
+                // Hiển thị thông báo cho người dùng
+                statusLabel.setText("Đã di chuyển đến địa điểm: " + newSelection.getName());
+            }
+        });
+            // Thiết lập cấu hình chiều rộng cột để đảm bảo cột tên không chiếm quá nhiều không gian
         routePlaceNameColumn.setMinWidth(100);
         routePlaceNameColumn.setPrefWidth(180);  // Giá trị mặc định, sẽ được điều chỉnh dựa trên nội dung
         routePlaceNameColumn.setMaxWidth(250);    // Giới hạn kích thước tối đa
         
         // Cột địa chỉ sẽ linh hoạt hơn và giãn ra để lấp đầy phần còn lại
         routePlaceAddressColumn.setMinWidth(200);
-        
-        // Sử dụng chính sách điều chỉnh chiều rộng của TableView
-        routeTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_SUBSEQUENT_COLUMNS);
+          // Sử dụng chính sách điều chỉnh chiều rộng của TableView (chỉ đặt một lần)
+        // Thay thế CONSTRAINED_RESIZE_POLICY với cách hiện đại hơn
+        routeTableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         
         // Bắt sự kiện khi dữ liệu thay đổi để tự động điều chỉnh chiều rộng cột tên
         currentRoutePlaces.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
@@ -357,8 +388,7 @@ public class MainController {
         }
         if (dynamicRouteInfoTextArea != null) {
             dynamicRouteInfoTextArea.setEditable(false);
-            dynamicRouteInfoTextArea.setWrapText(true);
-        }
+            dynamicRouteInfoTextArea.setWrapText(true);        }
     }
 
     /**
