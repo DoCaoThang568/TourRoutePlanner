@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  nominatim:
+    image: mediagis/nominatim:4.4 # Hoặc dùng 'latest' nhưng version cụ thể ổn định hơn
+    container_name: nominatim_vn
+    ports:
+      - "8080:8080" # Port để truy cập Nominatim API
+      # - "5432:5432" # Mở port này nếu bạn muốn truy cập trực tiếp vào PostgreSQL từ bên ngoài container (không khuyến khích cho production)
+    volumes:
+      # Mount file PBF vào container (đường dẫn bên trái là trên máy host, bên phải là trong container)
+      - /mydata/osm/vietnam-latest.osm.pbf:/data/region.osm.pbf:ro # Thay "/mydata/osm bằng đường dẫn tới file PBF trên máy host của bạn"
+      # Volume để lưu trữ dữ liệu PostgreSQL và Nominatim, đảm bảo dữ liệu không mất khi container bị xóa
+      - nominatim-data:/var/lib/postgresql/14/main # Kiểm tra version PG trong image nếu cần
+      - nominatim-flatnode:/srv/nominatim/flatnode # Dành cho flatnode nếu được kích hoạt
+    environment:
+      PBF_PATH: /data/region.osm.pbf              # Đường dẫn tới file PBF trong container
+      REPLICATION_URL: http://download.geofabrik.de/asia/vietnam-updates/ # URL để cập nhật dữ liệu (tùy chọn)
+      IMPORT_STYLE: full                         # Kiểu import (full, street, address, admin, extratags, etc.)
+      THREADS: ${NPROC:-4}                       # Số CPU core sử dụng cho import, NPROC là biến môi trường host, mặc định là 4
+      NOMINATIM_PASSWORD: '123'   # Mật khẩu cho user nominatim trong PostgreSQL (THAY ĐỔI NÓ!)
+      FREEZE: "false"                            # true: tối ưu cho đọc sau khi import, không cập nhật. false: cho phép cập nhật.
+
+      # Tùy chỉnh PostgreSQL (thường không cần thiết với image này vì nó đã tích hợp sẵn)
+      # POSTGRES_USER: nominatim
+      # POSTGRES_PASSWORD: 'yourStrongPassword'
+      # POSTGRES_DB: nominatim
+
+    shm_size: '1gb' # Kích thước shared memory, quan trọng cho PostgreSQL
+    restart: unless-stopped
+
+volumes:
+  nominatim-data:
+  nominatim-flatnode:
