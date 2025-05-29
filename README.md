@@ -16,10 +16,11 @@ A JavaFX application for planning and visualizing tourist routes, initially focu
 ### Prerequisites
 - Java 17 or newer
 - Maven 3.6+
+- Docker and Docker Compose (for running local Nominatim service)
 - Valid JxBrowser License Key (for map display)
 - Valid MapTiler API Key (for map tiles)
 
-### Build and Run
+### Configuration
 1.  Clone this repository:
     ```sh
     git clone <your-repo-url>
@@ -37,6 +38,45 @@ A JavaFX application for planning and visualizing tourist routes, initially focu
         # nominatim.server.url=http://localhost:8080
         ```
 3.  Build and run the application:
+    ```sh
+    mvn clean javafx:run
+    ```
+
+### Running with Docker (Optional - for local Nominatim)
+
+This project includes a `docker-compose.yml` file to easily set up a local Nominatim service for geocoding. This is useful if you prefer not to rely on public Nominatim servers or require offline capabilities.
+
+1.  **Prerequisites for Docker:**
+    *   Ensure Docker and Docker Compose are installed on your system.
+    *   Download the OpenStreetMap PBF data file for your desired region (e.g., `vietnam-latest.osm.pbf` from Geofabrik).
+
+2.  **Configure Docker Compose:**
+    *   Open the `docker-compose.yml` file.
+    *   Modify the volume mapping for the PBF file. Change `/mydata/osm/vietnam-latest.osm.pbf` to the actual path of your downloaded PBF file on your host machine. For example, if your PBF file is in `C:\\osm_data\\vietnam-latest.osm.pbf`, the line should look like:
+        ```yaml
+        - C:\\osm_data\\vietnam-latest.osm.pbf:/data/region.osm.pbf:ro
+        ```
+    *   (Optional) Adjust the `THREADS` environment variable based on your system's CPU cores.
+    *   (Important) Change the `NOMINATIM_PASSWORD` to a secure password.
+
+3.  **Start the Nominatim Service:**
+    *   Open a terminal in the project root directory (where `docker-compose.yml` is located).
+    *   Run the following command:
+        ```sh
+        docker-compose up -d
+        ```
+    *   The first time you run this, Docker will download the Nominatim image and then import the PBF data. This import process can take a significant amount of time (from tens of minutes to several hours) depending on the size of the PBF file and your system's performance. You can monitor the progress using `docker-compose logs -f nominatim`.
+
+4.  **Configure Application to Use Local Nominatim:**
+    *   Once the Nominatim service is running (import is complete), update the `src/main/resources/config.properties` file:
+        ```properties
+        nominatim.server.url=http://localhost:8080
+        ```
+    *   If you stop and restart the Nominatim container later (e.g., `docker-compose stop` and `docker-compose start`), it will use the previously imported data and start much faster.
+
+### Build and Run
+1.  Ensure all configurations are set, including `config.properties`.
+2.  Build and run the application:
     ```sh
     mvn clean javafx:run
     ```
