@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Tệp này định nghĩa các hành động tùy chỉnh cho NetBeans IDE khi làm việc với dự án Maven này.
+    Nó cho phép tùy chỉnh cách NetBeans xây dựng, chạy và gỡ lỗi dự án.
+-->
+<actions>
+        <!-- Định nghĩa hành động "Run" (Chạy) trong NetBeans -->
+        <action>
+            <actionName>run</actionName>
+            <packagings>
+                <packaging>jar</packaging> <!-- Hành động này áp dụng cho các dự án được đóng gói dưới dạng JAR -->
+            </packagings>
+            <goals>
+                <!-- Các goal của Maven sẽ được thực thi khi hành động "Run" được gọi: -->
+                <goal>process-classes</goal> <!-- Đảm bảo các lớp (classes) đã được biên dịch -->
+                <goal>org.openjfx:javafx-maven-plugin:0.0.8:run</goal> <!-- Chạy ứng dụng JavaFX bằng javafx-maven-plugin -->
+            </goals>
+            <properties>
+                <!-- Các thuộc tính cho môi trường thực thi -->
+                <exec.vmArgs></exec.vmArgs> <!-- Chỗ dành sẵn cho các tham số máy ảo Java (VM arguments), có thể tùy chỉnh -->
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args> <!-- Các tham số được truyền cho tệp thực thi Java -->
+                <exec.appArgs></exec.appArgs> <!-- Chỗ dành sẵn cho các tham số dành riêng cho ứng dụng -->
+                <exec.mainClass>${packageClassName}</exec.mainClass> <!-- Lớp chính (main class) để thực thi, thường được NetBeans tự suy ra -->
+                <exec.executable>java</exec.executable> <!-- Tệp thực thi Java -->
+            </properties>
+        </action>
+        <!-- Có thể định nghĩa các hành động khác ở đây, ví dụ như "debug" (gỡ lỗi), "profile" (đo hiệu năng), v.v. -->
+    </actions>

@@ -20,7 +20,6 @@
 Thumbs.db
 
 # NetBeans
-nbactions.xml
 nb-configuration.xml
 
 # Others
@@ -34,3 +33,6 @@ config.properties
 
 # Ignore large data files
 vietnam-latest.osm.pbf
+
+# Ignore docx files
+*.docx
