@@ -56,10 +56,9 @@
                <children>
                   <Label styleClass="header-title" text="TOUR ROUTE PLANNER" />
                   <!-- Spacer để đẩy dark mode toggle sang bên phải -->
-                  <Region HBox.hgrow="ALWAYS" />
-                  <Button fx:id="darkModeToggle" onAction="#toggleDarkMode" styleClass="dark-mode-toggle" text="🌙">
+                  <Region HBox.hgrow="ALWAYS" />                  <Button fx:id="darkModeToggle" onAction="#toggleDarkMode" styleClass="dark-mode-toggle">
                      <tooltip>
-                        <Tooltip text="Chuyển đổi chế độ tối/sáng" />
+                        <Tooltip text="Chuyển sang chế độ tối" />
                      </tooltip>
                   </Button>
                </children>

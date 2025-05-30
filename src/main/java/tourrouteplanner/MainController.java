@@ -18,6 +18,8 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.BorderPane; // Added import
 import javafx.scene.control.ScrollPane; // Added import
@@ -134,8 +136,7 @@ public class MainController {
      * Khởi tạo controller sau khi các trường FXML đã được inject.
      * Thiết lập các dịch vụ, danh sách, bảng và JxBrowser.
      */
-    @FXML
-    public void initialize() {
+    @FXML    public void initialize() {
         // Khởi tạo các dịch vụ. RouteService không còn nhận API key qua constructor.
         routeService = new RouteService();
         storageService = new StorageService();
@@ -143,7 +144,13 @@ public class MainController {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true); // Allow application to exit even if this thread is running
             return thread;
-        });        // Thiết lập ListView cho kết quả tìm kiếm địa điểm.
+        });
+        
+        // Thiết lập icon và tooltip cho nút Dark Mode
+        setDarkModeButtonIcon(false); // false = light mode (mặc định)
+        Tooltip.install(darkModeToggle, new Tooltip("Chuyển sang chế độ tối"));
+        
+        // Thiết lập ListView cho kết quả tìm kiếm địa điểm.
         placeListView.setItems(searchResults);
         placeListView.setCellFactory(param -> new ListCell<Place>() {
             private Button addButton;
@@ -1306,13 +1313,10 @@ public class MainController {
             // Thông báo nếu không thể di chuyển xuống (đã ở cuối danh sách)
             statusLabel.setText("Địa điểm này đã ở vị trí cuối cùng trong lộ trình.");
         }
-    }
-
-    /**
+    }    /**
      * Xử lý sự kiện khi người dùng nhấn nút toggle dark mode.
      * Chuyển đổi giữa chế độ sáng và chế độ tối.
-     */
-    @FXML
+     */    @FXML
     private void toggleDarkMode() {
         isDarkMode = !isDarkMode;
         
@@ -1322,13 +1326,39 @@ public class MainController {
             if (isDarkMode) {
                 placeListView.getScene().getRoot().getStyleClass().add("dark-mode");
                 statusLabel.setText("🌙 Đã chuyển sang chế độ tối");
+                // Cập nhật icon và tooltip cho Dark Mode
+                setDarkModeButtonIcon(true);
+                Tooltip.install(darkModeToggle, new Tooltip("Chuyển sang chế độ sáng"));
             } else {
                 placeListView.getScene().getRoot().getStyleClass().remove("dark-mode");
                 statusLabel.setText("☀️ Đã chuyển sang chế độ sáng");
+                // Cập nhật icon và tooltip cho Light Mode
+                setDarkModeButtonIcon(false);
+                Tooltip.install(darkModeToggle, new Tooltip("Chuyển sang chế độ tối"));
             }
         }
     }
       /**
+     * Thiết lập icon cho nút chuyển đổi Dark Mode dựa trên trạng thái hiện tại
+     * @param isDarkMode true nếu đang ở Dark Mode, false nếu đang ở Light Mode
+     */
+    private void setDarkModeButtonIcon(boolean isDarkMode) {
+        try {
+            String iconName = isDarkMode ? "sun.png" : "moon.png";
+            Image image = new Image(getClass().getResourceAsStream("/tourrouteplanner/icons/" + iconName));
+            ImageView imageView = new ImageView(image);
+            imageView.setFitHeight(20);
+            imageView.setFitWidth(20);
+            darkModeToggle.setGraphic(imageView);
+            darkModeToggle.setText(""); // Xóa text vì chúng ta dùng image
+        } catch (Exception e) {
+            // Fallback nếu không tìm thấy icon
+            darkModeToggle.setText(isDarkMode ? "☀️" : "🌙");
+            System.err.println("Không thể tải icon Dark Mode: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Cập nhật trạng thái hiển thị của placeholder text cho bảng route.
      * Placeholder sẽ hiển thị khi:
      * - Bảng không có dữ liệu (trống)

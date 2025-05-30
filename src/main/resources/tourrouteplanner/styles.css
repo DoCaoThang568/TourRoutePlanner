@@ -1013,29 +1013,32 @@ Dark Gray: #374151 (Gray-700) - Text
 /* ========== DARK MODE TOGGLE BUTTON ========== */
 .dark-mode-toggle {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
-        rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
-    -fx-border-color: rgba(255,255,255,0.3);
+        rgba(75, 85, 99, 0.9) 0%, rgba(55, 65, 81, 0.8) 100%);
+    -fx-border-color: rgba(255,255,255,0.4);
     -fx-border-width: 2;
     -fx-background-radius: 50%;
     -fx-border-radius: 50%;
-    -fx-pref-width: 40;
-    -fx-pref-height: 40;
-    -fx-min-width: 40;
-    -fx-min-height: 40;
-    -fx-max-width: 40;
-    -fx-max-height: 40;
-    -fx-font-size: 16px;
-    -fx-text-fill: rgba(255,255,255,0.9);
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 3);
+    -fx-pref-width: 44;
+    -fx-pref-height: 44;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-max-width: 44;
+    -fx-max-height: 44;
+    -fx-padding: 8;
+    -fx-content-display: graphic-only;
+    -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 3);
     -fx-cursor: hand;
+    -fx-transition: all 0.3s ease;
 }
 
 .dark-mode-toggle:hover {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
-        rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.2) 100%);
-    -fx-scale-x: 1.1;
-    -fx-scale-y: 1.1;
-    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.4), 12, 0, 0, 4);
+        rgba(75, 85, 99, 1.0) 0%, rgba(55, 65, 81, 0.9) 100%);
+    -fx-scale-x: 1.15;
+    -fx-scale-y: 1.15;
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.5), 15, 0, 0, 5);
+    -fx-border-color: rgba(59, 130, 246, 0.6);
 }
 
 .dark-mode-toggle:pressed {
@@ -1045,15 +1048,17 @@ Dark Gray: #374151 (Gray-700) - Text
 
 .dark-mode .dark-mode-toggle {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
-        rgba(255,215,0,0.8) 0%, rgba(255,193,7,0.6) 100%);
-    -fx-border-color: rgba(255,215,0,0.6);
-    -fx-text-fill: rgba(0,0,0,0.8);
+        rgba(255,215,0,0.9) 0%, rgba(255,193,7,0.8) 100%);
+    -fx-border-color: rgba(255,215,0,0.7);
+    -fx-text-fill: rgba(0,0,0,0.85);
+    -fx-font-weight: bold;
 }
 
 .dark-mode .dark-mode-toggle:hover {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
-        rgba(255,215,0,0.9) 0%, rgba(255,193,7,0.7) 100%);
-    -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.6), 15, 0, 0, 5);
+        rgba(255,215,0,1.0) 0%, rgba(255,193,7,0.9) 100%);
+    -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.7), 18, 0, 0, 6);
+    -fx-border-color: rgba(255,215,0,0.9);
 }
 
 /* ========== SMOOTH TRANSITIONS ========== */
