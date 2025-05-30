@@ -70,9 +70,10 @@ public class MainController {
     private Button saveRouteButton; // Nút để lưu lộ trình hiện tại ra tệp.
     @FXML
     private Button loadRouteButton; // Nút để tải lộ trình từ tệp.    @FXML
-    private Button moveUpButton; // Nút mũi tên lên để di chuyển địa điểm lên trên
-    @FXML
+    private Button moveUpButton; // Nút mũi tên lên để di chuyển địa điểm lên trên    @FXML
     private Button moveDownButton; // Nút mũi tên xuống để di chuyển địa điểm xuống dưới
+    @FXML
+    private Button clearAllButton; // Nút xóa tất cả địa điểm
     @FXML
     private Button darkModeToggle; // Nút chuyển đổi dark mode
     @FXML
@@ -202,10 +203,11 @@ public class MainController {
                     setTooltip(tooltip);
                 }
             }
-        });
-
-        // Thêm listener để pan bản đồ khi một địa điểm được chọn trong placeListView.
+        });        // Thêm listener để pan bản đồ khi một địa điểm được chọn trong placeListView.
         placeListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            // Bật/tắt nút thêm tùy thuộc vào việc có địa điểm được chọn hay không
+            addSelectedButton.setDisable(newSelection == null);
+            
             if (newSelection != null) {
                 String geoJson = newSelection.getGeoJson();
                 double[] boundingBox = newSelection.getBoundingBox();
@@ -232,13 +234,25 @@ public class MainController {
             } else {
                 clearMapHighlight(); // Xóa highlight nếu không có địa điểm nào được chọn
             }
-        });        // Cấu hình cho TableView các địa điểm đã chọn trong lộ trình.
+        });// Cấu hình cho TableView các địa điểm đã chọn trong lộ trình.
         routePlaceNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         routePlaceAddressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
         routeTableView.setItems(currentRoutePlaces);
-        
-        // Thêm listener để pan bản đồ khi một địa điểm được chọn trong bảng lộ trình
+          // Thêm listener để bật/tắt các nút điều khiển dựa trên việc có địa điểm được chọn
         routeTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            // Bật/tắt nút xóa và các nút di chuyển tùy thuộc vào việc có địa điểm được chọn hay không
+            boolean hasSelection = newSelection != null;
+            removeSelectedButton.setDisable(!hasSelection);
+            
+            if (hasSelection) {
+                int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
+                moveUpButton.setDisable(selectedIndex <= 0); // Không thể di chuyển lên nếu là phần tử đầu tiên
+                moveDownButton.setDisable(selectedIndex >= currentRoutePlaces.size() - 1); // Không thể di chuyển xuống nếu là phần tử cuối
+            } else {
+                moveUpButton.setDisable(true);
+                moveDownButton.setDisable(true);
+            }
+            
             if (newSelection != null) {
                 String geoJson = newSelection.getGeoJson();
                 double[] boundingBox = newSelection.getBoundingBox();
@@ -278,9 +292,23 @@ public class MainController {
           // Sử dụng chính sách điều chỉnh chiều rộng của TableView (chỉ đặt một lần)
         // Thay thế CONSTRAINED_RESIZE_POLICY với cách hiện đại hơn
         routeTableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        
-        // Bắt sự kiện khi dữ liệu thay đổi để tự động điều chỉnh chiều rộng cột tên
+          // Bắt sự kiện khi dữ liệu thay đổi để tự động điều chỉnh chiều rộng cột tên
         currentRoutePlaces.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
+            boolean hasPlaces = !currentRoutePlaces.isEmpty();
+            boolean hasEnoughPlaces = currentRoutePlaces.size() >= 2;
+            
+            // Bật/tắt các nút dựa trên số lượng địa điểm
+            clearAllButton.setDisable(!hasPlaces);
+            findRouteButton.setDisable(!hasEnoughPlaces);
+            
+            // Cập nhật trạng thái nút di chuyển nếu có selection
+            Place selectedPlace = routeTableView.getSelectionModel().getSelectedItem();
+            if (selectedPlace != null) {
+                int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
+                moveUpButton.setDisable(selectedIndex <= 0);
+                moveDownButton.setDisable(selectedIndex >= currentRoutePlaces.size() - 1);
+            }
+            
             if (!currentRoutePlaces.isEmpty()) {
                 Platform.runLater(() -> {
                     // Tính toán chiều rộng tối ưu cho cột tên dựa trên nội dung hiện tại
@@ -391,10 +419,19 @@ public class MainController {
             // Set preferred and minimum height. Adjust these values as needed.
             dynamicRouteInfoScrollPane.setPrefHeight(150);
             dynamicRouteInfoScrollPane.setMinHeight(100);
-        }
-        if (dynamicRouteInfoTextArea != null) {
+        }        if (dynamicRouteInfoTextArea != null) {
             dynamicRouteInfoTextArea.setEditable(false);
-            dynamicRouteInfoTextArea.setWrapText(true);        }
+            dynamicRouteInfoTextArea.setWrapText(true);        
+        }
+        
+        // Thêm listener để tự động tắt nút thêm khi danh sách tìm kiếm trống
+        searchResults.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
+            if (searchResults.isEmpty()) {
+                addSelectedButton.setDisable(true);
+                // Đảm bảo không có gì được chọn trong placeListView
+                placeListView.getSelectionModel().clearSelection();
+            }
+        });
     }
 
     /**
@@ -522,10 +559,9 @@ public class MainController {
         if (suggestionsListView != null) {
             suggestionsListView.setVisible(false);
             suggestionsListView.setManaged(false);
-        }
-
-        if (query == null || query.trim().isEmpty()) {
+        }        if (query == null || query.trim().isEmpty()) {
             searchResults.clear(); // Xóa kết quả cũ nếu query rỗng.
+            addSelectedButton.setDisable(true); // Tắt nút thêm khi không có kết quả
             return;
         }
         try {
