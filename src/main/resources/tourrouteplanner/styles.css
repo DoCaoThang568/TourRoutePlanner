@@ -1118,3 +1118,22 @@ Dark Gray: #374151 (Gray-700) - Text
 .loading-spinner {
     -fx-animation: spin 1s linear infinite;
 }
+
+/* ========== BUTTON STATES ========== */
+.button:disabled {
+    -fx-opacity: 0.5;
+    opacity: 0.5; /* Standard CSS property */
+    -fx-background-color: #9CA3AF; /* Light Gray */
+    background-color: #9CA3AF; /* Standard CSS property */
+    -fx-cursor: default;
+    cursor: default; /* Standard CSS property */
+}
+
+.button:enabled {
+    -fx-opacity: 1;
+    opacity: 1; /* Standard CSS property */
+    -fx-background-color: #4F46E5; /* Primary Blue */
+    background-color: #4F46E5; /* Standard CSS property */
+    -fx-cursor: hand;
+    cursor: pointer; /* Standard CSS property */
+}
