@@ -33,6 +33,60 @@ Dark Gray: #374151 (Gray-700) - Text
     -fx-font-size: 14px;
 }
 
+/* ========== MENU DROPDOWN FIXES - CRITICAL ACCESSIBILITY ========== */
+.menu-bar .menu .context-menu {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(55,65,81,0.95) 0%, rgba(31,41,55,0.98) 100%);
+    -fx-border-color: rgba(255,255,255,0.2);
+    -fx-border-width: 1;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 20, 0, 0, 10);
+    -fx-padding: 8;
+    backdrop-filter: blur(15px);
+}
+
+.menu-bar .menu .menu-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-font-size: 13px;
+    -fx-padding: 10 16 10 16;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.menu-bar .menu .menu-item:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(79,70,229,0.8) 0%, rgba(67,56,202,0.8) 100%);
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.4), 8, 0, 0, 3);
+}
+
+.menu-bar .menu .menu-item:focused {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(79,70,229,0.6) 0%, rgba(67,56,202,0.6) 100%);
+    -fx-text-fill: white;
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-width: 1;
+}
+
+.menu-bar .menu .menu-item .label {
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+}
+
+.menu-bar .menu .menu-item:hover .label {
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+}
+
+/* Separator trong menu */
+.menu-bar .menu .separator {
+    -fx-background-color: rgba(255,255,255,0.2);
+    -fx-padding: 4 0 4 0;
+}
+
 .app-header {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, 
         rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
