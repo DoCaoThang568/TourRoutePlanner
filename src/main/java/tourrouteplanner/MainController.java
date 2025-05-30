@@ -77,6 +77,8 @@ public class MainController {
     @FXML
     private Button darkModeToggle; // Nút chuyển đổi dark mode
     @FXML
+    private Label routePlaceholder; // Placeholder text for route table
+    @FXML
     private ProgressIndicator loadingSpinner; // Loading spinner
     @FXML
     private javafx.scene.layout.HBox loadingContainer; // Container cho loading animation
@@ -243,6 +245,9 @@ public class MainController {
             boolean hasSelection = newSelection != null;
             removeSelectedButton.setDisable(!hasSelection);
             
+            // Cập nhật placeholder visibility
+            updateRoutePlaceholderVisibility();
+            
             if (hasSelection) {
                 int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
                 moveUpButton.setDisable(selectedIndex <= 0); // Không thể di chuyển lên nếu là phần tử đầu tiên
@@ -299,14 +304,16 @@ public class MainController {
             // Bật/tắt các nút dựa trên số lượng địa điểm
             clearAllButton.setDisable(!hasPlaces);
             findRouteButton.setDisable(!hasEnoughPlaces);
-            
-            // Cập nhật trạng thái nút di chuyển nếu có selection
+              // Cập nhật trạng thái nút di chuyển nếu có selection
             Place selectedPlace = routeTableView.getSelectionModel().getSelectedItem();
             if (selectedPlace != null) {
                 int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
                 moveUpButton.setDisable(selectedIndex <= 0);
                 moveDownButton.setDisable(selectedIndex >= currentRoutePlaces.size() - 1);
             }
+            
+            // Cập nhật placeholder visibility khi danh sách thay đổi
+            updateRoutePlaceholderVisibility();
             
             if (!currentRoutePlaces.isEmpty()) {
                 Platform.runLater(() -> {
@@ -421,14 +428,16 @@ public class MainController {
         }        if (dynamicRouteInfoTextArea != null) {
             dynamicRouteInfoTextArea.setEditable(false);
             dynamicRouteInfoTextArea.setWrapText(true);          }
-        
-        // Thêm listener để tự động tắt nút thêm khi danh sách tìm kiếm trống
+          // Thêm listener để tự động tắt nút thêm khi danh sách tìm kiếm trống
         searchResults.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
             if (searchResults.isEmpty()) {
                 // Đảm bảo không có gì được chọn trong placeListView
                 placeListView.getSelectionModel().clearSelection();
             }
         });
+        
+        // Khởi tạo trạng thái placeholder ban đầu
+        updateRoutePlaceholderVisibility();
     }
 
     /**
@@ -1279,6 +1288,19 @@ public class MainController {
                 placeListView.getScene().getRoot().getStyleClass().remove("dark-mode");
                 statusLabel.setText("☀️ Đã chuyển sang chế độ sáng");
             }
+        }
+    }
+      /**
+     * Cập nhật trạng thái hiển thị của placeholder text cho bảng route.
+     * Placeholder sẽ hiển thị khi:
+     * - Bảng không có dữ liệu (trống)
+     * Placeholder sẽ ẩn khi:
+     * - Bảng có ít nhất một địa điểm
+     */
+    private void updateRoutePlaceholderVisibility() {
+        if (routePlaceholder != null) {
+            boolean shouldShowPlaceholder = currentRoutePlaces.isEmpty();
+            routePlaceholder.setVisible(shouldShowPlaceholder);
         }
     }
 }
