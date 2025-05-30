@@ -53,7 +53,7 @@ public class MainController {
     @FXML
     private TextField searchBox; // Trường nhập liệu để tìm kiếm địa điểm.
     @FXML
-    private ListView<Place> placeListView; // Danh sách hiển thị kết quả tìm kiếm địa điểm.
+    private ListView<Place> placeListView; // Danh sách hiển thị kết quả tìm kiếm.
     @FXML
     private ListView<String> suggestionsListView; // Danh sách hiển thị gợi ý tìm kiếm.
     @FXML
@@ -77,7 +77,9 @@ public class MainController {
     @FXML
     private Button darkModeToggle; // Nút chuyển đổi dark mode
     @FXML
-    private Label routePlaceholder; // Placeholder text for route table
+    private Label searchPlaceholder; // Nhãn placeholder cho kết quả tìm kiếm.
+    @FXML
+    private Label routePlaceholder; // Nhãn placeholder cho danh sách lộ trình.
     @FXML
     private ProgressIndicator loadingSpinner; // Loading spinner
     @FXML
@@ -367,14 +369,19 @@ public class MainController {
         });
 
         // Initialize suggestions ListView
-        suggestionsListView.setItems(searchSuggestions);
+        suggestionsListView.setItems(searchSuggestions);        // Xử lý khi người dùng click vào một gợi ý
         suggestionsListView.setOnMouseClicked(event -> {
             String selectedSuggestion = suggestionsListView.getSelectionModel().getSelectedItem();
             if (selectedSuggestion != null && !selectedSuggestion.isEmpty()) {
-                searchBox.setText(selectedSuggestion);
+                // Ẩn danh sách gợi ý ngay lập tức
                 suggestionsListView.setVisible(false);
                 suggestionsListView.setManaged(false);
-                handleSearch(); // Optionally, trigger search immediately
+                
+                // Điền vào ô tìm kiếm
+                searchBox.setText(selectedSuggestion);
+                
+                // Tự động kích hoạt tìm kiếm để hiển thị kết quả chi tiết
+                handleSearch();
             }
         });
 
@@ -387,9 +394,7 @@ public class MainController {
                 Thread thread = new Thread(runnable);
                 thread.setDaemon(true);
                 return thread;
-            });
-
-            if (newValue == null || newValue.trim().length() < 3) {
+            });            if (newValue == null || newValue.trim().length() < 2) {
                 searchSuggestions.clear();
                 suggestionsListView.setVisible(false);
                 suggestionsListView.setManaged(false);
@@ -398,20 +403,24 @@ public class MainController {
 
             suggestionsScheduler.schedule(() -> {
                 fetchSearchSuggestions(newValue.trim());
-            }, 500, TimeUnit.MILLISECONDS); // 500ms debounce
-        });
-
-        // Hide suggestions when searchBox loses focus, unless focus moves to suggestionsListView
+            }, 200, TimeUnit.MILLISECONDS); // Giảm thời gian debounce xuống 200ms để phản hồi nhanh hơn
+        });        // Ẩn suggestions khi searchBox mất focus, nhưng cho phép click vào suggestions
         searchBox.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
             if (!isFocused) {
-                // Add a small delay to allow click on suggestionsListView to register
-                // This is a common trick to handle focus transfer between related controls
+                // Thêm delay để cho phép click vào suggestions hoạt động
                 Platform.runLater(() -> {
                     if (!suggestionsListView.isFocused() && !searchBox.isFocused()) { 
                         suggestionsListView.setVisible(false);
                         suggestionsListView.setManaged(false);
                     }
                 });
+            } else {
+                // Khi focus vào searchBox, hiển thị lại suggestions nếu có text phù hợp
+                String currentText = searchBox.getText();
+                if (currentText != null && currentText.length() >= 2 && !searchSuggestions.isEmpty()) {
+                    suggestionsListView.setVisible(true);
+                    suggestionsListView.setManaged(true);
+                }
             }
         });
 
@@ -427,17 +436,17 @@ public class MainController {
             dynamicRouteInfoScrollPane.setMinHeight(100);
         }        if (dynamicRouteInfoTextArea != null) {
             dynamicRouteInfoTextArea.setEditable(false);
-            dynamicRouteInfoTextArea.setWrapText(true);          }
-          // Thêm listener để tự động tắt nút thêm khi danh sách tìm kiếm trống
+            dynamicRouteInfoTextArea.setWrapText(true);          }        // Thêm listener để tự động cập nhật placeholder khi danh sách tìm kiếm thay đổi
         searchResults.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
+            updateSearchPlaceholderVisibility();
             if (searchResults.isEmpty()) {
                 // Đảm bảo không có gì được chọn trong placeListView
                 placeListView.getSelectionModel().clearSelection();
             }
         });
-        
-        // Khởi tạo trạng thái placeholder ban đầu
+          // Khởi tạo trạng thái placeholder ban đầu
         updateRoutePlaceholderVisibility();
+        updateSearchPlaceholderVisibility();
     }
 
     /**
@@ -567,11 +576,21 @@ public class MainController {
             suggestionsListView.setManaged(false);
         }        if (query == null || query.trim().isEmpty()) {
             searchResults.clear(); // Xóa kết quả cũ nếu query rỗng.
+            // Khôi phục suggestions nếu có text trong searchBox
+            String currentText = searchBox.getText();
+            if (currentText != null && !currentText.trim().isEmpty() && currentText.length() >= 2) {
+                // Không ẩn suggestions nếu vẫn có text
+            } else {
+                suggestionsListView.setVisible(false);
+                suggestionsListView.setManaged(false);
+            }
             return;
-        }
-        try {
+        }try {
             List<Place> places = routeService.searchPlaces(query);
             searchResults.setAll(places); // Cập nhật danh sách kết quả.
+            
+            // Cập nhật placeholder (sẽ được xử lý bởi listener của searchResults)
+            
             if (!places.isEmpty()) {
                 placeListView.getSelectionModel().selectFirst(); // Chọn kết quả đầu tiên.
                 // Place firstPlace = places.get(0);
@@ -650,8 +669,7 @@ public class MainController {
                         suggestionsListView.setManaged(false);
                     });
                     return;
-                }
-
+                }                // Cải thiện logic lọc gợi ý để tránh trùng lặp và hiển thị tốt hơn
                 List<String> suggestionNames = suggestedPlaces.stream()
                         .filter(place -> {
                             String placeName = place.getName();
@@ -660,16 +678,36 @@ public class MainController {
                             String normalizedPlaceInfo = Utils.normalizeForSearch(combinedInfo);
                             return normalizedPlaceInfo != null && normalizedPlaceInfo.contains(normalizedUserQuery);
                         })
+                        .sorted((p1, p2) -> {
+                            // Ưu tiên những địa điểm có tên bắt đầu giống với query
+                            String name1 = p1.getName() != null ? p1.getName().toLowerCase() : "";
+                            String name2 = p2.getName() != null ? p2.getName().toLowerCase() : "";
+                            String lowerQuery = query.toLowerCase();
+                            
+                            boolean starts1 = name1.startsWith(lowerQuery);
+                            boolean starts2 = name2.startsWith(lowerQuery);
+                            
+                            if (starts1 && !starts2) return -1;
+                            if (!starts1 && starts2) return 1;
+                            
+                            // Nếu cả hai đều bắt đầu hoặc không bắt đầu, sắp xếp theo độ dài tên
+                            return name1.length() - name2.length();
+                        })
                         .map(place -> {
                             String name = place.getName() != null ? place.getName() : "N/A";
                             String address = place.getAddress();
-                            if (address != null && !address.isEmpty() && !address.equalsIgnoreCase(name)) {
+                            
+                            // Chỉ hiển thị địa chỉ nếu nó cung cấp thông tin bổ sung có ý nghĩa
+                            if (address != null && !address.isEmpty() && 
+                                !address.equalsIgnoreCase(name) && 
+                                address.length() > 10 && // Chỉ hiển thị địa chỉ đủ dài
+                                !address.toLowerCase().equals(name.toLowerCase())) {
                                 return name + ", " + address;
                             }
                             return name;
                         })
                         .distinct()
-                        .limit(10)
+                        .limit(5) // Giảm số lượng gợi ý để tránh quá nhiều
                         .collect(Collectors.toList());
 
                 Platform.runLater(() -> {
@@ -689,7 +727,7 @@ public class MainController {
                     suggestionsListView.setManaged(false);
                 });
             }
-        }, 300, TimeUnit.MILLISECONDS);
+        }, 200, TimeUnit.MILLISECONDS); // Giảm thời gian debounce cho suggestions
     }
 
     /**
@@ -1301,6 +1339,16 @@ public class MainController {
         if (routePlaceholder != null) {
             boolean shouldShowPlaceholder = currentRoutePlaces.isEmpty();
             routePlaceholder.setVisible(shouldShowPlaceholder);
+        }
+    }
+    
+    /**
+     * Cập nhật trạng thái hiển thị của placeholder cho kết quả tìm kiếm
+     */
+    private void updateSearchPlaceholderVisibility() {
+        if (searchPlaceholder != null) {
+            boolean hasResults = !searchResults.isEmpty();            searchPlaceholder.setVisible(!hasResults);
+            searchPlaceholder.setManaged(!hasResults);
         }
     }
 }

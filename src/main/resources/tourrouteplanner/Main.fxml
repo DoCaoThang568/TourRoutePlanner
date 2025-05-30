@@ -81,10 +81,9 @@
                         <StackPane HBox.hgrow="ALWAYS">
                            <children>
                               <VBox spacing="0">
-                                 <children>
-                                    <TextField fx:id="searchBox" onAction="#handleSearch" promptText="Nhập tên địa điểm..." styleClass="search-field">
+                                 <children>                                    <TextField fx:id="searchBox" onAction="#handleSearch" promptText="Nhập tên địa điểm..." styleClass="search-field">
                                        <tooltip>
-                                          <Tooltip text="Nhập ít nhất 2 ký tự để tìm kiếm địa điểm" />
+                                          <Tooltip text="Nhập ít nhất 2 ký tự để tìm kiếm địa điểm. Gợi ý sẽ hiển thị tự động." />
                                        </tooltip>
                                     </TextField>
                                     <ListView fx:id="suggestionsListView" prefHeight="150.0" visible="false" managed="false" styleClass="suggestions-list" />

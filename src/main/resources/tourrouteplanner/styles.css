@@ -193,7 +193,7 @@ Dark Gray: #374151 (Gray-700) - Text
 }
 
 /* ========== ELEGANT LISTS ========== */
-.places-list, .suggestions-list {
+.places-list {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
         rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
     -fx-border-color: rgba(255,255,255,0.4);
@@ -202,6 +202,19 @@ Dark Gray: #374151 (Gray-700) - Text
     -fx-border-radius: 18;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 8);
     -fx-padding: 8;
+}
+
+/* Styling riêng cho suggestions list (autocomplete) */
+.suggestions-list {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(249,250,251,0.98) 0%, rgba(243,244,246,0.95) 100%);
+    -fx-border-color: rgba(209,213,219,0.6);
+    -fx-border-width: 1;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 4);
+    -fx-padding: 4;
+    -fx-max-height: 150;
 }
 
 .places-list .list-cell, .suggestions-list .list-cell {
@@ -214,7 +227,34 @@ Dark Gray: #374151 (Gray-700) - Text
     -fx-margin: 2 2 2 2;
 }
 
-.places-list .list-cell:filled:hover, .suggestions-list .list-cell:filled:hover {
+/* Styling riêng cho suggestions list cells */
+.suggestions-list .list-cell {
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-font-size: 13px;
+    -fx-text-fill: rgba(0,0,0,0.7);
+    -fx-font-weight: 400;
+}
+
+.suggestions-list .list-cell:filled:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(59,130,246,0.1) 0%, rgba(37,99,235,0.1) 100%);
+    -fx-text-fill: rgba(0,0,0,0.9);
+    -fx-scale-x: 1.01;
+    -fx-scale-y: 1.01;
+}
+
+.suggestions-list .list-cell:filled:selected {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(59,130,246,0.2) 0%, rgba(37,99,235,0.2) 100%);
+    -fx-text-fill: rgba(0,0,0,0.9);
+    -fx-font-weight: 600;
+    -fx-border-color: rgba(59,130,246,0.4);
+    -fx-border-width: 1;
+}
+
+.places-list .list-cell:filled:hover {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
         rgba(79,70,229,0.2) 0%, rgba(67,56,202,0.2) 100%);
     -fx-text-fill: rgba(0,0,0,0.9);
@@ -224,7 +264,7 @@ Dark Gray: #374151 (Gray-700) - Text
     transform: translateY(-1px);
 }
 
-.places-list .list-cell:filled:selected, .suggestions-list .list-cell:filled:selected {
+.places-list .list-cell:filled:selected {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
         rgba(79,70,229,0.4) 0%, rgba(67,56,202,0.4) 100%);
     -fx-text-fill: white;
@@ -238,7 +278,6 @@ Dark Gray: #374151 (Gray-700) - Text
     animation: pulse 2s infinite;
 }
 
-/* ========== SELECTED ITEM HIGHLIGHTING ========== */
 .places-list .list-cell:filled:selected, .suggestions-list .list-cell:filled:selected {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
         rgba(79,70,229,0.4) 0%, rgba(67,56,202,0.4) 100%);
