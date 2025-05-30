@@ -7,6 +7,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.SplitPane?>
@@ -19,6 +20,7 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
@@ -46,13 +48,20 @@
                   </items>
                 </Menu>
               </menus>
-            </MenuBar>
-            <!-- Header của ứng dụng -->
+            </MenuBar>            <!-- Header của ứng dụng -->
             <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="app-header">
                <padding>
                   <Insets bottom="15.0" left="25.0" right="25.0" top="15.0" />
                </padding>
-               <children>                  <Label styleClass="header-title" text="TOUR ROUTE PLANNER" />
+               <children>
+                  <Label styleClass="header-title" text="TOUR ROUTE PLANNER" />
+                  <!-- Spacer để đẩy dark mode toggle sang bên phải -->
+                  <Region HBox.hgrow="ALWAYS" />
+                  <Button fx:id="darkModeToggle" onAction="#toggleDarkMode" styleClass="dark-mode-toggle" text="🌙">
+                     <tooltip>
+                        <Tooltip text="Chuyển đổi chế độ tối/sáng" />
+                     </tooltip>
+                  </Button>
                </children>
             </HBox>
          </children>
@@ -67,8 +76,7 @@
                <padding>
                   <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </padding>
-               <children>                  
-                  <!-- Khu vực tìm kiếm địa điểm -->                  <Label styleClass="section-header" text="Tìm kiếm địa điểm:" /><HBox alignment="CENTER_LEFT" spacing="12.0">
+               <children>                    <!-- Khu vực tìm kiếm địa điểm -->                  <Label styleClass="section-header" text="Tìm kiếm địa điểm:" /><HBox alignment="CENTER_LEFT" spacing="12.0">
                      <children>
                         <StackPane HBox.hgrow="ALWAYS">
                            <children>
@@ -82,8 +90,18 @@
                                     <ListView fx:id="suggestionsListView" prefHeight="150.0" visible="false" managed="false" styleClass="suggestions-list" />
                                  </children>
                               </VBox>
+                              <!-- Loading animation container -->
+                              <HBox fx:id="loadingContainer" alignment="CENTER" spacing="8.0" visible="false" managed="false" styleClass="loading-container">
+                                 <children>
+                                    <javafx.scene.control.ProgressIndicator fx:id="loadingSpinner" prefHeight="20.0" prefWidth="20.0" styleClass="loading-spinner" />
+                                    <Label text="Đang tìm kiếm..." styleClass="loading-text" />
+                                 </children>
+                                 <StackPane.margin>
+                                    <Insets top="50.0" />
+                                 </StackPane.margin>
+                              </HBox>
                            </children>
-                        </StackPane>                        <Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearch" styleClass="search-button" text="Tìm kiếm">
+                        </StackPane><Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearch" styleClass="search-button" text="Tìm kiếm">
                            <tooltip>
                               <Tooltip text="Tìm kiếm địa điểm" />
                            </tooltip>

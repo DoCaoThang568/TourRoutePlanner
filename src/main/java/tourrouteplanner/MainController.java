@@ -69,11 +69,16 @@ public class MainController {
     @FXML
     private Button saveRouteButton; // Nút để lưu lộ trình hiện tại ra tệp.
     @FXML
-    private Button loadRouteButton; // Nút để tải lộ trình từ tệp.
-    @FXML
+    private Button loadRouteButton; // Nút để tải lộ trình từ tệp.    @FXML
     private Button moveUpButton; // Nút mũi tên lên để di chuyển địa điểm lên trên
     @FXML
     private Button moveDownButton; // Nút mũi tên xuống để di chuyển địa điểm xuống dưới
+    @FXML
+    private Button darkModeToggle; // Nút chuyển đổi dark mode
+    @FXML
+    private ProgressIndicator loadingSpinner; // Loading spinner
+    @FXML
+    private javafx.scene.layout.HBox loadingContainer; // Container cho loading animation
     // @FXML private Label totalDistanceLabel; // Removed field
 
     @FXML
@@ -93,11 +98,12 @@ public class MainController {
     // Dịch vụ xử lý logic tìm kiếm địa điểm và lộ trình.
     private RouteService routeService;
     // Dịch vụ xử lý logic lưu và tải lộ trình.
-    private StorageService storageService;
-
-    // Timer for debouncing search suggestions
+    private StorageService storageService;    // Timer for debouncing search suggestions
     private ScheduledExecutorService suggestionsScheduler;
     private final ObservableList<String> searchSuggestions = FXCollections.observableArrayList();
+
+    // Dark mode state
+    private boolean isDarkMode = false;
 
     // Các thành phần của JxBrowser để hiển thị bản đồ.
     private Engine engine;
@@ -1277,6 +1283,27 @@ public class MainController {
         } else if (selectedIndex == currentRoutePlaces.size() - 1) {
             // Thông báo nếu không thể di chuyển xuống (đã ở cuối danh sách)
             statusLabel.setText("Địa điểm này đã ở vị trí cuối cùng trong lộ trình.");
+        }
+    }
+
+    /**
+     * Xử lý sự kiện khi người dùng nhấn nút toggle dark mode.
+     * Chuyển đổi giữa chế độ sáng và chế độ tối.
+     */
+    @FXML
+    private void toggleDarkMode() {
+        isDarkMode = !isDarkMode;
+        
+        // Lấy root node của scene
+        if (placeListView.getScene() != null && placeListView.getScene().getRoot() != null) {
+            // Thêm hoặc xóa class "dark-mode" từ root node
+            if (isDarkMode) {
+                placeListView.getScene().getRoot().getStyleClass().add("dark-mode");
+                statusLabel.setText("🌙 Đã chuyển sang chế độ tối");
+            } else {
+                placeListView.getScene().getRoot().getStyleClass().remove("dark-mode");
+                statusLabel.setText("☀️ Đã chuyển sang chế độ sáng");
+            }
         }
     }
 }
