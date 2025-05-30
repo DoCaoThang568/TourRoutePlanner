@@ -21,6 +21,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.BorderPane; // Added import
 import javafx.scene.control.ScrollPane; // Added import
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import tourrouteplanner.model.Place;
 import tourrouteplanner.model.Route;
 import tourrouteplanner.service.RouteService;
@@ -60,8 +62,6 @@ public class MainController {
     private TableColumn<Place, String> routePlaceNameColumn; // Cột tên địa điểm trong bảng lộ trình.
     @FXML
     private TableColumn<Place, String> routePlaceAddressColumn; // Cột địa chỉ trong bảng lộ trình.
-    @FXML
-    private Button addSelectedButton; // Nút để thêm địa điểm được chọn từ danh sách kết quả vào lộ trình.
     @FXML
     private Button removeSelectedButton; // Nút để xóa địa điểm được chọn từ bảng lộ trình.
     @FXML
@@ -139,20 +139,48 @@ public class MainController {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true); // Allow application to exit even if this thread is running
             return thread;
-        });
-
-        // Thiết lập ListView cho kết quả tìm kiếm địa điểm.
+        });        // Thiết lập ListView cho kết quả tìm kiếm địa điểm.
         placeListView.setItems(searchResults);
         placeListView.setCellFactory(param -> new ListCell<Place>() {
-            private final Label label = new Label();
+            private Button addButton;
+            private HBox hbox;
+            private VBox vbox;
+            private Label nameLabel;
+            private Label addressLabel;
             private final Tooltip tooltip = new Tooltip();
 
             { // Instance initializer block for the ListCell
-                label.setWrapText(true);
-                // Bind the label's preferred width to the cell's width minus some padding
-                // This allows the label to resize and wrap text correctly.
-                label.prefWidthProperty().bind(this.widthProperty().subtract(15)); // e.g., 15 for padding
-                this.setPrefWidth(0); // Allow the cell to shrink or grow as needed by content and listview width
+                // Tạo các UI components
+                addButton = new Button("Thêm");
+                addButton.getStyleClass().add("place-add-button");                addButton.setOnAction(event -> {
+                    Place place = getItem();
+                    if (place != null && !currentRoutePlaces.contains(place)) {
+                        currentRoutePlaces.add(place);
+                        addMapMarker(place.getName(), place.getLatitude(), place.getLongitude(), place.getAddress());
+                        statusLabel.setText("Đã thêm: " + place.getName());
+                        // Refresh the ListView to update button states
+                        placeListView.refresh();
+                    }
+                });
+
+                nameLabel = new Label();
+                nameLabel.getStyleClass().add("place-name");
+                nameLabel.setWrapText(true);
+                
+                addressLabel = new Label();
+                addressLabel.getStyleClass().add("place-address");
+                addressLabel.setWrapText(true);
+
+                vbox = new VBox(2);
+                vbox.getChildren().addAll(nameLabel, addressLabel);
+                vbox.setMaxWidth(Double.MAX_VALUE);
+
+                hbox = new HBox(10);
+                hbox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                hbox.getChildren().addAll(vbox, addButton);
+                
+                // Make vbox grow to fill available space
+                javafx.scene.layout.HBox.setHgrow(vbox, javafx.scene.layout.Priority.ALWAYS);
             }
 
             @Override
@@ -163,51 +191,22 @@ public class MainController {
                     setTooltip(null);
                     setGraphic(null);
                 } else {
-                    String displayText = item.getName();
+                    nameLabel.setText(item.getName());
                     String address = item.getAddress();
-
-                    // Consolidate and simplify displayText logic
-                    if (address != null && !address.isEmpty() && !address.equalsIgnoreCase(item.getName())) {
-                        String lowerCaseName = item.getName().toLowerCase(Locale.ROOT);
-                        String lowerCaseAddress = address.toLowerCase(Locale.ROOT);
-                        
-                        if (lowerCaseAddress.contains(lowerCaseName)) { // If name is part of address
-                            // If address is significantly longer, prefer address
-                            if (address.length() > item.getName().length() + 10) { 
-                                displayText = address;
-                            } else { // Otherwise, try to append distinct part of address to name
-                                String remainingAddress = address;
-                                // Attempt to remove the name part from address if it's a prefix or clearly contained
-                                if (lowerCaseAddress.startsWith(lowerCaseName)) {
-                                    remainingAddress = address.substring(item.getName().length());
-                                    if (remainingAddress.startsWith(",")) remainingAddress = remainingAddress.substring(1);
-                                    remainingAddress = remainingAddress.trim();
-                                }
-                                // If a distinct part of the address remains, append it
-                                if (!remainingAddress.isEmpty() && !lowerCaseName.equals(remainingAddress.toLowerCase(Locale.ROOT)) && !item.getName().equals(remainingAddress)) {
-                                    displayText = item.getName() + ", " + remainingAddress;
-                                } else {
-                                    displayText = item.getName(); // Default to name if address part is not distinct enough
-                                }
-                            }
-                        } else { // Name and address are distinct
-                            displayText = item.getName() + " - " + address;
-                        }
-                    }
+                    addressLabel.setText(address != null ? address : "");
                     
-                    label.setText(displayText);
-                    setGraphic(label); // Use the label as the graphic content of the cell
-                    setText(null); // Clear direct text setting for the cell
+                    // Disable button if place is already in route
+                    addButton.setDisable(currentRoutePlaces.contains(item));
                     
-                    tooltip.setText(item.getName() + "\\n" + (item.getAddress() != null ? item.getAddress() : ""));
+                    setGraphic(hbox);
+                    setText(null);
+                    
+                    tooltip.setText(item.getName() + "\n" + (address != null ? address : ""));
                     setTooltip(tooltip);
                 }
             }
         });        // Thêm listener để pan bản đồ khi một địa điểm được chọn trong placeListView.
         placeListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            // Bật/tắt nút thêm tùy thuộc vào việc có địa điểm được chọn hay không
-            addSelectedButton.setDisable(newSelection == null);
-            
             if (newSelection != null) {
                 String geoJson = newSelection.getGeoJson();
                 double[] boundingBox = newSelection.getBoundingBox();
@@ -421,13 +420,11 @@ public class MainController {
             dynamicRouteInfoScrollPane.setMinHeight(100);
         }        if (dynamicRouteInfoTextArea != null) {
             dynamicRouteInfoTextArea.setEditable(false);
-            dynamicRouteInfoTextArea.setWrapText(true);        
-        }
+            dynamicRouteInfoTextArea.setWrapText(true);          }
         
         // Thêm listener để tự động tắt nút thêm khi danh sách tìm kiếm trống
         searchResults.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
             if (searchResults.isEmpty()) {
-                addSelectedButton.setDisable(true);
                 // Đảm bảo không có gì được chọn trong placeListView
                 placeListView.getSelectionModel().clearSelection();
             }
@@ -561,7 +558,6 @@ public class MainController {
             suggestionsListView.setManaged(false);
         }        if (query == null || query.trim().isEmpty()) {
             searchResults.clear(); // Xóa kết quả cũ nếu query rỗng.
-            addSelectedButton.setDisable(true); // Tắt nút thêm khi không có kết quả
             return;
         }
         try {
@@ -717,71 +713,14 @@ public class MainController {
                 maxWidth = width;
             }
         }
-        
-        // Thêm một khoảng trống cho thanh cuộn
+          // Thêm một khoảng trống cho thanh cuộn
         return maxWidth + 20;
-    }
-
-    /**
-     * Xử lý sự kiện thêm địa điểm được chọn từ placeListView vào routeTableView.
-     * Thêm marker cho địa điểm mới trên bản đồ.
-     */    @FXML
-    private void handleAddSelected() {
-        Place selectedPlace = placeListView.getSelectionModel().getSelectedItem();
-        if (selectedPlace != null && !currentRoutePlaces.contains(selectedPlace)) {
-            // Tạo bản sao của selectedPlace để đảm bảo các trường đều có giá trị hợp lệ
-            String name = selectedPlace.getName();
-            String address = selectedPlace.getAddress();
-            
-            // Đảm bảo địa chỉ không bị null
-            if (address == null || address.trim().isEmpty()) {
-                String displayName = name;
-                if (displayName != null && displayName.contains(",")) {
-                    int firstCommaIndex = displayName.indexOf(",");
-                    if (firstCommaIndex > 0) {
-                        name = displayName.substring(0, firstCommaIndex).trim();
-                        address = displayName.substring(firstCommaIndex + 1).trim();
-                    } else {
-                        address = "Việt Nam"; // Giá trị mặc định
-                    }
-                } else {
-                    address = "Việt Nam"; // Giá trị mặc định
-                }
-            }
-            
-            // In thông tin cho việc debug
-            System.out.println("DEBUG - Thêm địa điểm: name=" + name + ", address=" + address);
-            
-            // Tạo đối tượng Place mới với các giá trị đã được xử lý
-            Place enhancedPlace = new Place(
-                selectedPlace.getPlaceId(),
-                name,
-                selectedPlace.getLatitude(),
-                selectedPlace.getLongitude(),
-                address,
-                selectedPlace.getBoundingBox(),
-                selectedPlace.getGeoJson(),
-                selectedPlace.getImportance()
-            );
-            
-            // Thêm vào danh sách lộ trình
-            currentRoutePlaces.add(enhancedPlace);
-            
-            // Đảm bảo UI được cập nhật
-            Platform.runLater(() -> {
-                routeTableView.refresh();
-            });
-            
-            // Thêm marker trên bản đồ cho địa điểm vừa thêm
-            addMapMarker(enhancedPlace.getName(), enhancedPlace.getLatitude(), 
-                         enhancedPlace.getLongitude(), enhancedPlace.getAddress());
-        }
     }
 
     /**
      * Xử lý sự kiện xóa địa điểm được chọn từ routeTableView.
      * Xóa marker tương ứng và cập nhật lại lộ trình trên bản đồ.
-     */    @FXML
+     */@FXML
     private void handleRemoveSelected() {
         // Lấy địa điểm được chọn từ bảng các điểm trong lộ trình.
         Place selectedRoutePlace = routeTableView.getSelectionModel().getSelectedItem();

@@ -101,7 +101,7 @@
                                  </StackPane.margin>
                               </HBox>
                            </children>
-                        </StackPane><Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearch" styleClass="search-button" text="Tìm kiếm">
+                        </StackPane>                        <Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearch" styleClass="search-button" text="Tìm kiếm">
                            <tooltip>
                               <Tooltip text="Tìm kiếm địa điểm" />
                            </tooltip>
@@ -109,17 +109,6 @@
                               <ImageView fitHeight="18.0" fitWidth="18.0">
                                  <image>
                                     <Image url="@/tourrouteplanner/icons/search.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </Button>                        <Button fx:id="addSelectedButton" mnemonicParsing="false" onAction="#handleAddSelected" styleClass="add-button" disable="true">
-                           <tooltip>
-                              <Tooltip text="Thêm địa điểm đã chọn vào lộ trình" />
-                           </tooltip>
-                           <graphic>
-                              <ImageView fitHeight="18.0" fitWidth="18.0">
-                                 <image>
-                                    <Image url="@/tourrouteplanner/icons/add.png" />
                                  </image>
                               </ImageView>
                            </graphic>
