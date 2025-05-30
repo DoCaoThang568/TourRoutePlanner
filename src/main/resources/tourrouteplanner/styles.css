@@ -1,171 +1,498 @@
-﻿/* General Styles */
+﻿/* ========== GENERAL STYLES ========== */
 .root {
-    -fx-background-color: #f8fafc;
-    -fx-font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-    -fx-font-size: 15px;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #667eea 0%, #764ba2 100%);
+    -fx-font-family: 'Inter', 'Segoe UI', 'SF Pro Display', 'Roboto', sans-serif;
+    -fx-font-size: 14px;
 }
 
-/* Header and Menu Bar */
-.menu-bar, .app-header {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #2563eb 0%, #60a5fa 100%);
+/* ========== HEADER AND MENU BAR ========== */
+.menu-bar {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, 
+        rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%);
+    -fx-border-color: rgba(255,255,255,0.3);
+    -fx-border-width: 0 0 1 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5);
+    -fx-padding: 8 0 8 0;
+    backdrop-filter: blur(20px);
+}
+
+.menu-bar .menu .label {
     -fx-text-fill: white;
-    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 8, 0, 0, 4);
-    -fx-padding: 12 0 12 24;
-    -fx-border-radius: 0 0 18 18;
+    -fx-font-weight: 600;
+    -fx-font-size: 14px;
+}
+
+.app-header {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, 
+        rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
+    -fx-border-color: rgba(255,255,255,0.2);
+    -fx-border-width: 0 0 1 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 20, 0, 0, 5);
+    -fx-padding: 20 25 20 25;
 }
 
 .header-title {
     -fx-text-fill: white;
-    -fx-font-size: 26px;
-    -fx-font-weight: bold;
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 2, 2);
+    letter-spacing: 1px;
 }
 
-/* Side Panel */
+/* ========== GLASS MORPHISM SIDE PANEL ========== */
 .side-panel {
-    -fx-background-color: #fff;
-    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 12, 0, 0, 4);
-    -fx-background-radius: 18;
-    -fx-padding: 28 24 24 24;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%);
+    -fx-border-color: rgba(255,255,255,0.3);
+    -fx-border-width: 1;
+    -fx-background-radius: 25;
+    -fx-border-radius: 25;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 25, 0, 0, 10);
+    -fx-padding: 30 25 25 25;
+    backdrop-filter: blur(20px);
 }
 
 .section-header {
-    -fx-font-weight: bold;
-    -fx-font-size: 18px;
-    -fx-text-fill: #2563eb;
-    -fx-border-color: transparent transparent #e5e7eb transparent;
-    -fx-border-width: 0 0 2 0;
-    -fx-padding: 0 0 12 0;
-}
-
-/* Form Elements (Search) */
-.search-field {
-    -fx-background-radius: 24;
-    -fx-border-radius: 24;
-    -fx-border-color: #e5e7eb;
-    -fx-padding: 10 18 10 18;
-    -fx-background-color: #f8fafc;
-    -fx-prompt-text-fill: #6b7280;
-}
-
-/* List Styles (Places List) */
-.places-list {
-    -fx-background-radius: 10;
-    -fx-border-radius: 10;
-    -fx-border-color: #e5e7eb;
-    -fx-background-color: #f8fafc;
-    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 4, 0, 0, 1);
-}
-
-.places-list .list-cell {
-    -fx-padding: 10 14 10 14;
-    -fx-background-radius: 8;
-    -fx-border-width: 0 0 1 0;
-    -fx-border-color: transparent transparent #e5e7eb transparent;
-}
-.places-list .list-cell:filled:selected {
-    -fx-background-color: #60a5fa;
-    -fx-text-fill: #1e40af;
-    -fx-font-weight: bold;
-    -fx-border-color: #2563eb;
-    -fx-border-width: 0 0 0 4;
-}
-
-/* Hiệu ứng khi di chuột qua một mục trong danh sách kết quả tìm kiếm */
-.places-list .list-cell:filled:hover {
-    -fx-background-color: #dbeafe; /* Màu nền nhạt hơn khi hover */
-    -fx-text-fill: #1e3a8a; /* Màu chữ đậm hơn một chút khi hover */
-}
-
-/* Button Styles */
-.button {
-    -fx-background-radius: 24;
-    -fx-border-radius: 24;
-    -fx-padding: 10 22;
-    -fx-cursor: hand;
-    -fx-background-color: #2563eb;
-    -fx-text-fill: white;
-    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 4, 0, 0, 2);
-    -fx-font-weight: bold;
-    -fx-border-width: 0;
-}
-
-/* Kiểu riêng cho các nút hành động (ví dụ: nút chỉ có icon) */
-.action-button {
-    -fx-padding: 8px; /* Điều chỉnh padding cho nút chỉ chứa icon */
-}
-
-.find-route-button {
-    -fx-background-color: #22c55e;
-    -fx-text-fill: white;
+    -fx-font-weight: 700;
     -fx-font-size: 16px;
-    -fx-font-weight: bold;
-    -fx-background-radius: 24;
-    -fx-border-radius: 24;
-    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 6, 0, 0, 3);
-    -fx-padding: 12 28;
-    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 1, 1);
+    -fx-padding: 0 0 15 0;
+    -fx-border-color: transparent transparent rgba(255,255,255,0.3) transparent;
+    -fx-border-width: 0 0 2 0;
 }
-.find-route-button:hover {
-    -fx-background-color: #86efac;
-    -fx-scale-x: 1.04;
-    -fx-scale-y: 1.04;
+
+/* ========== MODERN FORM ELEMENTS ========== */
+.search-field {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+    -fx-border-color: rgba(255,255,255,0.5);
+    -fx-border-width: 2;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-padding: 15 20 15 20;
+    -fx-prompt-text-fill: rgba(0,0,0,0.6);
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 5);
+}
+
+.search-field:focused {
+    -fx-border-color: rgba(255,255,255,0.8);
+    -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 15, 0, 0, 5);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+/* ========== ELEGANT LISTS ========== */
+.places-list, .suggestions-list {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-width: 1;
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 8);
+    -fx-padding: 8;
+}
+
+.places-list .list-cell, .suggestions-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 12 16 12 16;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-text-fill: rgba(0,0,0,0.8);
+    -fx-font-weight: 500;
+    -fx-margin: 2 2 2 2;
+}
+
+.places-list .list-cell:filled:hover, .suggestions-list .list-cell:filled:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.2) 100%);
+    -fx-text-fill: rgba(0,0,0,0.9);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+    -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.3), 8, 0, 0, 3);
+}
+
+.places-list .list-cell:filled:selected, .suggestions-list .list-cell:filled:selected {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.4) 0%, rgba(118,75,162,0.4) 100%);
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.5), 12, 0, 0, 5);
+}
+
+/* ========== PREMIUM BUTTON STYLES ========== */
+.button {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.9) 0%, rgba(118,75,162,0.9) 100%);
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-padding: 12 20 12 20;
     -fx-cursor: hand;
+    -fx-border-color: rgba(255,255,255,0.3);
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0, 0, 6);
 }
 
 .button:hover {
-    -fx-background-color: #60a5fa;
-    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.12), 8, 0, 0, 2);
-    -fx-scale-x: 1.03;
-    -fx-scale-y: 1.03;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,1.0) 0%, rgba(118,75,162,1.0) 100%);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 20, 0, 0, 8);
 }
 
-/* Route Info Display */
-.route-info-container {
-    -fx-background-color: #fff;
-    -fx-border-color: #e5e7eb;
-    -fx-border-radius: 12;
+.button:pressed {
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* Special Action Buttons */
+.action-button {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(34,197,94,0.9) 0%, rgba(16,185,129,0.9) 100%);
+    -fx-padding: 10 10 10 10;
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+}
+
+.action-button:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(34,197,94,1.0) 0%, rgba(16,185,129,1.0) 100%);
+    -fx-effect: dropshadow(gaussian, rgba(34,197,94,0.5), 15, 0, 0, 6);
+}
+
+/* Premium Find Route Button */
+.find-route-button {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(251,146,60,0.95) 0%, rgba(249,115,22,0.95) 100%);
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 25;
+    -fx-border-radius: 25;
+    -fx-padding: 15 30 15 30;
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(249,115,22,0.4), 20, 0, 0, 8);
+}
+
+.find-route-button:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(251,146,60,1.0) 0%, rgba(249,115,22,1.0) 100%);
+    -fx-scale-x: 1.08;
+    -fx-scale-y: 1.08;
+    -fx-effect: dropshadow(gaussian, rgba(249,115,22,0.6), 25, 0, 0, 10);
+}
+
+/* Remove and Clear Buttons */
+.remove-button, .clear-button {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(239,68,68,0.9) 0%, rgba(220,38,38,0.9) 100%);
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-border-color: rgba(255,255,255,0.3);
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.3), 12, 0, 0, 6);
+}
+
+.remove-button:hover, .clear-button:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(239,68,68,1.0) 0%, rgba(220,38,38,1.0) 100%);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.5), 18, 0, 0, 8);
+}
+
+/* Move Buttons */
+.move-button {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(168,85,247,0.9) 0%, rgba(147,51,234,0.9) 100%);
     -fx-background-radius: 12;
-    -fx-effect: dropshadow(three-pass-box, rgba(30,64,175,0.08), 4, 0, 0, 1);
-    -fx-padding: 16;
+    -fx-border-radius: 12;
+    -fx-padding: 8 8 8 8;
+    -fx-border-color: rgba(255,255,255,0.3);
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(168,85,247,0.3), 10, 0, 0, 5);
+}
+
+.move-button:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(168,85,247,1.0) 0%, rgba(147,51,234,1.0) 100%);
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+    -fx-effect: dropshadow(gaussian, rgba(168,85,247,0.5), 15, 0, 0, 7);
+}
+
+/* ========== ELEGANT TABLE STYLES ========== */
+.route-table {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-width: 1;
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 8);
+}
+
+.route-table .column-header-background {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.8) 0%, rgba(118,75,162,0.8) 100%);
+    -fx-background-radius: 15 15 0 0;
+}
+
+.route-table .column-header {
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-font-size: 13px;
+    -fx-padding: 12 8 12 8;
+}
+
+.route-table .table-row-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 8 0 8 0;
+}
+
+.route-table .table-row-cell:selected {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.3) 0%, rgba(118,75,162,0.3) 100%);
+    -fx-text-fill: rgba(0,0,0,0.9);
+}
+
+.route-table .table-row-cell:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
+}
+
+.route-table .table-cell {
+    -fx-padding: 10 12 10 12;
+    -fx-font-weight: 500;
+    -fx-text-fill: rgba(0,0,0,0.8);
+}
+
+/* ========== PREMIUM ROUTE INFO DISPLAY ========== */
+.route-info-container {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-width: 1;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 8);
+    -fx-padding: 20;
 }
 
 .route-info {
-    -fx-font-family: 'Segoe UI', Arial, sans-serif;
-    -fx-font-size: 15px;
-    -fx-background-color: #f8fafc;
+    -fx-background-color: transparent;
+    -fx-text-fill: rgba(0,0,0,0.85);
+    -fx-font-family: 'Inter', 'Segoe UI', monospace;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
     -fx-border-color: transparent;
-    -fx-background-radius: 8;
-    -fx-padding: 8;
-    -fx-text-fill: #22223b;
+    -fx-background-radius: 15;
+    -fx-padding: 15;
 }
 
-/* Map Container */
-.map-container {
-    -fx-border-color: #e5e7eb;
-    -fx-border-width: 2;
-    -fx-background-color: #fff;
-    -fx-background-radius: 18;
+/* ========== SPLIT PANE ENHANCEMENTS ========== */
+.main-split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 10;
 }
 
-/* Status Bar */
+.main-split-pane .split-pane-divider {
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, 
+        rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+    -fx-padding: 0 2 0 2;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+/* ========== STATUS BAR MODERN DESIGN ========== */
 .status-bar {
-    -fx-background-color: #1e40af;
-    -fx-padding: 8 20;
-    -fx-background-radius: 0 0 12 12;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, 
+        rgba(30,64,175,0.9) 0%, rgba(59,130,246,0.9) 100%);
+    -fx-border-color: rgba(255,255,255,0.2);
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 12 20 12 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, -3);
 }
 
 .status-text {
-    -fx-text-fill: #fff;
+    -fx-text-fill: white;
     -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0, 1, 1);
 }
 
-/* Split Pane */
-.split-pane {
+/* ========== ADVANCED ANIMATIONS & TRANSITIONS ========== */
+.button, .action-button, .find-route-button, .remove-button, .clear-button, .move-button {
+    -fx-transition: all 0.3s ease;
+}
+
+.search-field {
+    -fx-transition: all 0.2s ease;
+}
+
+.places-list .list-cell, .suggestions-list .list-cell {
+    -fx-transition: all 0.2s ease;
+}
+
+.route-table .table-row-cell {
+    -fx-transition: background-color 0.2s ease;
+}
+
+/* ========== SCROLL BAR STYLING ========== */
+.scroll-bar {
     -fx-background-color: transparent;
-    -fx-padding: 0;
 }
 
-.split-pane-divider {
-    -fx-background-color: #e5e7eb;
-    -fx-padding: 0 1;
+.scroll-bar .track {
+    -fx-background-color: rgba(255,255,255,0.1);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.6) 0%, rgba(118,75,162,0.6) 100%);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.8) 0%, rgba(118,75,162,0.8) 100%);
+}
+
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+}
+
+/* ========== MENU IMPROVEMENTS ========== */
+.context-menu {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-width: 1;
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0, 0, 10);
+    backdrop-filter: blur(15px);
+}
+
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-padding: 8 15 8 15;
+    -fx-text-fill: rgba(0,0,0,0.8);
+    -fx-font-weight: 500;
+}
+
+.menu-item:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.2) 100%);
+    -fx-background-radius: 10;
+    -fx-text-fill: rgba(0,0,0,0.9);
+}
+
+/* ========== TOOLTIP STYLING ========== */
+.tooltip {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(0,0,0,0.9) 0%, rgba(30,41,59,0.9) 100%);
+    -fx-text-fill: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 8 12 8 12;
+    -fx-font-size: 12px;
+    -fx-font-weight: 500;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 15, 0, 0, 5);
+}
+
+/* ========== FOCUS INDICATORS ========== */
+.button:focused {
+    -fx-border-color: rgba(102,126,234,0.6);
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 15, 0, 0, 5);
+}
+
+.search-field:focused {
+    -fx-border-color: rgba(102,126,234,0.8);
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.3), 15, 0, 0, 5);
+}
+
+/* ========== LOADING ANIMATIONS ========== */
+@keyframes pulse {
+    0% { -fx-scale-x: 1.0; -fx-scale-y: 1.0; }
+    50% { -fx-scale-x: 1.05; -fx-scale-y: 1.05; }
+    100% { -fx-scale-x: 1.0; -fx-scale-y: 1.0; }
+}
+
+.loading {
+    -fx-animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* ========== RESPONSIVE LAYOUT IMPROVEMENTS ========== */
+.side-panel {
+    -fx-min-width: 320px;
+    -fx-max-width: 450px;
+}
+
+/* ========== CUSTOM SELECTION STYLING ========== */
+.list-view:focused .list-cell:filled:selected {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.5) 0%, rgba(118,75,162,0.5) 100%);
+    -fx-text-fill: white;
+}
+
+.table-view:focused .table-row-cell:selected {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(102,126,234,0.4) 0%, rgba(118,75,162,0.4) 100%);
+}
+
+/* ========== GLASS MORPHISM EFFECTS ========== */
+.glass-panel {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
+    -fx-border-color: rgba(255,255,255,0.3);
+    -fx-border-width: 1;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 8);
+    backdrop-filter: blur(20px);
+}
+
+/* ========== FINAL POLISH ========== */
+.button:disabled {
+    -fx-opacity: 0.6;
+    -fx-cursor: default;
+}
+
+.button:disabled:hover {
+    -fx-scale-x: 1.0;
+    -fx-scale-y: 1.0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 4);
+}
+
+/* Ensure crisp text rendering */
+.label, .text, .button .text {
+    -fx-font-smoothing-type: lcd;
+}
+
+/* ========== MAP CONTAINER STYLING ========== */
+.map-container {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-width: 2;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 20, 0, 0, 10);
+    backdrop-filter: blur(15px);
 }

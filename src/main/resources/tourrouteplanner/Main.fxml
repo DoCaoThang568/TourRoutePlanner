@@ -217,17 +217,16 @@
                   <!-- Nút tìm lộ trình tối ưu đã được di chuyển -->
                   <!-- Khu vực hiển thị thông tin lộ trình đã được xóa -->
                </children>
-            </VBox>
-            <!-- Panel bên phải: Chứa bản đồ và các control mới -->
-            <BorderPane fx:id="mapAndControlsPane">
+            </VBox>            <!-- Panel bên phải: Chứa bản đồ và các control mới -->
+            <BorderPane fx:id="mapAndControlsPane" styleClass="glass-panel">
                <center>
                   <!-- StackPane để chứa trình duyệt JxBrowser hiển thị bản đồ -->
-                  <StackPane fx:id="mapPane" BorderPane.alignment="CENTER" />
+                  <StackPane fx:id="mapPane" BorderPane.alignment="CENTER" styleClass="map-container" />
                </center>
                <bottom>
-                  <VBox alignment="TOP_CENTER" spacing="10.0" BorderPane.alignment="CENTER">
+                  <VBox alignment="TOP_CENTER" spacing="15.0" BorderPane.alignment="CENTER" styleClass="glass-panel">
                      <padding>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                      </padding>
                      <children>
                         <HBox alignment="CENTER">
