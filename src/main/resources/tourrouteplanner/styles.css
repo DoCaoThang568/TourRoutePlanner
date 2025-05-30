@@ -748,6 +748,32 @@ Dark Gray: #374151 (Gray-700) - Text
     -fx-padding: 15;
 }
 
+/* Direct styling for TextArea in route information panel */
+.dark-mode .route-info-container .text-area {
+    -fx-background-color: #1a1a2e;
+    background-color: #1a1a2e;
+    -fx-control-inner-background: #1a1a2e;
+    -fx-text-fill: white;
+    color: white;
+}
+
+/* Handle TextArea content and viewport for proper background color */
+.dark-mode .route-info-container .text-area .content {
+    -fx-background-color: #1a1a2e;
+    background-color: #1a1a2e;
+}
+
+.dark-mode .route-info-container .text-area .viewport {
+    -fx-background-color: #1a1a2e;
+    background-color: #1a1a2e;
+}
+
+/* Ensure ScrollPane viewport is also properly colored */
+.dark-mode .route-info-container > .viewport {
+    -fx-background-color: #1a1a2e;
+    background-color: #1a1a2e;
+}
+
 /* ========== SPLIT PANE ENHANCEMENTS ========== */
 .main-split-pane {
     -fx-background-color: transparent;
@@ -1001,13 +1027,21 @@ Dark Gray: #374151 (Gray-700) - Text
 }
 
 .dark-mode .route-info-container {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
-        rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.2) 100%);
-    -fx-border-color: rgba(255,255,255,0.2);
+    -fx-background-color: #1a1a2e; /* Very dark blue-purple */
+    background-color: #1a1a2e; /* Standard CSS fallback */
+    -fx-border-color: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.3); /* Standard CSS property */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 15, 0, 0, 8);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.4); /* Standard CSS property */
 }
 
 .dark-mode .route-info {
-    -fx-text-fill: rgba(255,255,255,0.85);
+    -fx-text-fill: rgba(255,255,255,0.95);
+    color: rgba(255,255,255,0.95); /* Standard CSS property */
+    -fx-background-color: #1a1a2e; /* Match container background */
+    background-color: #1a1a2e; /* Standard CSS property */
+    -fx-font-weight: 500;
+    font-weight: 500; /* Standard CSS property */
 }
 
 /* ========== DARK MODE TOGGLE BUTTON ========== */
