@@ -52,12 +52,7 @@
                <padding>
                   <Insets bottom="15.0" left="25.0" right="25.0" top="15.0" />
                </padding>
-               <children>
-                  <Label styleClass="header-title" text="TOUR ROUTE PLANNER">
-                     <font>
-                        <Font name="System Bold" size="22.0" />
-                     </font>
-                  </Label>
+               <children>                  <Label styleClass="header-title" text="TOUR ROUTE PLANNER" />
                </children>
             </HBox>
          </children>
@@ -73,12 +68,7 @@
                   <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </padding>
                <children>                  
-                  <!-- Khu vực tìm kiếm địa điểm -->
-                  <Label styleClass="section-header" text="Tìm kiếm địa điểm:">
-                     <font>
-                        <Font name="System Bold" size="16.0" />
-                     </font>
-                  </Label>                  <HBox alignment="CENTER_LEFT" spacing="12.0">
+                  <!-- Khu vực tìm kiếm địa điểm -->                  <Label styleClass="section-header" text="Tìm kiếm địa điểm:" /><HBox alignment="CENTER_LEFT" spacing="12.0">
                      <children>
                         <StackPane HBox.hgrow="ALWAYS">
                            <children>
@@ -121,15 +111,7 @@
                         <Insets bottom="15.0" />
                      </VBox.margin>
                   </HBox>
-                  <!-- Khu vực hiển thị kết quả tìm kiếm -->
-                  <Label styleClass="section-header" text="Kết quả tìm kiếm:">
-                     <font>
-                        <Font name="System Bold" size="16.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets top="10.0" />
-                     </VBox.margin>
-                  </Label>                  <StackPane fx:id="searchResultsContainer" prefHeight="200.0" VBox.vgrow="SOMETIMES">
+                  <!-- Khu vực hiển thị kết quả tìm kiếm -->                  <Label styleClass="section-header" text="Kết quả tìm kiếm:" /><StackPane fx:id="searchResultsContainer" prefHeight="200.0" VBox.vgrow="SOMETIMES">
                      <children>
                         <ListView fx:id="placeListView" styleClass="places-list" />
                         <Label fx:id="searchPlaceholder" text="Kết quả tìm kiếm sẽ hiển thị ở đây" styleClass="placeholder-text" visible="true" mouseTransparent="true" />
@@ -139,15 +121,7 @@
                      </VBox.margin>
                   </StackPane>
 
-                  <!-- Khu vực hiển thị các điểm đã chọn trong lộ trình -->
-                  <Label styleClass="section-header" text="Các điểm đã chọn trong lộ trình:">
-                     <font>
-                        <Font name="System Bold" size="16.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets top="10.0" />
-                     </VBox.margin>
-                  </Label>                  <StackPane fx:id="routeTableContainer" prefHeight="250.0" VBox.vgrow="SOMETIMES">
+                  <!-- Khu vực hiển thị các điểm đã chọn trong lộ trình -->                  <Label styleClass="section-header" text="Các điểm đã chọn trong lộ trình:" /><StackPane fx:id="routeTableContainer" prefHeight="250.0" VBox.vgrow="SOMETIMES">
                      <children>
                         <HBox spacing="5.0">
                            <children>
