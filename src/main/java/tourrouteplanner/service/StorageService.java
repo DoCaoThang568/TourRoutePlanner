@@ -20,7 +20,7 @@ import java.util.List;
  * ({@link Route}).
  * Uses JSON format for file storage.
  */
-public class StorageService {
+public class StorageService implements IStorageService {
     /** Gson object used for converting between Java objects and JSON strings. */
     private final Gson gson;
 
