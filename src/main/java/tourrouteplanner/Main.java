@@ -12,90 +12,99 @@ import java.io.IOException;
 import javafx.scene.control.Alert;
 
 /**
- * Lớp ứng dụng chính cho TourRoutePlanner.
- * Khởi tạo giao diện người dùng JavaFX, tải tệp FXML,
- * và quản lý vòng đời của ứng dụng, bao gồm cả việc khởi tạo và tắt JxBrowser.
+ * Main application class for TourRoutePlanner.
+ * Initializes the JavaFX user interface, loads the FXML file,
+ * and manages the application lifecycle, including JxBrowser initialization and
+ * shutdown.
  */
 public class Main extends Application {
 
-    private MainController mainController; // Lưu trữ instance của controller để gọi phương thức shutdown
+    private MainController mainController; // Stores the controller instance for shutdown method call
 
     /**
-     * Điểm vào chính cho tất cả các ứng dụng JavaFX.
-     * Phương thức start được gọi sau khi phương thức init đã trả về,
-     * và sau khi hệ thống sẵn sàng để ứng dụng bắt đầu chạy.
-     * Phương thức này tải tệp FXML, thiết lập controller, và hiển thị cửa sổ chính.
+     * Main entry point for all JavaFX applications.
+     * The start method is called after the init method has returned,
+     * and after the system is ready for the application to begin running.
+     * This method loads the FXML file, sets up the controller, and displays the
+     * main window.
      *
-     * @param primaryStage sân khấu chính cho ứng dụng này, nơi mà
-     * cảnh ứng dụng có thể được thiết lập.
+     * @param primaryStage the primary stage for this application, onto which
+     *                     the application scene can be set.
      */
     @Override
     public void start(Stage primaryStage) {
         try {
-            // Đảm bảo thư mục dữ liệu tồn tại trước khi ứng dụng khởi chạy
+            // Ensure data directory exists before application launches
             File dataDir = new File(Constants.DATA_PATH);
             if (!dataDir.exists()) {
                 if (dataDir.mkdirs()) {
-                    System.out.println("Thư mục dữ liệu '" + Constants.DATA_PATH + "' đã được tạo.");
+                    System.out.println("Data directory '" + Constants.DATA_PATH + "' has been created.");
                 } else {
-                    System.err.println("Không thể tạo thư mục dữ liệu '" + Constants.DATA_PATH + "'. Vui lòng kiểm tra quyền ghi.");
-                    // Cân nhắc hiển thị Alert cho người dùng ở đây nếu việc tạo thư mục là bắt buộc
+                    System.err.println("Could not create data directory '" + Constants.DATA_PATH
+                            + "'. Please check write permissions.");
+                    // Consider showing an Alert to the user here if directory creation is mandatory
                 }
             }
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Main.fxml"));
             Parent root = loader.load();
-            mainController = loader.getController(); // Lấy instance của controller
+            mainController = loader.getController(); // Get controller instance
 
             primaryStage.setTitle(Constants.APP_NAME);
             primaryStage.setScene(new Scene(root));
             primaryStage.show();
         } catch (IOException e) {
             e.printStackTrace();
-            // Xử lý lỗi nghiêm trọng khi không thể tải FXML
+            // Handle critical error when FXML cannot be loaded
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Lỗi Khởi Động Nghiêm Trọng");
-            alert.setHeaderText("Không thể khởi động ứng dụng TourRoutePlanner");
-            alert.setContentText("Đã xảy ra lỗi nghiêm trọng khi tải giao diện người dùng chính (Main.fxml).\\nỨng dụng không thể tiếp tục.\\nChi tiết lỗi: " + e.getMessage());
+            alert.setTitle("Critical Startup Error");
+            alert.setHeaderText("Could not start TourRoutePlanner application");
+            alert.setContentText(
+                    "A critical error occurred while loading the main user interface (Main.fxml).\\nThe application cannot continue.\\nError details: "
+                            + e.getMessage());
             alert.showAndWait();
-            // Cân nhắc System.exit(1) ở đây nếu ứng dụng không thể hoạt động nếu không có FXML
+            // Consider System.exit(1) here if application cannot function without FXML
         } catch (NullPointerException e) {
             e.printStackTrace();
-            // Xử lý lỗi khi không tìm thấy tệp FXML
+            // Handle error when FXML file is not found
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Lỗi Khởi Động Nghiêm Trọng");
-            alert.setHeaderText("Không thể tìm thấy tệp giao diện người dùng");
-            alert.setContentText("Không tìm thấy tệp Main.fxml. Đảm bảo tệp này nằm đúng trong thư mục resources/tourrouteplanner và đã được build cùng ứng dụng.\\nỨng dụng không thể tiếp tục.");
+            alert.setTitle("Critical Startup Error");
+            alert.setHeaderText("Could not find user interface file");
+            alert.setContentText(
+                    "Main.fxml file not found. Ensure this file is located in resources/tourrouteplanner and has been built with the application.\\nThe application cannot continue.");
             alert.showAndWait();
-            // Cân nhắc System.exit(1) ở đây
+            // Consider System.exit(1) here
         }
     }
 
     /**
-     * Phương thức này được gọi khi ứng dụng JavaFX kết thúc.
-     * Nó đảm bảo rằng các tài nguyên, đặc biệt là JxBrowser, được giải phóng đúng cách.
+     * This method is called when the JavaFX application terminates.
+     * It ensures that resources, especially JxBrowser, are properly released.
      *
-     * @throws Exception nếu có lỗi xảy ra trong quá trình dừng.
+     * @throws Exception if an error occurs during the stop process.
      */
     @Override
     public void stop() throws Exception {
         if (mainController != null) {
-            mainController.shutdownJxBrowser(); // Gọi phương thức shutdown của JxBrowser từ controller
+            mainController.shutdownJxBrowser(); // Call JxBrowser shutdown method from controller
         }
-        super.stop(); // Gọi phương thức stop của lớp cha
+        super.stop(); // Call parent class stop method
     }
 
     /**
-     * Phương thức main truyền thống của Java.
-     * Bị bỏ qua trong ứng dụng JavaFX được triển khai chính xác qua cơ chế của JavaFX.
-     * main() chỉ phục vụ như một phương án dự phòng trong trường hợp ứng dụng không thể được
-     * khởi chạy thông qua các tạo phẩm triển khai (ví dụ: trong các IDE có hỗ trợ JavaFX hạn chế
-     * hoặc khi chạy từ dòng lệnh mà không có JavaFX launcher).
-     * NetBeans và các IDE hiện đại thường bỏ qua main() và sử dụng Application.launch().
+     * Traditional Java main method.
+     * Ignored in properly deployed JavaFX applications via JavaFX mechanisms.
+     * main() only serves as a fallback in case the application cannot be
+     * launched through deployment artifacts (e.g., in IDEs with limited JavaFX
+     * support
+     * or when running from command line without JavaFX launcher).
+     * NetBeans and modern IDEs typically bypass main() and use
+     * Application.launch().
      *
-     * @param args các đối số dòng lệnh (thường không được sử dụng trong ứng dụng JavaFX GUI).
+     * @param args command line arguments (typically unused in JavaFX GUI
+     *             applications).
      */
     public static void main(String[] args) {
-        launch(args); // Khởi chạy ứng dụng JavaFX
+        launch(args); // Launch JavaFX application
     }
 }

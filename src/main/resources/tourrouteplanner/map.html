@@ -1,570 +1,698 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Map - OpenLayers</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v9.0.0/ol.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/ol@v9.0.0/ol.css"
+    />
     <style>
-        body { margin: 0; padding: 0; }
-        #mapDiv { width: 100%; height: 100vh; background-color: #f0f0f0; }
-        .ol-popup {
-            position: absolute;
-            background-color: white;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #cccccc;
-            bottom: 12px;
-            left: -50px; /* Will be adjusted by OpenLayers */
-            min-width: 180px;
-            transform: translateX(-50%); /* Helps in centering if left is set to 50% of marker */
-        }
-        .ol-popup:after, .ol-popup:before {
-            top: 100%;
-            border: solid transparent;
-            content: " ";
-            height: 0;
-            width: 0;
-            position: absolute;
-            pointer-events: none;
-        }
-        .ol-popup:after {
-            border-top-color: white;
-            border-width: 10px;
-            left: 50%;
-            margin-left: -10px;
-        }
-        .ol-popup:before {
-            border-top-color: #cccccc;
-            border-width: 11px;
-            left: 50%;
-            margin-left: -11px;
-        }
-        .ol-popup-closer {
-            text-decoration: none;
-            position: absolute;
-            top: 2px;
-            right: 8px;
-            color: #333; /* Make closer more visible */
-        }
-        .ol-popup-closer:after {
-            content: "✖";
-        }
-        #popup-content {
-            font-size: 14px;
-            font-family: Arial, sans-serif;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #mapDiv {
+        width: 100%;
+        height: 100vh;
+        background-color: #f0f0f0;
+      }
+      .ol-popup {
+        position: absolute;
+        background-color: white;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px; /* Will be adjusted by OpenLayers */
+        min-width: 180px;
+        transform: translateX(
+          -50%
+        ); /* Helps in centering if left is set to 50% of marker */
+      }
+      .ol-popup:after,
+      .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+      .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 50%;
+        margin-left: -10px;
+      }
+      .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 50%;
+        margin-left: -11px;
+      }
+      .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+        color: #333; /* Make closer more visible */
+      }
+      .ol-popup-closer:after {
+        content: "✖";
+      }
+      #popup-content {
+        font-size: 14px;
+        font-family: Arial, sans-serif;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="mapDiv"></div>
     <div id="popup" class="ol-popup">
-        <a href="#" id="popup-closer" class="ol-popup-closer"></a>
-        <div id="popup-content"></div>
+      <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+      <div id="popup-content"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ol@v9.0.0/dist/ol.js"></script>
     <script>
-        // Script chính để khởi tạo và quản lý bản đồ OpenLayers,
-        // bao gồm hiển thị marker (thông qua các hàm được gọi từ Java),
-        // xử lý popup và giao tiếp với Java.
+      // Main script to initialize and manage OpenLayers map,
+      // including marker display (via functions called from Java),
+      // popup handling and Java communication.
 
-        let mapInstance = null; // Đối tượng bản đồ OpenLayers chính
-        let markerLayer = null; // Layer chứa các điểm đánh dấu (marker) trên bản đồ
-        let routeLayer = null;  // Layer hiển thị tuyến đường được vẽ (quản lý bởi Java)
-        let highlightLayer = null; // Layer mới để hiển thị vùng highlight
-        let popupOverlay = null; // Overlay để hiển thị thông tin chi tiết (popup) khi nhấp vào marker
-        let popupContentElement = null; // Phần tử DOM chứa nội dung của popup
-        let popupCloserElement = null; // Phần tử DOM để đóng popup
-        const hanoiCoords = ol.proj.fromLonLat([105.8342, 21.0278]); // Tọa độ trung tâm mặc định: Hà Nội
-        // window.MAPTILER_API_KEY sẽ được inject bởi Java (được Java nạp vào)
+      let mapInstance = null; // Main OpenLayers map object
+      let markerLayer = null; // Layer containing markers on the map
+      let routeLayer = null; // Layer displaying drawn route (managed by Java)
+      let highlightLayer = null; // New layer for displaying highlight areas
+      let popupOverlay = null; // Overlay for displaying detailed info (popup) when clicking marker
+      let popupContentElement = null; // DOM element containing popup content
+      let popupCloserElement = null; // DOM element to close popup
+      const hanoiCoords = ol.proj.fromLonLat([105.8342, 21.0278]); // Default center coordinates: Hanoi
+      // window.MAPTILER_API_KEY will be injected by Java
 
-        // Đảm bảo đối tượng javaConnector (cầu nối với Java) đã sẵn sàng trước khi thực hiện callback.
-        // Hàm này sẽ liên tục kiểm tra sự tồn tại của window.javaConnector sau mỗi 100ms.
-        function whenJavaConnectorReady(callback) {
-            if (window.javaConnector) {
-                console.log("map.html: javaConnector is ready."); // Log: javaConnector đã sẵn sàng
-                callback();
-            } else {
-                console.log('Waiting for javaConnector...'); // Log trạng thái: Đang chờ javaConnector
-                setTimeout(() => whenJavaConnectorReady(callback), 100);
-            }
+      // Ensure javaConnector object (bridge to Java) is ready before calling callback.
+      // This function will continuously check for window.javaConnector every 100ms.
+      function whenJavaConnectorReady(callback) {
+        if (window.javaConnector) {
+          console.log("map.html: javaConnector is ready.");
+          callback();
+        } else {
+          console.log("Waiting for javaConnector...");
+          setTimeout(() => whenJavaConnectorReady(callback), 100);
+        }
+      }
+
+      // New function to zoom map to a specific bounding box.
+      // Bounding box is passed as [southLat, northLat, westLon, eastLon].
+      function zoomToBoundingBox(southLat, northLat, westLon, eastLon) {
+        console.log(
+          `map.html: zoomToBoundingBox called with S:${southLat}, N:${northLat}, W:${westLon}, E:${eastLon}`
+        );
+        if (!mapInstance) {
+          console.error(
+            "map.html: zoomToBoundingBox - mapInstance is not initialized."
+          );
+          return;
+        }
+        try {
+          const extent = ol.proj.transformExtent(
+            [westLon, southLat, eastLon, northLat],
+            "EPSG:4326",
+            mapInstance.getView().getProjection()
+          );
+          console.log("map.html: Transformed extent for fit:", extent);
+          mapInstance.getView().fit(extent, {
+            padding: [50, 50, 50, 50], // Add some padding around bounding box
+            duration: 1000, // Animation duration (ms)
+            maxZoom: 17, // Limit max zoom to avoid too much detail
+          });
+          console.log("map.html: map.getView().fit() called successfully.");
+        } catch (error) {
+          console.error("map.html: Error in zoomToBoundingBox:", error);
+        }
+      }
+
+      // Initialize OpenLayers map with provided API key.
+      // If API key is missing or there's an error, map will use OpenStreetMap as fallback.
+      // This function is typically called from Java after MAPTILER_API_KEY has been injected into window.
+      function initializeMapWithApiKey(useFallback = false) {
+        console.log("map.html: initializeMapWithApiKey called.");
+        if (mapInstance) {
+          // If map already initialized, don't reinitialize
+          console.log("Map already initialized.");
+          return;
         }
 
-        // Hàm mới để zoom bản đồ tới một bounding box cụ thể.
-        // Bounding box được truyền dưới dạng [southLat, northLat, westLon, eastLon].
-        function zoomToBoundingBox(southLat, northLat, westLon, eastLon) {
-            console.log(`map.html: zoomToBoundingBox called with S:${southLat}, N:${northLat}, W:${westLon}, E:${eastLon}`);
-            if (!mapInstance) {
-                console.error("map.html: zoomToBoundingBox - mapInstance is not initialized.");
-                return;
-            }
-            try {
-                const extent = ol.proj.transformExtent([westLon, southLat, eastLon, northLat], 'EPSG:4326', mapInstance.getView().getProjection());
-                console.log("map.html: Transformed extent for fit:", extent);
-                mapInstance.getView().fit(extent, {
-                    padding: [50, 50, 50, 50], // Thêm một chút padding xung quanh bounding box
-                    duration: 1000, // Thời gian animation (ms)
-                    maxZoom: 17 // Giới hạn mức zoom tối đa để không quá chi tiết
-                });
-                console.log("map.html: map.getView().fit() called successfully.");
-            } catch (error) {
-                console.error("map.html: Error in zoomToBoundingBox:", error);
-            }
+        const apiKey = window.MAPTILER_API_KEY;
+        let tileSource; // Data source for Tile layer (base map)
+
+        if (!useFallback && apiKey) {
+          console.log("Using MapTiler Outdoor map with API key.");
+          tileSource = new ol.source.XYZ({
+            url: `https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=${apiKey}`,
+            attributions:
+              '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+            tileSize: 512, // MapTiler typically uses tileSize 512 for certain styles
+          });
+        } else {
+          // Case: no API key or fallback requested
+          if (useFallback) {
+            console.warn(
+              "MapTiler API Key not available or error, falling back to OpenStreetMap."
+            );
+          } else if (!apiKey) {
+            console.warn(
+              "MapTiler API Key not provided by Java, falling back to OpenStreetMap."
+            );
+          }
+          tileSource = new ol.source.OSM(); // Use OpenStreetMap as fallback
         }
 
-        // Khởi tạo bản đồ OpenLayers với API key được cung cấp.
-        // Nếu API key không có hoặc có lỗi, bản đồ sẽ sử dụng OpenStreetMap làm nguồn dữ liệu dự phòng.
-        // Hàm này thường được gọi từ Java sau khi MAPTILER_API_KEY đã được nạp vào window.
-        function initializeMapWithApiKey(useFallback = false) {
-            console.log('map.html: initializeMapWithApiKey called.'); // Log: Hàm initializeMapWithApiKey được gọi
-            if (mapInstance) { // Nếu bản đồ đã được khởi tạo, không thực hiện lại
-                console.log('Map already initialized.'); // Log: Bản đồ đã được khởi tạo
-                return;
+        // Get DOM elements for popup
+        const popupContainer = document.getElementById("popup");
+        popupContentElement = document.getElementById("popup-content");
+        popupCloserElement = document.getElementById("popup-closer");
+
+        // Create Overlay object for popup
+        popupOverlay = new ol.Overlay({
+          element: popupContainer, // HTML element for popup
+          autoPan: {
+            // Auto-pan map to show popup fully
+            animation: {
+              duration: 250, // Animation duration (ms)
+            },
+          },
+        });
+
+        // Handle popup close event
+        popupCloserElement.onclick = function () {
+          popupOverlay.setPosition(undefined); // Hide popup
+          popupCloserElement.blur(); // Remove focus from close button
+          return false;
+        };
+
+        // Initialize marker layer
+        markerLayer = new ol.layer.Vector({
+          source: new ol.source.Vector(), // Empty vector source initially
+          style: new ol.style.Style({
+            image: new ol.style.Icon({
+              anchor: [0.5, 1], // Icon anchor point (0.5, 1) is at center bottom
+              src: "icons/custom_marker.png", // Path to custom marker image file
+              scale: 0.1, // Icon scale factor
+              // Anchor may need adjustment depending on icon shape
+            }),
+          }),
+        });
+
+        // Initialize route layer
+        routeLayer = new ol.layer.Vector({
+          source: new ol.source.Vector(), // Empty vector source initially
+          style: new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              // Style for line drawing
+              color: "blue", // Line color
+              width: 3, // Line width
+            }),
+          }),
+        });
+
+        // Initialize highlight layer
+        highlightLayer = new ol.layer.Vector({
+          source: new ol.source.Vector(),
+          style: new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: "rgba(0, 255, 255, 0.8)", // Cyan border color, slightly transparent
+              width: 3,
+            }),
+            fill: new ol.style.Fill({
+              color: "rgba(0, 255, 255, 0.1)", // Cyan fill color, very transparent
+            }),
+          }),
+          zIndex: 1, // Ensure highlightLayer is above base map but below marker/route if needed
+        });
+
+        // Initialize main map object (mapInstance)
+        mapInstance = new ol.Map({
+          target: "mapDiv", // ID of div containing the map
+          layers: [
+            // List of layers on the map
+            new ol.layer.Tile({ source: tileSource }), // Base map layer
+            highlightLayer, // Add highlightLayer to map
+            markerLayer, // Marker layer
+            routeLayer, // Route layer
+          ],
+          overlays: [popupOverlay], // Add popup overlay to map
+          view: new ol.View({
+            // Initial map view configuration
+            center: hanoiCoords, // Map center
+            zoom: 6, // Initial zoom level
+          }),
+        });
+
+        // Handle map click event
+        mapInstance.on("click", function (event) {
+          // Check if there's a feature (marker) at the clicked position
+          const feature = mapInstance.forEachFeatureAtPixel(
+            event.pixel,
+            function (featureCandidate, layerCandidate) {
+              // Ensure this feature belongs to markerLayer and has 'name' property (to distinguish from other features like route lines)
+              if (
+                layerCandidate === markerLayer &&
+                featureCandidate.get("name")
+              ) {
+                return featureCandidate; // Return marker if found
+              }
+              return undefined; // Skip if not a desired marker
             }
+          );
 
-            const apiKey = window.MAPTILER_API_KEY;
-            let tileSource; // Nguồn dữ liệu cho lớp Tile (bản đồ nền)
-
-            if (!useFallback && apiKey) {
-                console.log('Using MapTiler Outdoor map with API key.'); // Log: Sử dụng bản đồ MapTiler Outdoor với API key
-                tileSource = new ol.source.XYZ({
-                    url: `https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=${apiKey}`,
-                    attributions: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-                    tileSize: 512 // MapTiler thường dùng tileSize 512 cho một số style nhất định
-                });
-            } else { // Trường hợp không có API key hoặc yêu cầu sử dụng fallback
-                if (useFallback) {
-                    console.warn('MapTiler API Key not available or error, falling back to OpenStreetMap.'); // Cảnh báo: API Key MapTiler không có hoặc lỗi, chuyển sang OSM
-                } else if (!apiKey) {
-                     console.warn('MapTiler API Key not provided by Java, falling back to OpenStreetMap.'); // Cảnh báo: API Key MapTiler không được Java cung cấp, chuyển sang OSM
-                }
-                tileSource = new ol.source.OSM(); // Sử dụng OpenStreetMap làm nguồn dự phòng
+          if (feature) {
+            // If clicked on a marker
+            const coordinates = feature.getGeometry().getCoordinates(); // Get marker coordinates
+            popupOverlay.setPosition(coordinates); // Show popup at marker coordinates
+            // Create popup content
+            let content = "<b>" + feature.get("name") + "</b>";
+            const description = feature.get("description");
+            if (description) {
+              content += "<br>" + description;
             }
-
-            // Lấy các phần tử DOM cho popup
-            const popupContainer = document.getElementById('popup');
-            popupContentElement = document.getElementById('popup-content');
-            popupCloserElement = document.getElementById('popup-closer');
-
-            // Tạo đối tượng Overlay cho popup
-            popupOverlay = new ol.Overlay({
-                element: popupContainer, // Phần tử HTML của popup
-                autoPan: { // Tự động di chuyển bản đồ để popup hiển thị đầy đủ
-                    animation: {
-                        duration: 250, // Thời gian animation (ms)
-                    },
-                },
+            popupContentElement.innerHTML = content; // Set popup content
+          } else {
+            // If not clicking on any marker (clicking empty area on map)
+            console.log("map.html: Map clicked at pixel: ", event.pixel);
+            const coords = mapInstance.getCoordinateFromPixel(event.pixel); // Get geographic coordinates from pixel
+            const lonLat = ol.proj.toLonLat(coords); // Convert to LonLat
+            console.log("map.html: Map clicked at LonLat: ", lonLat);
+            // Call Java function to handle map click (e.g., reverse geocoding)
+            whenJavaConnectorReady(() => {
+              if (
+                window.javaConnector &&
+                typeof window.javaConnector.handleMapClick === "function"
+              ) {
+                console.log(
+                  "map.html: Calling javaConnector.handleMapClick with Lon: " +
+                    lonLat[0] +
+                    ", Lat: " +
+                    lonLat[1]
+                );
+                window.javaConnector.handleMapClick(lonLat[1], lonLat[0]); // Note order: Lat, Lon
+              } else {
+                console.error(
+                  "map.html: javaConnector.handleMapClick is not available or not a function."
+                );
+              }
             });
+          }
+        });
+        console.log(
+          "map.html: OpenLayers map initialized with new base layer and popup."
+        );
+      }
 
-            // Xử lý sự kiện đóng popup
-            popupCloserElement.onclick = function() {
-                popupOverlay.setPosition(undefined); // Ẩn popup
-                popupCloserElement.blur(); // Bỏ focus khỏi nút đóng
-                return false;
-            };
+      // New function to highlight a geographic object from GeoJSON string
+      // GeoJSON string is expected in EPSG:4326 format
+      function highlightGeoJsonFeature(geoJsonString) {
+        console.log(
+          "map.html: highlightGeoJsonFeature called with GeoJSON string:",
+          geoJsonString
+        );
+        if (!mapInstance || !highlightLayer) {
+          console.error(
+            "map.html: highlightGeoJsonFeature - mapInstance or highlightLayer is not initialized."
+          );
+          return;
+        }
+        clearHighlight(); // Clear old highlights
 
-            // Khởi tạo Layer chứa các điểm đánh dấu (marker)
-            markerLayer = new ol.layer.Vector({
-                source: new ol.source.Vector(), // Nguồn dữ liệu vector rỗng ban đầu
-                style: new ol.style.Style({
-                    image: new ol.style.Icon({
-                        anchor: [0.5, 1], // Điểm neo của icon (0.5, 1) là ở giữa cạnh dưới
-                        src: 'icons/custom_marker.png', // Đường dẫn tới file ảnh marker tùy chỉnh
-                        scale: 0.1 // Tỷ lệ thu phóng icon (giảm từ 0.5 xuống 0.3)
-                        // Có thể cần điều chỉnh anchor tùy theo hình dạng của icon
-                    })
-                })
+        if (!geoJsonString || geoJsonString.trim() === "") {
+          console.log(
+            "map.html: highlightGeoJsonFeature - GeoJSON string is empty, nothing to highlight."
+          );
+          return;
+        }
+
+        try {
+          const geoJsonFormat = new ol.format.GeoJSON();
+          // Read feature from GeoJSON string. Data from Nominatim is EPSG:4326.
+          // Need to transform feature to map projection.
+          const feature = geoJsonFormat.readFeature(geoJsonString, {
+            dataProjection: "EPSG:4326", // Input GeoJSON data projection
+            featureProjection: mapInstance.getView().getProjection(), // Current map projection
+          });
+
+          if (feature) {
+            highlightLayer.getSource().addFeature(feature);
+            console.log("map.html: GeoJSON feature highlighted successfully.");
+          } else {
+            console.warn(
+              "map.html: Could not parse GeoJSON string into a feature."
+            );
+          }
+        } catch (error) {
+          console.error("map.html: Error in highlightGeoJsonFeature:", error);
+          // Could try to highlight bounding box as fallback if info available
+        }
+      }
+
+      // Function to highlight a bounding box on the map
+      // s: southLat, n: northLat, w: westLon, e: eastLon
+      function highlightBoundingBox(southLat, northLat, westLon, eastLon) {
+        console.log(
+          `map.html: highlightBoundingBox called with S:${southLat}, N:${northLat}, W:${westLon}, E:${eastLon}`
+        );
+        if (!mapInstance || !highlightLayer) {
+          console.error(
+            "map.html: highlightBoundingBox - mapInstance or highlightLayer is not initialized."
+          );
+          return;
+        }
+        try {
+          clearHighlight(); // Clear old highlight first
+
+          const extent = ol.proj.transformExtent(
+            [westLon, southLat, eastLon, northLat],
+            "EPSG:4326",
+            mapInstance.getView().getProjection()
+          );
+          const polygon = ol.geom.Polygon.fromExtent(extent);
+          const feature = new ol.Feature(polygon);
+
+          highlightLayer.getSource().addFeature(feature);
+          console.log("map.html: Bounding box highlighted.");
+        } catch (error) {
+          console.error("map.html: Error in highlightBoundingBox:", error);
+        }
+      }
+
+      // New function to clear all highlights
+      function clearHighlight() {
+        console.log("map.html: clearHighlight called.");
+        if (highlightLayer && highlightLayer.getSource()) {
+          highlightLayer.getSource().clear();
+          console.log("map.html: Highlight cleared.");
+        } else {
+          console.warn(
+            "map.html: Highlight layer or its source is not available to clear highlight."
+          );
+        }
+      }
+
+      // Zoom to fit entire route in view
+      function fitToRoute() {
+        console.log("map.html: fitToRoute called.");
+        if (!mapInstance || !routeLayer || !routeLayer.getSource()) {
+          console.error(
+            "Map or routeLayer not initialized yet or no route available. Cannot fit to route."
+          );
+          return;
+        }
+
+        try {
+          const extent = routeLayer.getSource().getExtent();
+          // Check if extent is valid (not infinity)
+          if (
+            extent &&
+            extent[0] !== Infinity &&
+            extent[1] !== Infinity &&
+            extent[2] !== -Infinity &&
+            extent[3] !== -Infinity
+          ) {
+            console.log("map.html: Fitting map to route extent:", extent);
+            mapInstance.getView().fit(extent, {
+              padding: [80, 80, 80, 80], // Add padding so route doesn't touch screen edges
+              duration: 1000, // Animation duration (ms)
+              maxZoom: 16, // Limit max zoom level
             });
-
-            // Khởi tạo Layer hiển thị tuyến đường
-            routeLayer = new ol.layer.Vector({
-                source: new ol.source.Vector(), // Nguồn dữ liệu vector rỗng ban đầu
-                style: new ol.style.Style({
-                    stroke: new ol.style.Stroke({ // Style cho đường vẽ
-                        color: 'blue', // Màu đường
-                        width: 3       // Độ rộng đường
-                    })
-                })
-            });
-
-            // Khởi tạo Layer để hiển thị vùng highlight
-            highlightLayer = new ol.layer.Vector({
-                source: new ol.source.Vector(),
-                style: new ol.style.Style({
-                    stroke: new ol.style.Stroke({
-                        color: 'rgba(0, 255, 255, 0.8)', // Màu viền cyan, hơi trong suốt
-                        width: 3
-                    }),
-                    fill: new ol.style.Fill({
-                        color: 'rgba(0, 255, 255, 0.1)' // Màu nền cyan, rất trong suốt
-                    })
-                }),
-                zIndex: 1 // Đảm bảo highlightLayer nằm trên bản đồ nền nhưng dưới marker/route nếu cần điều chỉnh
-            });
-
-            // Khởi tạo đối tượng bản đồ chính (mapInstance)
-            mapInstance = new ol.Map({
-                target: 'mapDiv', // ID của thẻ div chứa bản đồ
-                layers: [ // Danh sách các layer trên bản đồ
-                    new ol.layer.Tile({ source: tileSource }), // Layer bản đồ nền
-                    highlightLayer, // Thêm highlightLayer vào bản đồ
-                    markerLayer, // Layer chứa marker
-                    routeLayer   // Layer chứa tuyến đường
-                ],
-                overlays: [popupOverlay], // Thêm overlay của popup vào bản đồ
-                view: new ol.View({ // Cấu hình khung nhìn ban đầu của bản đồ
-                    center: hanoiCoords, // Tâm bản đồ
-                    zoom: 6              // Mức phóng đại ban đầu
-                })
-            });
-
-            // Xử lý sự kiện nhấp chuột trên bản đồ
-            mapInstance.on('click', function(event) {
-                // Kiểm tra xem có feature (marker) nào tại vị trí nhấp chuột không
-                const feature = mapInstance.forEachFeatureAtPixel(event.pixel, 
-                    function(featureCandidate, layerCandidate) { 
-                    // Đảm bảo feature này thuộc markerLayer và có thuộc tính 'name' (để phân biệt với các feature khác như đường route)
-                    if (layerCandidate === markerLayer && featureCandidate.get('name')) {
-                        // console.log("map.html: Clicked on marker: ", featureCandidate.get('name')); // Log khi nhấp vào marker
-                        return featureCandidate; // Trả về marker nếu tìm thấy
-                    }
-                    return undefined; // Bỏ qua nếu không phải marker mong muốn
-                });
-
-                if (feature) { // Nếu nhấp vào một marker
-                    const coordinates = feature.getGeometry().getCoordinates(); // Lấy tọa độ của marker
-                    popupOverlay.setPosition(coordinates); // Hiển thị popup tại tọa độ marker
-                    // Tạo nội dung cho popup
-                    let content = '<b>' + feature.get('name') + '</b>';
-                    const description = feature.get('description');
-                    if (description) {
-                        content += '<br>' + description;
-                    }
-                    popupContentElement.innerHTML = content; // Đặt nội dung cho popup
-                } else { // Nếu không nhấp vào marker nào (nhấp vào vùng trống trên bản đồ)
-                    console.log("map.html: Map clicked at pixel: ", event.pixel); // Log tọa độ pixel khi nhấp vào bản đồ
-                    const coords = mapInstance.getCoordinateFromPixel(event.pixel); // Lấy tọa độ địa lý từ pixel
-                    const lonLat = ol.proj.toLonLat(coords); // Chuyển đổi sang LonLat
-                    console.log("map.html: Map clicked at LonLat: ", lonLat); // Log tọa độ LonLat
-                    // Gọi hàm Java để xử lý việc nhấp chuột trên bản đồ (ví dụ: reverse geocoding)
-                    whenJavaConnectorReady(() => {
-                        if (window.javaConnector && typeof window.javaConnector.handleMapClick === 'function') {
-                            console.log("map.html: Calling javaConnector.handleMapClick with Lon: " + lonLat[0] + ", Lat: " + lonLat[1]);
-                            window.javaConnector.handleMapClick(lonLat[1], lonLat[0]); // Lưu ý thứ tự: Lat, Lon
-                        } else {
-                            console.error("map.html: javaConnector.handleMapClick is not available or not a function.");
-                        }
-                    });
-                }
-            });
-            console.log('map.html: OpenLayers map initialized with new base layer and popup.'); // Log: Bản đồ OpenLayers đã được khởi tạo
+            console.log("map.html: Map fitted to route extent.");
+            return true;
+          } else {
+            console.warn("map.html: Invalid route extent, cannot fit map.");
+            return false;
+          }
+        } catch (e) {
+          console.error("map.html: Error in fitToRoute: ", e);
+          return false;
         }
+      }
 
-        // Hàm mới để highlight một đối tượng địa lý từ chuỗi GeoJSON
-        // Chuỗi GeoJSON được kỳ vọng ở định dạng EPSG:4326
-        function highlightGeoJsonFeature(geoJsonString) {
-            console.log("map.html: highlightGeoJsonFeature called with GeoJSON string:", geoJsonString);
-            if (!mapInstance || !highlightLayer) {
-                console.error("map.html: highlightGeoJsonFeature - mapInstance or highlightLayer is not initialized.");
-                return;
-            }
-            clearHighlight(); // Xóa các highlight cũ
-
-            if (!geoJsonString || geoJsonString.trim() === "") {
-                console.log("map.html: highlightGeoJsonFeature - GeoJSON string is empty, nothing to highlight.");
-                return;
-            }
-
-            try {
-                const geoJsonFormat = new ol.format.GeoJSON();
-                // Đọc feature từ chuỗi GeoJSON. Dữ liệu từ Nominatim là EPSG:4326.
-                // Cần transform feature sang projection của bản đồ.
-                const feature = geoJsonFormat.readFeature(geoJsonString, {
-                    dataProjection: 'EPSG:4326', // Projection của dữ liệu GeoJSON đầu vào
-                    featureProjection: mapInstance.getView().getProjection() // Projection của bản đồ hiện tại
-                });
-
-                if (feature) {
-                    highlightLayer.getSource().addFeature(feature);
-                    console.log("map.html: GeoJSON feature highlighted successfully.");
-                } else {
-                    console.warn("map.html: Could not parse GeoJSON string into a feature.");
-                }
-            } catch (error) {
-                console.error("map.html: Error in highlightGeoJsonFeature:", error);
-                // Có thể thử highlight bounding box như một fallback nếu có thông tin
-                // Hoặc thông báo lỗi cho người dùng qua javaConnector nếu cần
-            }
+      // Add a new marker to the map.
+      // This function is called from Java via javaConnector.
+      function addMapMarker(name, lat, lng, description) {
+        console.log(
+          `map.html: addMapMarker called with Name: ${name}, Lat: ${lat}, Lng: ${lng}, Desc: ${description}`
+        );
+        if (!mapInstance || !markerLayer) {
+          console.error(
+            "Map or markerLayer not initialized yet. Cannot add marker."
+          );
+          return;
         }
-
-        // Hàm để highlight một bounding box trên bản đồ
-        // s: southLat, n: northLat, w: westLon, e: eastLon
-        function highlightBoundingBox(southLat, northLat, westLon, eastLon) {
-            console.log(`map.html: highlightBoundingBox called with S:${southLat}, N:${northLat}, W:${westLon}, E:${eastLon}`);
-            if (!mapInstance || !highlightLayer) {
-                console.error("map.html: highlightBoundingBox - mapInstance or highlightLayer is not initialized.");
-                return;
-            }
-            try {
-                clearHighlight(); // Xóa highlight cũ trước
-
-                const extent = ol.proj.transformExtent([westLon, southLat, eastLon, northLat], 'EPSG:4326', mapInstance.getView().getProjection());
-                const polygon = ol.geom.Polygon.fromExtent(extent);
-                const feature = new ol.Feature(polygon);
-                
-                highlightLayer.getSource().addFeature(feature);
-                console.log("map.html: Bounding box highlighted.");
-            } catch (error) {
-                console.error("map.html: Error in highlightBoundingBox:", error);
-            }
+        try {
+          const markerCoords = ol.proj.fromLonLat([lng, lat]); // Convert LonLat to map coordinate system
+          const markerFeature = new ol.Feature({
+            geometry: new ol.geom.Point(markerCoords), // Marker geometry is a point
+            name: name, // Place name (used for popup)
+            description: description, // Detailed description (used for popup)
+          });
+          markerLayer.getSource().addFeature(markerFeature); // Add marker feature to layer source
+          console.log(`map.html: Marker "${name}" added at ${lng},${lat}`);
+        } catch (e) {
+          console.error("map.html: Error in addMapMarker: ", e);
         }
+      }
 
-        // Hàm mới để xóa tất cả các highlight
-        function clearHighlight() {
-            console.log("map.html: clearHighlight called.");
-            if (highlightLayer && highlightLayer.getSource()) {
-                highlightLayer.getSource().clear();
-                console.log("map.html: Highlight cleared.");
-            } else {
-                console.warn("map.html: Highlight layer or its source is not available to clear highlight.");
-            }
+      // Draw a route on the map based on list of coordinates.
+      // This function is called from Java.
+      function drawRoute(routeCoordinates) {
+        console.log(
+          "map.html: drawRoute called with " +
+            routeCoordinates.length +
+            " coordinates."
+        );
+        if (!mapInstance || !routeLayer) {
+          console.error(
+            "Map or routeLayer not initialized yet. Cannot draw route."
+          );
+          return;
         }
+        try {
+          clearRoute(); // Clear old route (if any) before drawing new one
 
-        // Zoom đến vừa đủ để hiển thị toàn bộ tuyến đường
-        function fitToRoute() {
-            console.log("map.html: fitToRoute called.");
-            if (!mapInstance || !routeLayer || !routeLayer.getSource()) {
-                console.error('Map or routeLayer not initialized yet or no route available. Cannot fit to route.');
-                return;
-            }
-            
-            try {
-                const extent = routeLayer.getSource().getExtent();
-                // Kiểm tra xem extent có hợp lệ không (không phải infinity)
-                if (extent && extent[0] !== Infinity && extent[1] !== Infinity && 
-                    extent[2] !== -Infinity && extent[3] !== -Infinity) {
-                    
-                    console.log("map.html: Fitting map to route extent:", extent);
-                    mapInstance.getView().fit(extent, {
-                        padding: [80, 80, 80, 80], // Thêm padding để đường không sát cạnh màn hình
-                        duration: 1000, // Thời gian animation (ms)
-                        maxZoom: 16 // Giới hạn mức zoom tối đa
-                    });
-                    console.log("map.html: Map fitted to route extent.");
-                    return true;
-                } else {
-                    console.warn("map.html: Invalid route extent, cannot fit map.");
-                    return false;
-                }
-            } catch (e) {
-                console.error("map.html: Error in fitToRoute: ", e);
-                return false;
-            }
-        }
+          if (routeCoordinates && routeCoordinates.length > 0) {
+            const olCoordinates = routeCoordinates.map((coord) =>
+              ol.proj.fromLonLat([coord.lng, coord.lat])
+            ); // Convert all coordinates
 
-        // Thêm một điểm đánh dấu (marker) mới vào bản đồ.
-        // Hàm này được gọi từ Java thông qua javaConnector.
-        function addMapMarker(name, lat, lng, description) {
-            console.log(`map.html: addMapMarker called with Name: ${name}, Lat: ${lat}, Lng: ${lng}, Desc: ${description}`); // Log chi tiết thông tin marker
-            if (!mapInstance || !markerLayer) {
-                console.error('Map or markerLayer not initialized yet. Cannot add marker.'); // Lỗi: Bản đồ hoặc layer marker chưa được khởi tạo
-                return;
-            }
-            try {
-                const markerCoords = ol.proj.fromLonLat([lng, lat]); // Chuyển đổi tọa độ LonLat sang hệ tọa độ của bản đồ
-                const markerFeature = new ol.Feature({
-                    geometry: new ol.geom.Point(markerCoords), // Hình học của marker là một điểm
-                    name: name, // Tên của địa điểm (sử dụng cho popup)
-                    description: description // Mô tả chi tiết (sử dụng cho popup)
-                });
-                markerLayer.getSource().addFeature(markerFeature); // Thêm feature marker vào source của layer
-                console.log(`map.html: Marker "${name}" added at ${lng},${lat}`);
-            } catch (e) {
-                console.error("map.html: Error in addMapMarker: ", e);
-            }
-        }        // Vẽ một tuyến đường trên bản đồ dựa trên danh sách các tọa độ.
-        // Hàm này được gọi từ Java.
-        function drawRoute(routeCoordinates) {
-            console.log("map.html: drawRoute called with " + routeCoordinates.length + " coordinates."); // Log số lượng tọa độ
-            if (!mapInstance || !routeLayer) {
-                console.error('Map or routeLayer not initialized yet. Cannot draw route.'); // Lỗi: Bản đồ hoặc layer route chưa được khởi tạo
-                return;
-            }
-            try {
-                clearRoute(); // Xóa tuyến đường cũ (nếu có) trước khi vẽ tuyến mới
-
-                if (routeCoordinates && routeCoordinates.length > 0) {
-                    const olCoordinates = routeCoordinates.map(coord => ol.proj.fromLonLat([coord.lng, coord.lat])); // Chuyển đổi tất cả tọa độ
-                    
-                    // Tìm các điểm đánh dấu hiện tại (marker) trên bản đồ
-                    let markerCoordinates = [];
-                    if (markerLayer && markerLayer.getSource()) {
-                        markerLayer.getSource().getFeatures().forEach(feature => {
-                            if (feature.getGeometry() instanceof ol.geom.Point) {
-                                markerCoordinates.push(feature.getGeometry().getCoordinates());
-                            }
-                        });
-                    }
-                    
-                    // Định nghĩa các màu sắc cho từng đoạn đường
-                    const routeColors = [
-                        '#2563eb', // Xanh dương
-                        '#059669', // Xanh lá
-                        '#d97706', // Cam
-                        '#be123c', // Đỏ
-                        '#7c3aed', // Tím
-                        '#0369a1', // Xanh nước biển
-                        '#16a34a', // Xanh lá đậm
-                        '#c2410c', // Cam đậm
-                        '#b91c1c', // Đỏ đậm
-                        '#6d28d9'  // Tím đậm
-                    ];
-
-                    // Nếu có nhiều marker, chia nhỏ đường đi thành các đoạn giữa các marker
-                    if (markerCoordinates.length > 1) {
-                        console.log("map.html: Multiple markers detected. Drawing multi-segment route.");
-                        
-                        // Tìm các điểm trong tuyến đường gần nhất với mỗi marker
-                        const markerPoints = [];
-                        markerCoordinates.forEach(markerCoord => {
-                            let closestIdx = 0;
-                            let minDistance = Infinity;
-                            
-                            // Tìm điểm gần nhất trong tuyến đường cho mỗi marker
-                            olCoordinates.forEach((routeCoord, idx) => {
-                                const dist = Math.sqrt(
-                                    Math.pow(routeCoord[0] - markerCoord[0], 2) +
-                                    Math.pow(routeCoord[1] - markerCoord[1], 2)
-                                );
-                                if (dist < minDistance) {
-                                    minDistance = dist;
-                                    closestIdx = idx;
-                                }
-                            });
-                            
-                            markerPoints.push({
-                                index: closestIdx,
-                                coordinate: olCoordinates[closestIdx]
-                            });
-                        });
-                        
-                        // Sắp xếp các điểm theo thứ tự trên tuyến đường
-                        markerPoints.sort((a, b) => a.index - b.index);
-                        
-                        // Tạo các đoạn đường giữa các marker
-                        for (let i = 0; i < markerPoints.length - 1; i++) {
-                            const startIdx = markerPoints[i].index;
-                            const endIdx = markerPoints[i + 1].index;
-                            const segmentCoordinates = olCoordinates.slice(startIdx, endIdx + 1);
-                            
-                            if (segmentCoordinates.length > 1) {
-                                const colorIndex = i % routeColors.length;
-                                
-                                // Tạo feature cho đoạn đường này
-                                const segmentFeature = new ol.Feature({
-                                    geometry: new ol.geom.LineString(segmentCoordinates)
-                                });
-                                
-                                // Đặt style với màu sắc khác nhau cho mỗi đoạn
-                                segmentFeature.setStyle(new ol.style.Style({
-                                    stroke: new ol.style.Stroke({
-                                        color: routeColors[colorIndex],
-                                        width: 4
-                                    })
-                                }));
-                                
-                                routeLayer.getSource().addFeature(segmentFeature);
-                            }
-                        }
-                    } else {
-                        // Nếu chỉ có một hoặc không có marker nào, vẽ đường đi bình thường với một màu
-                        console.log("map.html: Single route segment detected.");
-                        const routeFeature = new ol.Feature({
-                            geometry: new ol.geom.LineString(olCoordinates)
-                        });
-                        
-                        routeFeature.setStyle(new ol.style.Style({
-                            stroke: new ol.style.Stroke({
-                                color: routeColors[0], // Màu mặc định cho đường đơn
-                                width: 4
-                            })
-                        }));
-                        
-                        routeLayer.getSource().addFeature(routeFeature);
-                    }
-                      console.log("map.html: Route drawn successfully.");
-                } else {
-                    console.log("map.html: No coordinates provided to drawRoute, route cleared.");
-                }
-            } catch (e) {
-                console.error("map.html: Error in drawRoute: ", e);
-            }
-        }
-
-        // Xóa tất cả các điểm đánh dấu (marker) khỏi bản đồ.
-        // Hàm này được gọi từ Java.
-        function clearAllMarkers() {
-            console.log("map.html: clearAllMarkers called."); // Log: Hàm clearAllMarkers được gọi
+            // Find current markers on the map
+            let markerCoordinates = [];
             if (markerLayer && markerLayer.getSource()) {
-                markerLayer.getSource().clear(); // Xóa tất cả feature khỏi source của layer marker
-                console.log("map.html: All markers cleared.");
-            } else {
-                console.warn("map.html: Marker layer or its source is not available to clear markers.");
-            }
-        }
-
-        // Xóa tuyến đường hiện tại khỏi bản đồ.
-        // Hàm này được gọi từ Java.
-        function clearRoute() {
-            console.log("map.html: clearRoute called."); // Log: Hàm clearRoute được gọi
-            if (routeLayer && routeLayer.getSource()) {
-                routeLayer.getSource().clear(); // Xóa tất cả feature khỏi source của layer route
-                console.log("map.html: Route cleared.");
-            } else {
-                console.warn("map.html: Route layer or its source is not available to clear route.");
-            }
-        }
-
-        // Di chuyển (pan) tâm bản đồ đến tọa độ (lat, lng) cho trước và tùy chỉnh mức zoom.
-        // Hàm này được gọi từ Java.
-        function panTo(lat, lng, zoomLevel) {
-            console.log(`map.html: panTo called with Lat: ${lat}, Lng: ${lng}, Zoom: ${zoomLevel}`); // Log tọa độ và zoom
-            if (!mapInstance) {
-                console.error("map.html: mapInstance is not initialized in panTo.");
-                return;
-            }
-            try {
-                const targetCoordinates = ol.proj.fromLonLat([lng, lat]);
-                mapInstance.getView().animate({
-                    center: targetCoordinates,
-                    zoom: zoomLevel !== undefined ? zoomLevel : mapInstance.getView().getZoom(), // Sử dụng zoomLevel nếu có, nếu không giữ zoom hiện tại
-                    duration: 800 // Thời gian animation (ms)
+              markerLayer
+                .getSource()
+                .getFeatures()
+                .forEach((feature) => {
+                  if (feature.getGeometry() instanceof ol.geom.Point) {
+                    markerCoordinates.push(
+                      feature.getGeometry().getCoordinates()
+                    );
+                  }
                 });
-                console.log("map.html: Map panned and zoomed to " + lat + ", " + lng + " with zoom " + (zoomLevel !== undefined ? zoomLevel : "current"));
-            } catch (e) {
-                console.error("map.html: Error in panTo: ", e);
-                logToJava("Error in panTo: " + e.message);
             }
-        }
 
-        // Hàm này có thể được gọi từ Java để ghi log từ phía JavaScript.
-        // Ví dụ: window.javaConnector.logJs("Một thông điệp từ JavaScript")
-        function logToJava(message) {
-            console.log("map.html: logToJava called with message: ", message);
-            if (window.javaConnector && typeof window.javaConnector.logJs === 'function') {
-                window.javaConnector.logJs(message);
+            // Define colors for each route segment
+            const routeColors = [
+              "#2563eb", // Blue
+              "#059669", // Green
+              "#d97706", // Orange
+              "#be123c", // Red
+              "#7c3aed", // Purple
+              "#0369a1", // Ocean blue
+              "#16a34a", // Dark green
+              "#c2410c", // Dark orange
+              "#b91c1c", // Dark red
+              "#6d28d9", // Dark purple
+            ];
+
+            // If multiple markers, split route into segments between markers
+            if (markerCoordinates.length > 1) {
+              console.log(
+                "map.html: Multiple markers detected. Drawing multi-segment route."
+              );
+
+              // Find points in route closest to each marker
+              const markerPoints = [];
+              markerCoordinates.forEach((markerCoord) => {
+                let closestIdx = 0;
+                let minDistance = Infinity;
+
+                // Find closest point in route for each marker
+                olCoordinates.forEach((routeCoord, idx) => {
+                  const dist = Math.sqrt(
+                    Math.pow(routeCoord[0] - markerCoord[0], 2) +
+                      Math.pow(routeCoord[1] - markerCoord[1], 2)
+                  );
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                    closestIdx = idx;
+                  }
+                });
+
+                markerPoints.push({
+                  index: closestIdx,
+                  coordinate: olCoordinates[closestIdx],
+                });
+              });
+
+              // Sort points by order on route
+              markerPoints.sort((a, b) => a.index - b.index);
+
+              // Create route segments between markers
+              for (let i = 0; i < markerPoints.length - 1; i++) {
+                const startIdx = markerPoints[i].index;
+                const endIdx = markerPoints[i + 1].index;
+                const segmentCoordinates = olCoordinates.slice(
+                  startIdx,
+                  endIdx + 1
+                );
+
+                if (segmentCoordinates.length > 1) {
+                  const colorIndex = i % routeColors.length;
+
+                  // Create feature for this segment
+                  const segmentFeature = new ol.Feature({
+                    geometry: new ol.geom.LineString(segmentCoordinates),
+                  });
+
+                  // Set style with different color for each segment
+                  segmentFeature.setStyle(
+                    new ol.style.Style({
+                      stroke: new ol.style.Stroke({
+                        color: routeColors[colorIndex],
+                        width: 4,
+                      }),
+                    })
+                  );
+
+                  routeLayer.getSource().addFeature(segmentFeature);
+                }
+              }
             } else {
-                console.warn('javaConnector.logJs is not available. Message not sent to Java.');
-            }
-        }
+              // If only one or no markers, draw route normally with single color
+              console.log("map.html: Single route segment detected.");
+              const routeFeature = new ol.Feature({
+                geometry: new ol.geom.LineString(olCoordinates),
+              });
 
-        // (Tùy chọn) Gọi initializeMapWithApiKey ngay khi script được tải nếu bạn muốn bản đồ hiển thị ngay
-        // mà không cần chờ Java gọi. Tuy nhiên, điều này có nghĩa là API key có thể chưa được inject.
-        // Để an toàn, tốt nhất là để Java gọi hàm này sau khi đã inject API key.
-        // initializeMapWithApiKey(true); // Gọi với fallback nếu muốn thử
-        console.log("map.html script loaded. Waiting for initializeMapWithApiKey call from Java or explicit call.");
+              routeFeature.setStyle(
+                new ol.style.Style({
+                  stroke: new ol.style.Stroke({
+                    color: routeColors[0], // Default color for single route
+                    width: 4,
+                  }),
+                })
+              );
+
+              routeLayer.getSource().addFeature(routeFeature);
+            }
+
+            console.log("map.html: Route drawn successfully.");
+          } else {
+            console.log(
+              "map.html: No coordinates provided to drawRoute, route cleared."
+            );
+          }
+        } catch (e) {
+          console.error("map.html: Error in drawRoute: ", e);
+        }
+      }
+
+      // Clear all markers from the map.
+      // This function is called from Java.
+      function clearAllMarkers() {
+        console.log("map.html: clearAllMarkers called.");
+        if (markerLayer && markerLayer.getSource()) {
+          markerLayer.getSource().clear(); // Clear all features from marker layer source
+          console.log("map.html: All markers cleared.");
+        } else {
+          console.warn(
+            "map.html: Marker layer or its source is not available to clear markers."
+          );
+        }
+      }
+
+      // Clear current route from the map.
+      // This function is called from Java.
+      function clearRoute() {
+        console.log("map.html: clearRoute called.");
+        if (routeLayer && routeLayer.getSource()) {
+          routeLayer.getSource().clear(); // Clear all features from route layer source
+          console.log("map.html: Route cleared.");
+        } else {
+          console.warn(
+            "map.html: Route layer or its source is not available to clear route."
+          );
+        }
+      }
+
+      // Pan map center to given coordinates (lat, lng) and customize zoom level.
+      // This function is called from Java.
+      function panTo(lat, lng, zoomLevel) {
+        console.log(
+          `map.html: panTo called with Lat: ${lat}, Lng: ${lng}, Zoom: ${zoomLevel}`
+        );
+        if (!mapInstance) {
+          console.error("map.html: mapInstance is not initialized in panTo.");
+          return;
+        }
+        try {
+          const targetCoordinates = ol.proj.fromLonLat([lng, lat]);
+          mapInstance.getView().animate({
+            center: targetCoordinates,
+            zoom:
+              zoomLevel !== undefined
+                ? zoomLevel
+                : mapInstance.getView().getZoom(), // Use zoomLevel if provided, otherwise keep current zoom
+            duration: 800, // Animation duration (ms)
+          });
+          console.log(
+            "map.html: Map panned and zoomed to " +
+              lat +
+              ", " +
+              lng +
+              " with zoom " +
+              (zoomLevel !== undefined ? zoomLevel : "current")
+          );
+        } catch (e) {
+          console.error("map.html: Error in panTo: ", e);
+          logToJava("Error in panTo: " + e.message);
+        }
+      }
+
+      // This function can be called from Java to log from JavaScript side.
+      // Example: window.javaConnector.logJs("A message from JavaScript")
+      function logToJava(message) {
+        console.log("map.html: logToJava called with message: ", message);
+        if (
+          window.javaConnector &&
+          typeof window.javaConnector.logJs === "function"
+        ) {
+          window.javaConnector.logJs(message);
+        } else {
+          console.warn(
+            "javaConnector.logJs is not available. Message not sent to Java."
+          );
+        }
+      }
+
+      // (Optional) Call initializeMapWithApiKey when script loads if you want map to display immediately
+      // without waiting for Java to call. However, this means API key may not have been injected yet.
+      // For safety, it's best to let Java call this function after injecting API key.
+      // initializeMapWithApiKey(true); // Call with fallback if desired
+      console.log(
+        "map.html script loaded. Waiting for initializeMapWithApiKey call from Java or explicit call."
+      );
     </script>
-</body>
+  </body>
 </html>

@@ -3,30 +3,39 @@ package tourrouteplanner.model;
 import java.util.List;
 
 /**
- * Đại diện cho một tuyến đường đã được tính toán, bao gồm các điểm tham chiếu,
- * đường đi chi tiết và thông tin tổng hợp như khoảng cách và thời gian di chuyển.
+ * Represents a calculated route, including waypoints,
+ * detailed path, and summary information such as distance and travel time.
  */
 public class Route {
-    /** Danh sách các địa điểm (waypoints) theo thứ tự trong tuyến đường. */
+    /** List of places (waypoints) in order within the route. */
     private List<Place> waypoints;
-    /** Danh sách các cặp tọa độ (vĩ độ, kinh độ) mô tả chi tiết đường đi của tuyến đường. */
+    /**
+     * List of coordinate pairs (latitude, longitude) describing the detailed path
+     * of the route.
+     */
     private List<Coordinate> coordinates;
-    /** Tổng khoảng cách của tuyến đường, đơn vị tính bằng mét (m). */
+    /** Total distance of the route, in meters (m). */
     private double totalDistanceMeters;
-    /** Tổng thời gian di chuyển ước tính của tuyến đường, đơn vị tính bằng giây (s). */
+    /** Estimated total travel time of the route, in seconds (s). */
     private double totalDurationSeconds;
-    /** Hướng dẫn chi tiết từng chặng của tuyến đường. */
+    /** Turn-by-turn navigation instructions for the route. */
     private String turnByTurnInstructions;
 
     /**
-     * Khởi tạo một đối tượng Route mới.
-     * @param waypoints Danh sách các {@link Place} (điểm tham chiếu) trong tuyến đường, theo thứ tự.
-     * @param coordinates Danh sách các {@link Coordinate} xác định hình dạng đường đi của tuyến đường.
-     * @param totalDistanceMeters Tổng khoảng cách của tuyến đường, tính bằng mét.
-     * @param totalDurationSeconds Tổng thời gian di chuyển ước tính của tuyến đường, tính bằng giây.
-     * @param turnByTurnInstructions Hướng dẫn chi tiết từng chặng của tuyến đường.
+     * Creates a new Route object.
+     * 
+     * @param waypoints              List of {@link Place} (waypoints) in the route,
+     *                               in order.
+     * @param coordinates            List of {@link Coordinate} defining the route
+     *                               path shape.
+     * @param totalDistanceMeters    Total distance of the route, in meters.
+     * @param totalDurationSeconds   Estimated total travel time of the route, in
+     *                               seconds.
+     * @param turnByTurnInstructions Turn-by-turn navigation instructions for the
+     *                               route.
      */
-    public Route(List<Place> waypoints, List<Coordinate> coordinates, double totalDistanceMeters, double totalDurationSeconds, String turnByTurnInstructions) {
+    public Route(List<Place> waypoints, List<Coordinate> coordinates, double totalDistanceMeters,
+            double totalDurationSeconds, String turnByTurnInstructions) {
         this.waypoints = waypoints;
         this.coordinates = coordinates;
         this.totalDistanceMeters = totalDistanceMeters;
@@ -34,50 +43,59 @@ public class Route {
         this.turnByTurnInstructions = turnByTurnInstructions;
     }
 
-    /** Lấy danh sách các điểm tham chiếu (waypoints) của tuyến đường. */
-    public List<Place> getWaypoints() { return waypoints; }
-    /** Lấy danh sách các tọa độ mô tả đường đi của tuyến đường. */
-    public List<Coordinate> getCoordinates() { return coordinates; }
+    /** Gets the list of waypoints of the route. */
+    public List<Place> getWaypoints() {
+        return waypoints;
+    }
 
-    /** Lấy tổng khoảng cách của tuyến đường (km). */
+    /** Gets the list of coordinates describing the route path. */
+    public List<Coordinate> getCoordinates() {
+        return coordinates;
+    }
+
+    /** Gets the total distance of the route (km). */
     public double getTotalDistanceKm() {
         return this.totalDistanceMeters / 1000.0;
     }
 
-    /** Lấy tổng thời gian di chuyển ước tính của tuyến đường (phút). */
+    /** Gets the estimated total travel time of the route (minutes). */
     public double getTotalDurationMinutes() {
         return this.totalDurationSeconds / 60.0;
     }
 
-    /** Lấy hướng dẫn chi tiết từng chặng của tuyến đường. */
-    public String getTurnByTurnInstructions() { return turnByTurnInstructions; }
+    /** Gets the turn-by-turn navigation instructions for the route. */
+    public String getTurnByTurnInstructions() {
+        return turnByTurnInstructions;
+    }
 
     /**
-     * Lớp nội tĩnh (static inner class) đại diện cho một tọa độ địa lý (vĩ độ và kinh độ).
-     * Được sử dụng để mô tả các điểm trên đường đi của một {@link Route}.
+     * Static inner class representing a geographic coordinate (latitude and
+     * longitude).
+     * Used to describe points along the path of a {@link Route}.
      */
     public static class Coordinate {
-        /** Vĩ độ của điểm tọa độ. */
+        /** Latitude of the coordinate point. */
         private double latitude;
-        /** Kinh độ của điểm tọa độ. */
+        /** Longitude of the coordinate point. */
         private double longitude;
 
         /**
-         * Khởi tạo một đối tượng Coordinate mới.
-         * @param latitude Vĩ độ của tọa độ.
-         * @param longitude Kinh độ của tọa độ.
+         * Creates a new Coordinate object.
+         * 
+         * @param latitude  Latitude of the coordinate.
+         * @param longitude Longitude of the coordinate.
          */
         public Coordinate(double latitude, double longitude) {
             this.latitude = latitude;
             this.longitude = longitude;
         }
 
-        /** Lấy vĩ độ của tọa độ. */
+        /** Gets the latitude of the coordinate. */
         public double getLatitude() {
             return latitude;
         }
 
-        /** Lấy kinh độ của tọa độ. */
+        /** Gets the longitude of the coordinate. */
         public double getLongitude() {
             return longitude;
         }

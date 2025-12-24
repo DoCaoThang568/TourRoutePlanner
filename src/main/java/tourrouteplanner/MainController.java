@@ -7,7 +7,7 @@ import com.teamdev.jxbrowser.engine.RenderingMode;
 import com.teamdev.jxbrowser.frame.Frame;
 import com.teamdev.jxbrowser.js.JsAccessible;
 import com.teamdev.jxbrowser.js.JsObject;
-import com.teamdev.jxbrowser.browser.event.ConsoleMessageReceived; // Correct import for JxBrowser 8.x
+import com.teamdev.jxbrowser.browser.event.ConsoleMessageReceived;
 import com.teamdev.jxbrowser.navigation.event.LoadFinished;
 import com.teamdev.jxbrowser.view.javafx.BrowserView;
 import com.teamdev.jxbrowser.browser.callback.InjectJsCallback;
@@ -21,8 +21,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.BorderPane; // Added import
-import javafx.scene.control.ScrollPane; // Added import
+import javafx.scene.layout.BorderPane;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import tourrouteplanner.model.Place;
@@ -32,11 +32,11 @@ import tourrouteplanner.service.StorageService;
 import tourrouteplanner.util.Utils;
 
 import java.io.File;
-import java.io.IOException; // Thêm import IOException
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList; // Thêm import ArrayList
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -46,111 +46,114 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Controller chính cho giao diện người dùng của ứng dụng Tour Route Planner.
- * Quản lý các tương tác của người dùng, hiển thị bản đồ, tìm kiếm địa điểm,
- * lập kế hoạch lộ trình và lưu/tải lộ trình.
+ * Main controller for the Tour Route Planner application user interface.
+ * Manages user interactions, map display, place search,
+ * route planning and saving/loading routes.
  */
 public class MainController {
 
     @FXML
-    private TextField searchBox; // Trường nhập liệu để tìm kiếm địa điểm.
+    private TextField searchBox; // Input field for place search.
     @FXML
-    private ListView<Place> placeListView; // Danh sách hiển thị kết quả tìm kiếm.
+    private ListView<Place> placeListView; // List view displaying search results.
     @FXML
-    private ListView<String> suggestionsListView; // Danh sách hiển thị gợi ý tìm kiếm.
+    private ListView<String> suggestionsListView; // List view displaying search suggestions.
     @FXML
-    private TableView<Place> routeTableView; // Bảng hiển thị các địa điểm đã chọn trong lộ trình hiện tại.
+    private TableView<Place> routeTableView; // Table displaying selected places in the current route.
     @FXML
-    private TableColumn<Place, String> routePlaceNameColumn; // Cột tên địa điểm trong bảng lộ trình.
+    private TableColumn<Place, String> routePlaceNameColumn; // Place name column in route table.
     @FXML
-    private TableColumn<Place, String> routePlaceAddressColumn; // Cột địa chỉ trong bảng lộ trình.    @FXML
-    private Button removeSelectedButton; // Nút để xóa địa điểm được chọn từ bảng lộ trình.
+    private TableColumn<Place, String> routePlaceAddressColumn; // Address column in route table.
     @FXML
-    private Button findRouteButton; // Nút để tìm và hiển thị lộ trình giữa các địa điểm đã chọn.
+    private Button removeSelectedButton; // Button to remove selected place from route table.
     @FXML
-    private Button saveRouteButton; // Nút để lưu lộ trình hiện tại ra tệp.
+    private Button findRouteButton; // Button to find and display route between selected places.
     @FXML
-    private Button loadRouteButton; // Nút để tải lộ trình từ tệp.
+    private Button saveRouteButton; // Button to save current route to file.
     @FXML
-    private Button moveUpButton; // Nút mũi tên lên để di chuyển địa điểm lên trên
+    private Button loadRouteButton; // Button to load route from file.
     @FXML
-    private Button moveDownButton; // Nút mũi tên xuống để di chuyển địa điểm xuống dưới
+    private Button moveUpButton; // Up arrow button to move place up
     @FXML
-    private Button clearAllButton; // Nút xóa tất cả địa điểm
+    private Button moveDownButton; // Down arrow button to move place down
     @FXML
-    private Button darkModeToggle; // Nút chuyển đổi dark mode
+    private Button clearAllButton; // Button to clear all places
     @FXML
-    private Label searchPlaceholder; // Nhãn placeholder cho kết quả tìm kiếm.
+    private Button darkModeToggle; // Dark mode toggle button
     @FXML
-    private Label routePlaceholder; // Nhãn placeholder cho danh sách lộ trình.
+    private Label searchPlaceholder; // Placeholder label for search results.
+    @FXML
+    private Label routePlaceholder; // Placeholder label for route list.
     @FXML
     private ProgressIndicator loadingSpinner; // Loading spinner
     @FXML
-    private javafx.scene.layout.HBox loadingContainer; // Container cho loading animation
-    // @FXML private Label totalDistanceLabel; // Removed field
+    private javafx.scene.layout.HBox loadingContainer; // Container for loading animation
 
     @FXML
-    private StackPane mapPane; // Container cho bản đồ JxBrowser.
+    private StackPane mapPane; // Container for JxBrowser map.
 
     @FXML
-    private BorderPane mapAndControlsPane; // Added field
+    private BorderPane mapAndControlsPane;
     @FXML
-    private ScrollPane dynamicRouteInfoScrollPane; // Added field
+    private ScrollPane dynamicRouteInfoScrollPane;
     @FXML
-    private TextArea dynamicRouteInfoTextArea; // Added field
+    private TextArea dynamicRouteInfoTextArea;
 
-    // Danh sách các địa điểm kết quả tìm kiếm, có thể được quan sát để cập nhật UI.
+    // Observable list of search result places for UI updates.
     private ObservableList<Place> searchResults = FXCollections.observableArrayList();
-    // Danh sách các địa điểm trong lộ trình hiện tại, có thể được quan sát để cập nhật UI.
+    // Observable list of places in current route for UI updates.
     private ObservableList<Place> currentRoutePlaces = FXCollections.observableArrayList();
-    // Dịch vụ xử lý logic tìm kiếm địa điểm và lộ trình.
+    // Service handling place search and routing logic.
     private RouteService routeService;
-    // Dịch vụ xử lý logic lưu và tải lộ trình.
-    private StorageService storageService;    // Timer for debouncing search suggestions
+    // Service handling route save and load logic.
+    private StorageService storageService;
+    // Timer for debouncing search suggestions
     private ScheduledExecutorService suggestionsScheduler;
     private final ObservableList<String> searchSuggestions = FXCollections.observableArrayList();
 
     // Dark mode state
     private boolean isDarkMode = false;
 
-    // Các thành phần của JxBrowser để hiển thị bản đồ.
+    // JxBrowser components for map display.
     private Engine engine;
     private Browser browser;
     private BrowserView browserView;
 
     @FXML
-    private Label statusLabel; // Nhãn hiển thị thông báo trạng thái cho người dùng.
+    private Label statusLabel; // Label displaying status messages to user.
 
-    // Theo dõi xem đã tính lộ trình chưa
+    // Track whether route has been calculated
     private boolean routeCalculated = false;
 
     /**
-     * Constructor mặc định cho MainController.
-     * Được gọi khi FXML được tải.
+     * Default constructor for MainController.
+     * Called when FXML is loaded.
      */
     public MainController() {
-        // Khởi tạo ban đầu có thể được thực hiện ở đây nếu cần,
-        // nhưng hầu hết logic khởi tạo UI nên đặt trong phương thức initialize().
+        // Initial setup can be done here if needed,
+        // but most UI initialization logic should be in initialize() method.
     }
 
     /**
-     * Khởi tạo controller sau khi các trường FXML đã được inject.
-     * Thiết lập các dịch vụ, danh sách, bảng và JxBrowser.
+     * Initializes the controller after FXML fields have been injected.
+     * Sets up services, lists, tables, and JxBrowser.
      */
-    @FXML    public void initialize() {
-        // Khởi tạo các dịch vụ. RouteService không còn nhận API key qua constructor.
+    @FXML
+    public void initialize() {
+        // Initialize services. RouteService no longer receives API key via constructor.
         routeService = new RouteService();
         storageService = new StorageService();
         suggestionsScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true); // Allow application to exit even if this thread is running
-            return thread;        });
-        
-        // Thiết lập icon và tooltip cho nút Dark Mode
-        setDarkModeButtonIcon(false); // false = light mode (mặc định)
-        Tooltip.install(darkModeToggle, new Tooltip("Chuyển sang chế độ tối"));
-        
-        // Thiết lập ListView cho kết quả tìm kiếm địa điểm.
+            return thread;
+        });
+
+        // Set up icon and tooltip for Dark Mode button
+        setDarkModeButtonIcon(false); // false = light mode (default)
+        Tooltip.install(darkModeToggle, new Tooltip("Switch to dark mode"));
+
+        // Set up ListView for place search results.
         placeListView.setItems(searchResults);
         placeListView.setCellFactory(param -> new ListCell<Place>() {
             private Button addButton;
@@ -161,14 +164,15 @@ public class MainController {
             private final Tooltip tooltip = new Tooltip();
 
             { // Instance initializer block for the ListCell
-                // Tạo các UI components
-                addButton = new Button("Thêm");
-                addButton.getStyleClass().add("place-add-button");                addButton.setOnAction(event -> {
+              // Create UI components
+                addButton = new Button("Add");
+                addButton.getStyleClass().add("place-add-button");
+                addButton.setOnAction(event -> {
                     Place place = getItem();
                     if (place != null && !currentRoutePlaces.contains(place)) {
                         currentRoutePlaces.add(place);
                         addMapMarker(place.getName(), place.getLatitude(), place.getLongitude(), place.getAddress());
-                        statusLabel.setText("Đã thêm: " + place.getName());
+                        statusLabel.setText("Added: " + place.getName());
                         // Refresh the ListView to update button states
                         placeListView.refresh();
                     }
@@ -177,7 +181,7 @@ public class MainController {
                 nameLabel = new Label();
                 nameLabel.getStyleClass().add("place-name");
                 nameLabel.setWrapText(true);
-                
+
                 addressLabel = new Label();
                 addressLabel.getStyleClass().add("place-address");
                 addressLabel.setWrapText(true);
@@ -189,7 +193,7 @@ public class MainController {
                 hbox = new HBox(10);
                 hbox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
                 hbox.getChildren().addAll(vbox, addButton);
-                
+
                 // Make vbox grow to fill available space
                 javafx.scene.layout.HBox.setHgrow(vbox, javafx.scene.layout.Priority.ALWAYS);
             }
@@ -205,49 +209,56 @@ public class MainController {
                     nameLabel.setText(item.getName());
                     String address = item.getAddress();
                     addressLabel.setText(address != null ? address : "");
-                    
+
                     // Disable button if place is already in route
                     addButton.setDisable(currentRoutePlaces.contains(item));
-                    
+
                     setGraphic(hbox);
                     setText(null);
-                    
+
                     tooltip.setText(item.getName() + "\n" + (address != null ? address : ""));
                     setTooltip(tooltip);
                 }
             }
-        });        // Thêm listener để pan bản đồ khi một địa điểm được chọn trong placeListView.
+        });
+
+        // Add listener to pan map when a place is selected in placeListView.
         placeListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 String geoJson = newSelection.getGeoJson();
                 double[] boundingBox = newSelection.getBoundingBox();
 
                 if (geoJson != null && !geoJson.trim().isEmpty()) {
-                    // Ưu tiên highlight GeoJSON nếu có
+                    // Prioritize GeoJSON highlight if available
                     highlightGeoJsonOnMap(geoJson);
-                    // Vẫn zoom tới bounding box nếu có, vì GeoJSON có thể là điểm hoặc vùng nhỏ
+                    // Still zoom to bounding box if available, since GeoJSON might be a point or
+                    // small area
                     if (boundingBox != null && boundingBox.length == 4) {
                         zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
                     } else {
-                        // Nếu không có bounding box, pan tới điểm trung tâm với mức zoom mặc định
-                        panTo(newSelection.getLatitude(), newSelection.getLongitude(), 15); // Sử dụng int trực tiếp
+                        // If no bounding box, pan to center point with default zoom level
+                        panTo(newSelection.getLatitude(), newSelection.getLongitude(), 15);
                     }
                 } else if (boundingBox != null && boundingBox.length == 4) {
-                    // Nếu không có GeoJSON nhưng có bounding box, highlight bounding box
+                    // If no GeoJSON but has bounding box, highlight bounding box
                     highlightBoundingBoxOnMap(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
                     zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
                 } else {
-                    // Nếu không có cả GeoJSON và bounding box, pan tới điểm trung tâm
-                    panTo(newSelection.getLatitude(), newSelection.getLongitude(), 15); // Sử dụng int trực tiếp
-                    clearMapHighlight(); // Xóa highlight cũ
+                    // If neither GeoJSON nor bounding box, pan to center point
+                    panTo(newSelection.getLatitude(), newSelection.getLongitude(), 15);
+                    clearMapHighlight(); // Clear old highlight
                 }
             } else {
-                clearMapHighlight(); // Xóa highlight nếu không có địa điểm nào được chọn
+                clearMapHighlight(); // Clear highlight if no place selected
             }
-        });// Cấu hình cho TableView các địa điểm đã chọn trong lộ trình.
+        });
+
+        // Configure TableView for selected places in route.
         routePlaceNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        routePlaceAddressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));        routeTableView.setItems(currentRoutePlaces);
-          // Thêm listener để bật/tắt các nút điều khiển dựa trên việc có địa điểm được chọn
+        routePlaceAddressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
+        routeTableView.setItems(currentRoutePlaces);
+
+        // Add listener to enable/disable control buttons based on selection
         routeTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             boolean hasSelection = newSelection != null;
             if (removeSelectedButton != null) {
@@ -257,7 +268,8 @@ public class MainController {
             if (hasSelection && moveUpButton != null && moveDownButton != null) {
                 int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
                 moveUpButton.setDisable(selectedIndex <= 0); // Disable if the selected item is the first
-                moveDownButton.setDisable(selectedIndex >= currentRoutePlaces.size() - 1); // Disable if the selected item is the last
+                moveDownButton.setDisable(selectedIndex >= currentRoutePlaces.size() - 1); // Disable if the selected
+                                                                                           // item is the last
             } else if (moveUpButton != null && moveDownButton != null) {
                 moveUpButton.setDisable(true);
                 moveDownButton.setDisable(true);
@@ -274,62 +286,68 @@ public class MainController {
             // Update placeholder visibility
             updateRoutePlaceholderVisibility();
         });
-            // Thiết lập cấu hình chiều rộng cột để đảm bảo cột tên không chiếm quá nhiều không gian
+
+        // Set up column width configuration to ensure name column doesn't take too much
+        // space
         routePlaceNameColumn.setMinWidth(100);
-        routePlaceNameColumn.setPrefWidth(180);  // Giá trị mặc định, sẽ được điều chỉnh dựa trên nội dung
-        routePlaceNameColumn.setMaxWidth(250);    // Giới hạn kích thước tối đa
-        
-        // Cột địa chỉ sẽ linh hoạt hơn và giãn ra để lấp đầy phần còn lại
+        routePlaceNameColumn.setPrefWidth(180); // Default value, will be adjusted based on content
+        routePlaceNameColumn.setMaxWidth(250); // Maximum size limit
+
+        // Address column will be more flexible and stretch to fill remaining space
         routePlaceAddressColumn.setMinWidth(200);
-          // Sử dụng chính sách điều chỉnh chiều rộng của TableView (chỉ đặt một lần)
-        // Thay thế CONSTRAINED_RESIZE_POLICY với cách hiện đại hơn
-        routeTableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);          // Bắt sự kiện khi dữ liệu thay đổi để tự động điều chỉnh chiều rộng cột tên
+
+        // Use TableView column resize policy (set only once)
+        routeTableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+
+        // Listen for data changes to auto-adjust name column width
         currentRoutePlaces.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
             boolean hasPlaces = !currentRoutePlaces.isEmpty();
-            boolean hasEnoughPlaces = currentRoutePlaces.size() >= 2;            
-            // Bật/tắt các nút dựa trên số lượng địa điểm
+            boolean hasEnoughPlaces = currentRoutePlaces.size() >= 2;
+
+            // Enable/disable buttons based on number of places
             if (clearAllButton != null) {
                 clearAllButton.setDisable(!hasPlaces);
             }
             if (findRouteButton != null) {
                 findRouteButton.setDisable(!hasEnoughPlaces);
             }
-              // Cập nhật trạng thái nút di chuyển dựa trên việc có selection và vị trí của selection
+
+            // Update move button state based on selection and position
             Place selectedPlace = routeTableView.getSelectionModel().getSelectedItem();
             if (selectedPlace != null && hasPlaces && moveUpButton != null && moveDownButton != null) {
                 int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
                 moveUpButton.setDisable(selectedIndex <= 0);
                 moveDownButton.setDisable(selectedIndex >= currentRoutePlaces.size() - 1);
             } else if (moveUpButton != null && moveDownButton != null) {
-                // Nếu không có place nào được chọn hoặc không có place nào trong danh sách
+                // If no place selected or no places in list
                 moveUpButton.setDisable(true);
                 moveDownButton.setDisable(true);
             }
-            
-            // Cập nhật placeholder visibility khi danh sách thay đổi
+
+            // Update placeholder visibility when list changes
             updateRoutePlaceholderVisibility();
-            
+
             if (!currentRoutePlaces.isEmpty()) {
                 Platform.runLater(() -> {
-                    // Tính toán chiều rộng tối ưu cho cột tên dựa trên nội dung hiện tại
+                    // Calculate optimal width for name column based on current content
                     double prefWidth = computePrefColumnWidth(routePlaceNameColumn, currentRoutePlaces);
                     if (prefWidth > 0) {
-                        // Đặt chiều rộng cho cột tên trong giới hạn đã định
+                        // Set width for name column within defined limits
                         routePlaceNameColumn.setPrefWidth(Math.max(100, Math.min(prefWidth + 10, 250)));
                     }
                 });
             }
         });
-        
-        // Thêm listener cho kích thước TableView để điều chỉnh tương đối khi thay đổi kích thước cửa sổ
+
+        // Add listener for TableView size to adjust relatively when window resizes
         routeTableView.widthProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal.doubleValue() > 0) {
                 double tableWidth = newVal.doubleValue();
-                routePlaceNameColumn.setMaxWidth(tableWidth * 0.4); // Chiếm tối đa 40% chiều rộng bảng
+                routePlaceNameColumn.setMaxWidth(tableWidth * 0.4); // Take up to 40% of table width
             }
         });
-        
-        // CellFactory đơn giản chỉ để hiển thị text với wrap
+
+        // Simple CellFactory to display text with wrap
         routePlaceNameColumn.setCellFactory(tc -> {
             TableCell<Place, String> cell = new TableCell<Place, String>() {
                 @Override
@@ -345,7 +363,8 @@ public class MainController {
             };
             return cell;
         });
-          routePlaceAddressColumn.setCellFactory(tc -> {
+
+        routePlaceAddressColumn.setCellFactory(tc -> {
             TableCell<Place, String> cell = new TableCell<Place, String>() {
                 @Override
                 protected void updateItem(String item, boolean empty) {
@@ -356,23 +375,26 @@ public class MainController {
                         setText(item);
                     }
                     setWrapText(true);
-                }            };
+                }
+            };
             return cell;
         });
 
         // Initialize suggestions ListView
-        suggestionsListView.setItems(searchSuggestions);        // Xử lý khi người dùng click vào một gợi ý
+        suggestionsListView.setItems(searchSuggestions);
+
+        // Handle when user clicks on a suggestion
         suggestionsListView.setOnMouseClicked(event -> {
             String selectedSuggestion = suggestionsListView.getSelectionModel().getSelectedItem();
             if (selectedSuggestion != null && !selectedSuggestion.isEmpty()) {
-                // Ẩn danh sách gợi ý ngay lập tức
+                // Hide suggestions list immediately
                 suggestionsListView.setVisible(false);
                 suggestionsListView.setManaged(false);
-                
-                // Điền vào ô tìm kiếm
+
+                // Fill in search box
                 searchBox.setText(selectedSuggestion);
-                
-                // Tự động kích hoạt tìm kiếm để hiển thị kết quả chi tiết
+
+                // Automatically trigger search to display detailed results
                 handleSearch();
             }
         });
@@ -386,7 +408,9 @@ public class MainController {
                 Thread thread = new Thread(runnable);
                 thread.setDaemon(true);
                 return thread;
-            });            if (newValue == null || newValue.trim().length() < 2) {
+            });
+
+            if (newValue == null || newValue.trim().length() < 2) {
                 searchSuggestions.clear();
                 suggestionsListView.setVisible(false);
                 suggestionsListView.setManaged(false);
@@ -395,19 +419,22 @@ public class MainController {
 
             suggestionsScheduler.schedule(() -> {
                 fetchSearchSuggestions(newValue.trim());
-            }, 200, TimeUnit.MILLISECONDS); // Giảm thời gian debounce xuống 200ms để phản hồi nhanh hơn
-        });        // Ẩn suggestions khi searchBox mất focus, nhưng cho phép click vào suggestions
+            }, 200, TimeUnit.MILLISECONDS); // Reduced debounce time to 200ms for faster response
+        });
+
+        // Hide suggestions when searchBox loses focus, but allow clicking on
+        // suggestions
         searchBox.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
             if (!isFocused) {
-                // Thêm delay để cho phép click vào suggestions hoạt động
+                // Add delay to allow clicking on suggestions to work
                 Platform.runLater(() -> {
-                    if (!suggestionsListView.isFocused() && !searchBox.isFocused()) { 
+                    if (!suggestionsListView.isFocused() && !searchBox.isFocused()) {
                         suggestionsListView.setVisible(false);
                         suggestionsListView.setManaged(false);
                     }
                 });
             } else {
-                // Khi focus vào searchBox, hiển thị lại suggestions nếu có text phù hợp
+                // When focus on searchBox, show suggestions again if there's suitable text
                 String currentText = searchBox.getText();
                 if (currentText != null && currentText.length() >= 2 && !searchSuggestions.isEmpty()) {
                     suggestionsListView.setVisible(true);
@@ -416,7 +443,7 @@ public class MainController {
             }
         });
 
-        // Khởi tạo JxBrowser để hiển thị bản đồ.
+        // Initialize JxBrowser to display map.
         initializeJxBrowser();
 
         // Initially hide the dynamic route info scroll pane and set its size
@@ -426,64 +453,72 @@ public class MainController {
             // Set preferred and minimum height. Adjust these values as needed.
             dynamicRouteInfoScrollPane.setPrefHeight(150);
             dynamicRouteInfoScrollPane.setMinHeight(100);
-        }        if (dynamicRouteInfoTextArea != null) {
+        }
+
+        if (dynamicRouteInfoTextArea != null) {
             dynamicRouteInfoTextArea.setEditable(false);
-            dynamicRouteInfoTextArea.setWrapText(true);          }        // Thêm listener để tự động cập nhật placeholder khi danh sách tìm kiếm thay đổi
+            dynamicRouteInfoTextArea.setWrapText(true);
+        }
+
+        // Add listener to auto-update placeholder when search list changes
         searchResults.addListener((javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
             updateSearchPlaceholderVisibility();
             if (searchResults.isEmpty()) {
-                // Đảm bảo không có gì được chọn trong placeListView
+                // Ensure nothing is selected in placeListView
                 placeListView.getSelectionModel().clearSelection();
             }
         });
-          // Khởi tạo trạng thái placeholder ban đầu
+
+        // Initialize initial placeholder state
         updateRoutePlaceholderVisibility();
         updateSearchPlaceholderVisibility();
     }
 
     /**
-     * Khởi tạo và cấu hình JxBrowser Engine, Browser và BrowserView.
-     * Tải tệp HTML bản đồ và thiết lập giao tiếp Java-JavaScript.
+     * Initializes and configures JxBrowser Engine, Browser and BrowserView.
+     * Loads map HTML file and sets up Java-JavaScript communication.
      */
     private void initializeJxBrowser() {
-        // Tải JxBrowser license key từ tệp config.properties.
+        // Load JxBrowser license key from config.properties file.
         String licenseKey = Utils.loadConfigProperty("jxbrowser.license.key");
         if (licenseKey == null || licenseKey.trim().isEmpty()) {
-            Utils.showAlert(Alert.AlertType.ERROR, "Lỗi License Key", "Không tìm thấy JxBrowser License Key trong config.properties.");
-            System.err.println("JxBrowser License Key is missing in config.properties. JxBrowser will not be initialized.");
-            // Cân nhắc vô hiệu hóa các tính năng liên quan đến bản đồ nếu không có license key.
+            Utils.showAlert(Alert.AlertType.ERROR, "License Key Error",
+                    "JxBrowser License Key not found in config.properties.");
+            System.err.println(
+                    "JxBrowser License Key is missing in config.properties. JxBrowser will not be initialized.");
+            // Consider disabling map-related features if no license key.
             return;
         }
 
         try {
-            // Cấu hình và khởi tạo JxBrowser Engine.
+            // Configure and initialize JxBrowser Engine.
             EngineOptions options = EngineOptions.newBuilder(RenderingMode.HARDWARE_ACCELERATED)
-                    .licenseKey(licenseKey) // Sử dụng license key đã tải.
+                    .licenseKey(licenseKey) // Use loaded license key.
                     .build();
             engine = Engine.newInstance(options);
             browser = engine.newBrowser();
 
-            // Cho phép JavaScript gọi các phương thức Java được đánh dấu @JsAccessible.
-            // Đặt đối tượng 'javaConnector' (là instance của MainController này) vào global window object của JavaScript.
+            // Allow JavaScript to call Java methods marked @JsAccessible.
+            // Set 'javaConnector' object (this MainController instance) to global window
+            // object of JavaScript.
             browser.set(InjectJsCallback.class, params -> {
                 Frame frame = params.frame();
                 JsObject window = frame.executeJavaScript("window");
                 if (window != null) {
                     window.putProperty("javaConnector", MainController.this);
-                    // System.out.println("Java object \'javaConnector\' exposed to JavaScript."); // Removed log
                 } else {
                     System.err.println("Could not get window object from frame.");
                 }
                 return InjectJsCallback.Response.proceed();
             });
 
-            // Lắng nghe và ghi lại các thông điệp từ console của JavaScript.
+            // Listen and log JavaScript console messages.
             browser.on(ConsoleMessageReceived.class, event -> {
                 String message = "[JS " + event.consoleMessage().level() + "] " + event.consoleMessage().message();
-                System.out.println(message); // Keep this for JS console messages
+                System.out.println(message);
             });
 
-            // Xử lý sự kiện khi trang web (map.html) đã tải xong.
+            // Handle event when web page (map.html) has finished loading.
             browser.navigation().on(LoadFinished.class, event -> {
                 String loadedUrl = "unknown";
                 try {
@@ -493,143 +528,106 @@ public class MainController {
                 } catch (Exception e) {
                     System.err.println("Error retrieving URL in LoadFinished: " + e.getMessage());
                 }
-                // System.out.println("JxBrowser LoadFinished event. URL: \\"" + loadedUrl + "\\""); // Removed diagnostic log
 
                 if (loadedUrl.endsWith("map.html")) {
-                    // System.out.println("map.html loaded. Proceeding with API key injection."); // Removed diagnostic log
                     String maptilerApiKey = Utils.loadConfigProperty("maptiler.api.key");
                     if (maptilerApiKey != null && !maptilerApiKey.trim().isEmpty()) {
                         browser.mainFrame().ifPresent(frame -> {
-                            // Tạo script để gán API key và gọi hàm khởi tạo bản đồ trong JavaScript.
-                            String script = String.format("window.MAPTILER_API_KEY = '%s'; if(typeof initializeMapWithApiKey === \'function\') { console.log(\'Calling initializeMapWithApiKey from Java\'); initializeMapWithApiKey(); } else { console.error(\'initializeMapWithApiKey function not found in map.html\'); }", Utils.escapeJavaScriptString(maptilerApiKey));
-                            // System.out.println("Executing script: " + script); // Removed log
+                            // Create script to assign API key and call map initialization function in
+                            // JavaScript.
+                            String script = String.format(
+                                    "window.MAPTILER_API_KEY = '%s'; if(typeof initializeMapWithApiKey === 'function') { console.log('Calling initializeMapWithApiKey from Java'); initializeMapWithApiKey(); } else { console.error('initializeMapWithApiKey function not found in map.html'); }",
+                                    Utils.escapeJavaScriptString(maptilerApiKey));
                             frame.executeJavaScript(script);
-                            // System.out.println("MapTiler API Key injected and initializeMapWithApiKey called."); // Removed log
                         });
                     } else {
-                        Utils.showAlert(Alert.AlertType.ERROR, "Lỗi API Key", "Không thể tải MapTiler API Key từ config.properties.");
+                        Utils.showAlert(Alert.AlertType.ERROR, "API Key Error",
+                                "Could not load MapTiler API Key from config.properties.");
                         System.err.println("MapTiler API Key is missing or empty in config.properties.");
-                        // Nếu không có API key, thử khởi tạo bản đồ ở chế độ fallback (ví dụ: OSM mặc định).
+                        // If no API key, try initializing map in fallback mode (e.g., default OSM).
                         browser.mainFrame().ifPresent(frame -> {
-                            frame.executeJavaScript("if(typeof initializeMapWithApiKey === \'function\') { initializeMapWithApiKey(true); } else { console.error(\'initializeMapWithApiKey function not found for fallback.\'); }"); // Gọi với cờ fallback.
+                            frame.executeJavaScript(
+                                    "if(typeof initializeMapWithApiKey === 'function') { initializeMapWithApiKey(true); } else { console.error('initializeMapWithApiKey function not found for fallback.'); }");
                         });
                     }
                 } else {
-                    // Added more verbose logging here
-                    System.err.println("LoadFinished: Loaded URL does NOT end with map.html. URL: \"" + loadedUrl + "\". Map specific initialization will be skipped.");
+                    System.err.println("LoadFinished: Loaded URL does NOT end with map.html. URL: \"" + loadedUrl
+                            + "\". Map specific initialization will be skipped.");
                 }
             });
 
-            // Tạo BrowserView và thêm vào mapPane.
+            // Create BrowserView and add to mapPane.
             browserView = BrowserView.newInstance(browser);
             mapPane.getChildren().add(browserView);
 
-            // Tải tệp map.html.
+            // Load map.html file.
             Path mapHtmlPath = Paths.get("src/main/resources/tourrouteplanner/map.html").toAbsolutePath();
             if (Files.exists(mapHtmlPath)) {
                 browser.navigation().loadUrl(mapHtmlPath.toUri().toString());
             } else {
                 String errorMessage = "map.html not found at: " + mapHtmlPath.toString();
                 System.err.println(errorMessage);
-                Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tải bản đồ", errorMessage);
+                Utils.showAlert(Alert.AlertType.ERROR, "Map Loading Error", errorMessage);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Utils.showAlert(Alert.AlertType.ERROR, "Lỗi khởi tạo JxBrowser", "Không thể khởi tạo JxBrowser: " + e.getMessage());
+            Utils.showAlert(Alert.AlertType.ERROR, "JxBrowser Initialization Error",
+                    "Could not initialize JxBrowser: " + e.getMessage());
         }
     }
 
     /**
-     * Khởi tạo lại tất cả các marker trên bản đồ theo thứ tự hiện tại của các địa điểm trong lộ trình.
+     * Reinitializes all markers on the map according to current order of places in
+     * route.
      */
     private void refreshMapMarkers() {
         clearAllMarkers();
-        
-        // Thêm lại marker cho tất cả các địa điểm theo thứ tự mới
+
+        // Re-add markers for all places in new order
         for (Place place : currentRoutePlaces) {
-            addMapMarker(place.getName(), place.getLatitude(), 
-                         place.getLongitude(), place.getAddress());
+            addMapMarker(place.getName(), place.getLatitude(),
+                    place.getLongitude(), place.getAddress());
         }
     }
 
     /**
-     * Xử lý sự kiện tìm kiếm địa điểm khi người dùng nhập vào searchBox.
-     * Gọi RouteService để tìm kiếm và cập nhật placeListView.
-     * Di chuyển bản đồ đến vị trí của kết quả đầu tiên (nếu có).
+     * Handles place search event when user types in searchBox.
+     * Calls RouteService to search and updates placeListView.
+     * Pans map to first result location (if any).
      */
     @FXML
     private void handleSearch() {
         String query = searchBox.getText();
-        clearMapHighlight(); // Xóa highlight cũ khi bắt đầu tìm kiếm mới
+        clearMapHighlight(); // Clear old highlight when starting new search
 
         // Hide suggestions when a search is explicitly triggered
         if (suggestionsListView != null) {
             suggestionsListView.setVisible(false);
             suggestionsListView.setManaged(false);
-        }        if (query == null || query.trim().isEmpty()) {
-            searchResults.clear(); // Xóa kết quả cũ nếu query rỗng.
-            // Khôi phục suggestions nếu có text trong searchBox
+        }
+
+        if (query == null || query.trim().isEmpty()) {
+            searchResults.clear(); // Clear old results if query is empty.
             String currentText = searchBox.getText();
             if (currentText != null && !currentText.trim().isEmpty() && currentText.length() >= 2) {
-                // Không ẩn suggestions nếu vẫn có text
+                // Don't hide suggestions if there's still text
             } else {
                 suggestionsListView.setVisible(false);
                 suggestionsListView.setManaged(false);
             }
             return;
-        }try {
+        }
+
+        try {
             List<Place> places = routeService.searchPlaces(query);
-            searchResults.setAll(places); // Cập nhật danh sách kết quả.
-            
-            // Cập nhật placeholder (sẽ được xử lý bởi listener của searchResults)
-            
+            searchResults.setAll(places); // Update results list.
+
             if (!places.isEmpty()) {
-                placeListView.getSelectionModel().selectFirst(); // Chọn kết quả đầu tiên.
-                // Place firstPlace = places.get(0);
-                // Việc pan bản đồ sẽ được xử lý bởi listener của placeListView
-                // panTo(firstPlace.getLatitude(), firstPlace.getLongitude());
+                placeListView.getSelectionModel().selectFirst(); // Select first result.
             }
-
-            // Diagnostic logging for map visibility - REMOVE THIS BLOCK
-            /*
-            Platform.runLater(() -> {
-                System.out.println("--- After handleSearch ---");
-                if (mapPane != null) {
-                    System.out.println("MapPane visible: " + mapPane.isVisible() + ", managed: " + mapPane.isManaged() +
-                                       ", width: " + mapPane.getWidth() + ", height: " + mapPane.getHeight());
-                    if (mapPane.getChildren().isEmpty()) {
-                        System.err.println("MapPane has NO children.");
-                    } else {
-                         System.out.println("MapPane children count: " + mapPane.getChildren().size());
-                    }
-                } else {
-                     System.err.println("MapPane is NULL.");
-                }
-
-                if (browserView != null) {
-                    System.out.println("BrowserView visible: " + browserView.isVisible() + ", managed: " + browserView.isManaged() +
-                                       ", width: " + browserView.getBoundsInLocal().getWidth() + 
-                                       ", height: " + browserView.getBoundsInLocal().getHeight());
-                    if (mapPane != null && !mapPane.getChildren().contains(browserView)) {
-                        System.err.println("CRITICAL: BrowserView is NOT a child of mapPane!");
-                    }
-                     // Check if browser is still valid
-                    if (browser != null && browser.isClosed()) {
-                        System.err.println("CRITICAL: Browser instance is CLOSED after search!");
-                    } else if (browser == null) {
-                        System.err.println("CRITICAL: Browser instance is NULL after search!");
-                    }
-
-                } else {
-                    System.err.println("CRITICAL: browserView is NULL after search.");
-                }
-                System.out.println("--- End of handleSearch diagnostics ---");
-            });
-            */
-
         } catch (IOException e) {
             e.printStackTrace();
-            Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm kiếm", "Không thể thực hiện tìm kiếm: " + e.getMessage());
+            Utils.showAlert(Alert.AlertType.ERROR, "Search Error", "Could not perform search: " + e.getMessage());
         }
     }
 
@@ -652,7 +650,7 @@ public class MainController {
 
         suggestionsScheduler.schedule(() -> {
             try {
-                List<Place> suggestedPlaces = routeService.searchPlaces(query); // Vẫn dùng query gốc cho API
+                List<Place> suggestedPlaces = routeService.searchPlaces(query);
 
                 String normalizedUserQuery = Utils.normalizeForSearch(query);
                 if (normalizedUserQuery == null || normalizedUserQuery.isEmpty()) {
@@ -661,45 +659,50 @@ public class MainController {
                         suggestionsListView.setManaged(false);
                     });
                     return;
-                }                // Cải thiện logic lọc gợi ý để tránh trùng lặp và hiển thị tốt hơn
+                }
+
+                // Improved suggestion filtering logic to avoid duplicates and better display
                 List<String> suggestionNames = suggestedPlaces.stream()
                         .filter(place -> {
                             String placeName = place.getName();
                             String placeAddress = place.getAddress();
-                            String combinedInfo = (placeName != null ? placeName : "") + (placeAddress != null ? " " + placeAddress : "");
+                            String combinedInfo = (placeName != null ? placeName : "")
+                                    + (placeAddress != null ? " " + placeAddress : "");
                             String normalizedPlaceInfo = Utils.normalizeForSearch(combinedInfo);
                             return normalizedPlaceInfo != null && normalizedPlaceInfo.contains(normalizedUserQuery);
                         })
                         .sorted((p1, p2) -> {
-                            // Ưu tiên những địa điểm có tên bắt đầu giống với query
+                            // Prioritize places with names starting with query
                             String name1 = p1.getName() != null ? p1.getName().toLowerCase() : "";
                             String name2 = p2.getName() != null ? p2.getName().toLowerCase() : "";
                             String lowerQuery = query.toLowerCase();
-                            
+
                             boolean starts1 = name1.startsWith(lowerQuery);
                             boolean starts2 = name2.startsWith(lowerQuery);
-                            
-                            if (starts1 && !starts2) return -1;
-                            if (!starts1 && starts2) return 1;
-                            
-                            // Nếu cả hai đều bắt đầu hoặc không bắt đầu, sắp xếp theo độ dài tên
+
+                            if (starts1 && !starts2)
+                                return -1;
+                            if (!starts1 && starts2)
+                                return 1;
+
+                            // If both start or don't start, sort by name length
                             return name1.length() - name2.length();
                         })
                         .map(place -> {
                             String name = place.getName() != null ? place.getName() : "N/A";
                             String address = place.getAddress();
-                            
-                            // Chỉ hiển thị địa chỉ nếu nó cung cấp thông tin bổ sung có ý nghĩa
-                            if (address != null && !address.isEmpty() && 
-                                !address.equalsIgnoreCase(name) && 
-                                address.length() > 10 && // Chỉ hiển thị địa chỉ đủ dài
-                                !address.toLowerCase().equals(name.toLowerCase())) {
+
+                            // Only show address if it provides meaningful additional information
+                            if (address != null && !address.isEmpty() &&
+                                    !address.equalsIgnoreCase(name) &&
+                                    address.length() > 10 &&
+                                    !address.toLowerCase().equals(name.toLowerCase())) {
                                 return name + ", " + address;
                             }
                             return name;
                         })
                         .distinct()
-                        .limit(5) // Giảm số lượng gợi ý để tránh quá nhiều
+                        .limit(5) // Reduce number of suggestions to avoid clutter
                         .collect(Collectors.toList());
 
                 Platform.runLater(() -> {
@@ -714,27 +717,28 @@ public class MainController {
                 });
             } catch (IOException e) {
                 Platform.runLater(() -> {
-                    System.err.println("Lỗi khi tìm kiếm gợi ý: " + e.getMessage());
+                    System.err.println("Error fetching suggestions: " + e.getMessage());
                     suggestionsListView.setVisible(false);
                     suggestionsListView.setManaged(false);
                 });
             }
-        }, 200, TimeUnit.MILLISECONDS); // Giảm thời gian debounce cho suggestions
+        }, 200, TimeUnit.MILLISECONDS);
     }
 
     /**
-     * Tính toán chiều rộng phù hợp cho một cột dựa trên nội dung của nó
-     * @param column Cột cần tính toán chiều rộng
-     * @param items Danh sách các mục dữ liệu
-     * @return Độ rộng phù hợp cho cột
+     * Calculates appropriate width for a column based on its content
+     * 
+     * @param column Column to calculate width for
+     * @param items  List of data items
+     * @return Appropriate width for the column
      */
     private double computePrefColumnWidth(TableColumn<Place, String> column, ObservableList<Place> items) {
-        double maxWidth = 50; // Chiều rộng tối thiểu
+        double maxWidth = 50; // Minimum width
 
-        // Tạo một Text tạm thời để đo chiều rộng
+        // Create temporary Text to measure width
         javafx.scene.text.Text text = new javafx.scene.text.Text();
-        
-        // Lặp qua từng mục để đo chiều rộng
+
+        // Iterate through each item to measure width
         for (Place item : items) {
             String value = "";
             if (column == routePlaceNameColumn && item.getName() != null) {
@@ -742,129 +746,134 @@ public class MainController {
             } else if (column == routePlaceAddressColumn && item.getAddress() != null) {
                 value = item.getAddress();
             }
-            
-            // Đo chiều rộng của văn bản
+
+            // Measure text width
             text.setText(value);
             double width = text.getBoundsInLocal().getWidth();
-            
-            // Cập nhật chiều rộng tối đa
+
+            // Update maximum width
             if (width > maxWidth) {
                 maxWidth = width;
             }
         }
-          // Thêm một khoảng trống cho thanh cuộn
+
+        // Add padding for scrollbar
         return maxWidth + 20;
     }
 
     /**
-     * Xử lý sự kiện xóa địa điểm được chọn từ routeTableView.
-     * Xóa marker tương ứng và cập nhật lại lộ trình trên bản đồ.
-     */@FXML
+     * Handles removing selected place from routeTableView.
+     * Removes corresponding marker and updates route on map.
+     */
+    @FXML
     private void handleRemoveSelected() {
-        // Lấy địa điểm được chọn từ bảng các điểm trong lộ trình.
+        // Get selected place from route table.
         Place selectedRoutePlace = routeTableView.getSelectionModel().getSelectedItem();
         if (selectedRoutePlace != null) {
-            // Lưu lại vị trí của item được chọn để có thể chọn lại item khác sau khi xóa
+            // Save selected index to select another item after removal
             int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
-            
-            // Kiểm tra xem địa điểm bị xóa có phải là địa điểm đang được highlight không
+
+            // Check if removed place is currently highlighted
             Place currentlySelectedInList = placeListView.getSelectionModel().getSelectedItem();
             boolean wasHighlightTarget = selectedRoutePlace.equals(currentlySelectedInList);
 
-            currentRoutePlaces.remove(selectedRoutePlace); // Xóa khỏi danh sách lộ trình.
+            currentRoutePlaces.remove(selectedRoutePlace); // Remove from route list.
             clearAllMarkers();
-            currentRoutePlaces.forEach(p -> addMapMarker(p.getName(), p.getLatitude(), p.getLongitude(), p.getAddress()));
+            currentRoutePlaces
+                    .forEach(p -> addMapMarker(p.getName(), p.getLatitude(), p.getLongitude(), p.getAddress()));
 
-            // Chọn một địa điểm mới trong bảng sau khi xóa, nếu còn địa điểm nào
+            // Select a new place in table after removal, if any remain
             if (!currentRoutePlaces.isEmpty()) {
-                // Nếu có item ở vị trí cũ, chọn item đó; nếu không thì chọn item trước đó
+                // If there's item at old position, select it; otherwise select previous item
                 if (selectedIndex < currentRoutePlaces.size()) {
                     routeTableView.getSelectionModel().select(selectedIndex);
                 } else {
                     routeTableView.getSelectionModel().select(currentRoutePlaces.size() - 1);
                 }
             } else {
-                // Nếu không còn địa điểm nào, xóa highlight
+                // If no places remain, clear highlight
                 if (wasHighlightTarget) {
                     clearMapHighlight();
                 }
             }
-            
+
             if (routeCalculated && currentRoutePlaces.size() > 1) {
-                // Chỉ tính toán lại lộ trình nếu đã tính trước đó và còn ít nhất 2 điểm
+                // Only recalculate route if calculated before and at least 2 places remain
                 handleFindRoute();
             } else if (currentRoutePlaces.size() <= 1) {
-                clearRoute(); // Xóa lộ trình trên bản đồ nếu không còn đủ điểm.
-                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null);
+                clearRoute(); // Clear route on map if not enough places.
+                updateDynamicRouteInfo(String.format(Locale.US, "Total distance: %.2f km", 0.0), null);
                 routeCalculated = false;
             }
         } else {
-            // Thông báo nếu không có điểm nào được chọn trong TableView.
-            Utils.showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Vui lòng chọn một địa điểm từ bảng 'Các điểm đã chọn trong lộ trình' để xóa.");
+            // Notify if no place selected in TableView.
+            Utils.showAlert(Alert.AlertType.INFORMATION, "Notice",
+                    "Please select a place from the 'Selected places in route' table to remove.");
         }
     }
 
     /**
-     * Xử lý sự kiện tìm đường đi giữa các địa điểm trong currentRoutePlaces.
-     * Gọi RouteService để lấy thông tin lộ trình và vẽ lên bản đồ.
-     * Cập nhật tổng quãng đường.
+     * Handles finding route between places in currentRoutePlaces.
+     * Calls RouteService to get route information and draws on map.
+     * Updates total distance.
      */
     @FXML
     private void handleFindRoute() {
         if (currentRoutePlaces.size() < 2) {
-            Utils.showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Cần ít nhất 2 địa điểm để tìm đường đi.");
-            clearRoute(); // Xóa lộ trình cũ (nếu có).
-            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), ""); // Sửa ở đây, truyền chuỗi rỗng thay vì null
+            Utils.showAlert(Alert.AlertType.INFORMATION, "Notice", "At least 2 places are required to find a route.");
+            clearRoute(); // Clear old route (if any).
+            updateDynamicRouteInfo(String.format(Locale.US, "Total distance: %.2f km", 0.0), "");
             return;
         }
-        try {            Route route = routeService.getRoute(new ArrayList<>(currentRoutePlaces));
+        try {
+            Route route = routeService.getRoute(new ArrayList<>(currentRoutePlaces));
             if (route != null && route.getCoordinates() != null && !route.getCoordinates().isEmpty()) {
-                drawRoute(route.getCoordinates()); // Vẽ lộ trình lên bản đồ.
-                
-                // Tự động zoom để hiển thị toàn bộ lộ trình
+                drawRoute(route.getCoordinates()); // Draw route on map.
+
+                // Auto zoom to show entire route
                 fitToRoute();
-                
+
                 updateDynamicRouteInfo(
-                    String.format(Locale.US, "Tổng quãng đường: %.2f km", route.getTotalDistanceKm()),
-                    route.getTurnByTurnInstructions()
-                );
+                        String.format(Locale.US, "Total distance: %.2f km", route.getTotalDistanceKm()),
+                        route.getTurnByTurnInstructions());
                 routeCalculated = true;
             } else {
-                Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm đường", "Không thể tìm thấy đường đi cho các địa điểm đã chọn.");
+                Utils.showAlert(Alert.AlertType.ERROR, "Route Finding Error",
+                        "Could not find route for selected places.");
                 clearRoute();
-                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), ""); // Sửa ở đây
+                updateDynamicRouteInfo(String.format(Locale.US, "Total distance: %.2f km", 0.0), "");
             }
         } catch (IOException e) {
             e.printStackTrace();
-            Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tìm đường", "Lỗi khi kết nối dịch vụ tìm đường: " + e.getMessage());
+            Utils.showAlert(Alert.AlertType.ERROR, "Route Finding Error",
+                    "Error connecting to routing service: " + e.getMessage());
             clearRoute();
-            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), ""); // Sửa ở đây
+            updateDynamicRouteInfo(String.format(Locale.US, "Total distance: %.2f km", 0.0), "");
         }
-    }    /**
-     * Cập nhật vùng hiển thị thông tin lộ trình động.
-     * @param totalDistanceText Chuỗi hiển thị tổng quãng đường.
-     * @param turnByTurnInstructions Chuỗi hướng dẫn chi tiết từng chặng.
+    }
+
+    /**
+     * Updates the dynamic route information display area.
+     * 
+     * @param totalDistanceText      String displaying total distance.
+     * @param turnByTurnInstructions String with turn-by-turn directions.
      */
     private void updateDynamicRouteInfo(String totalDistanceText, String turnByTurnInstructions) {
-        // Đặt giá trị biến routeCalculated
-        if (totalDistanceText != null && !totalDistanceText.equals(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0))) {
-            // Nếu có thông tin quãng đường thì đã tính lộ trình
+        // Set routeCalculated variable
+        if (totalDistanceText != null
+                && !totalDistanceText.equals(String.format(Locale.US, "Total distance: %.2f km", 0.0))) {
             routeCalculated = true;
         } else {
-            // Nếu không có thông tin quãng đường hoặc quãng đường = 0.0
             routeCalculated = false;
         }
-        
+
         if (dynamicRouteInfoScrollPane != null && dynamicRouteInfoTextArea != null) {
             StringBuilder infoBuilder = new StringBuilder();
             infoBuilder.append(totalDistanceText);
 
             if (turnByTurnInstructions != null && !turnByTurnInstructions.trim().isEmpty()) {
-                infoBuilder.append("\n\nHướng dẫn chi tiết:\n");
+                infoBuilder.append("\n\nDetailed directions:\n");
                 infoBuilder.append(turnByTurnInstructions);
-            } else {
-                // Optionally, add a message if there are no turn-by-turn instructions
-                // infoBuilder.append("\n\n(Không có hướng dẫn chi tiết)");
             }
 
             dynamicRouteInfoTextArea.setText(infoBuilder.toString());
@@ -873,163 +882,177 @@ public class MainController {
             dynamicRouteInfoScrollPane.setVisible(hasContent);
             dynamicRouteInfoScrollPane.setManaged(hasContent);
         } else {
-            System.err.println("dynamicRouteInfoScrollPane or dynamicRouteInfoTextArea is null. Cannot update route info.");
+            System.err.println(
+                    "dynamicRouteInfoScrollPane or dynamicRouteInfoTextArea is null. Cannot update route info.");
         }
     }
 
     /**
-     * Xử lý sự kiện lưu lộ trình hiện tại (danh sách địa điểm và thông tin lộ trình) ra tệp.
-     * Sử dụng StorageService để hiển thị dialog lưu tệp và thực hiện lưu.
+     * Handles saving current route (place list and route info) to file.
+     * Uses StorageService to show save file dialog and perform save.
      */
     @FXML
     private void handleSaveRoute() {
         if (currentRoutePlaces.isEmpty()) {
-            Utils.showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Không có tuyến đường nào để lưu.");
+            Utils.showAlert(Alert.AlertType.INFORMATION, "Notice", "No route to save.");
             return;
         }
         File file = storageService.showSaveFileDialog(mapPane.getScene().getWindow());
         if (file != null) {
-            // Truyền danh sách địa điểm và thông tin lộ trình cuối cùng (nếu có) để lưu.
+            // Pass place list and last route info (if any) to save.
             storageService.saveRoute(file, new ArrayList<>(currentRoutePlaces), routeService.getLastRoute());
         }
     }
 
     /**
-     * Xử lý sự kiện tải lộ trình từ một tệp đã lưu.
-     * Sử dụng StorageService để hiển thị dialog mở tệp và tải dữ liệu.
-     * Cập nhật UI (danh sách địa điểm, bản đồ, tổng quãng đường) với dữ liệu đã tải.
+     * Handles loading route from a saved file.
+     * Uses StorageService to show open file dialog and load data.
+     * Updates UI (place list, map, total distance) with loaded data.
      */
     @FXML
     private void handleLoadRoute() {
         File file = storageService.showOpenFileDialog(mapPane.getScene().getWindow());
         if (file != null) {
-            clearMapHighlight(); // Xóa highlight cũ trước khi tải lộ trình mới
+            clearMapHighlight(); // Clear old highlight before loading new route
             StorageService.LoadedRouteData loadedData = storageService.loadRoute(file);
-            // Kiểm tra dữ liệu tải về và danh sách địa điểm không null.
+            // Check loaded data and place list are not null.
             if (loadedData != null && loadedData.getPlaces() != null) {
                 currentRoutePlaces.setAll(loadedData.getPlaces());
                 clearAllMarkers();
-                currentRoutePlaces.forEach(p -> addMapMarker(p.getName(), p.getLatitude(), p.getLongitude(), p.getAddress()));
+                currentRoutePlaces
+                        .forEach(p -> addMapMarker(p.getName(), p.getLatitude(), p.getLongitude(), p.getAddress()));
 
                 Route loadedRouteInfo = loadedData.getRoute();
-                if (loadedRouteInfo != null && loadedRouteInfo.getCoordinates() != null && !loadedRouteInfo.getCoordinates().isEmpty()) {
+                if (loadedRouteInfo != null && loadedRouteInfo.getCoordinates() != null
+                        && !loadedRouteInfo.getCoordinates().isEmpty()) {
                     drawRoute(loadedRouteInfo.getCoordinates());
                     updateDynamicRouteInfo(
-                        String.format(Locale.US, "Tổng quãng đường: %.2f km", loadedRouteInfo.getTotalDistanceKm()),
-                        loadedRouteInfo.getTurnByTurnInstructions()
-                    );
+                            String.format(Locale.US, "Total distance: %.2f km", loadedRouteInfo.getTotalDistanceKm()),
+                            loadedRouteInfo.getTurnByTurnInstructions());
                 } else {
-                    // Nếu không có thông tin lộ trình trong tệp (ví dụ: tệp cũ chỉ lưu địa điểm)
-                    // hoặc thông tin lộ trình không hợp lệ, thì tính toán lại nếu có thể.
+                    // If no route info in file (e.g., old file only saved places)
+                    // or route info is invalid, recalculate if possible.
                     if (currentRoutePlaces.size() >= 2) {
-                        handleFindRoute(); // Thử tìm lại lộ trình dựa trên các điểm đã tải.
+                        handleFindRoute(); // Try to find route based on loaded places.
                     } else {
                         clearRoute();
-                        updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
+                        updateDynamicRouteInfo(String.format(Locale.US, "Total distance: %.2f km", 0.0), null);
                     }
                 }
             } else {
-                Utils.showAlert(Alert.AlertType.ERROR, "Lỗi tải lộ trình", "Không thể tải dữ liệu lộ trình từ tệp đã chọn hoặc tệp không hợp lệ.");
+                Utils.showAlert(Alert.AlertType.ERROR, "Route Loading Error",
+                        "Could not load route data from selected file or file is invalid.");
                 clearRoute();
-                updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null); // Sửa ở đây
+                updateDynamicRouteInfo(String.format(Locale.US, "Total distance: %.2f km", 0.0), null);
             }
         }
     }
 
     /**
-     * Thực thi một đoạn mã JavaScript trong khung chính của trình duyệt JxBrowser.
-     * @param script Đoạn mã JavaScript cần thực thi.
+     * Executes a JavaScript code snippet in the main frame of JxBrowser.
+     * 
+     * @param script JavaScript code to execute.
      */
     private void executeJavaScript(String script) {
-        // Đảm bảo browser và mainFrame khả dụng trước khi thực thi.
+        // Ensure browser and mainFrame are available before executing.
         if (browser != null && browser.mainFrame().isPresent()) {
             browser.mainFrame().get().executeJavaScript(script);
         } else {
-             System.err.println("Không thể thực thi JavaScript, browser hoặc khung chính chưa sẵn sàng. Script: " + script);
+            System.err.println("Cannot execute JavaScript, browser or main frame not ready. Script: " + script);
         }
     }
 
-    // --- Các phương thức giao tiếp với JavaScript trên bản đồ ---
+    // --- Methods for communicating with JavaScript on the map ---
 
     /**
-     * Di chuyển và zoom bản đồ đến một tọa độ và mức zoom cụ thể.
-     * Được gọi từ Java để điều khiển bản đồ JavaScript.
+     * Pans and zooms map to specific coordinates and zoom level.
+     * Called from Java to control the JavaScript map.
      *
-     * @param latitude Vĩ độ của điểm đến.
-     * @param longitude Kinh độ của điểm đến.
-     * @param zoomLevel Mức zoom (số nguyên).
+     * @param latitude  Latitude of destination.
+     * @param longitude Longitude of destination.
+     * @param zoomLevel Zoom level (integer).
      */
     @JsAccessible
-    public void panTo(double latitude, double longitude, int zoomLevel) { 
+    public void panTo(double latitude, double longitude, int zoomLevel) {
         if (browser != null && browser.mainFrame().isPresent()) {
-            // Đảm bảo rằng zoomLevel là một số nguyên khi truyền vào JavaScript.
-            String script = String.format(Locale.US, "if(typeof panTo === 'function') { panTo(%f, %f, %d); } else { console.error('JavaScript function panTo not found.'); }", latitude, longitude, zoomLevel);
+            String script = String.format(Locale.US,
+                    "if(typeof panTo === 'function') { panTo(%f, %f, %d); } else { console.error('JavaScript function panTo not found.'); }",
+                    latitude, longitude, zoomLevel);
             browser.mainFrame().get().executeJavaScript(script);
         }
     }
 
     /**
-     * Yêu cầu JavaScript zoom bản đồ tới một bounding box.
-     * @param southLat Vĩ độ Nam
-     * @param northLat Vĩ độ Bắc
-     * @param westLon Kinh độ Tây
-     * @param eastLon Kinh độ Đông
+     * Requests JavaScript to zoom map to a bounding box.
+     * 
+     * @param southLat South latitude
+     * @param northLat North latitude
+     * @param westLon  West longitude
+     * @param eastLon  East longitude
      */
     private void zoomToBoundingBox(double southLat, double northLat, double westLon, double eastLon) {
         if (browser != null && browser.mainFrame().isPresent()) {
-            String script = String.format(Locale.US, "if(typeof zoomToBoundingBox === 'function') { zoomToBoundingBox(%f, %f, %f, %f); } else { console.error('JavaScript function zoomToBoundingBox not found.'); }",
-                                          southLat, northLat, westLon, eastLon);
+            String script = String.format(Locale.US,
+                    "if(typeof zoomToBoundingBox === 'function') { zoomToBoundingBox(%f, %f, %f, %f); } else { console.error('JavaScript function zoomToBoundingBox not found.'); }",
+                    southLat, northLat, westLon, eastLon);
             browser.mainFrame().get().executeJavaScript(script);
         }
     }
 
     /**
-     * Yêu cầu JavaScript highlight một bounding box trên bản đồ.
-     * @param southLat Vĩ độ Nam
-     * @param northLat Vĩ độ Bắc
-     * @param westLon Kinh độ Tây
-     * @param eastLon Kinh độ Đông
+     * Requests JavaScript to highlight a bounding box on map.
+     * 
+     * @param southLat South latitude
+     * @param northLat North latitude
+     * @param westLon  West longitude
+     * @param eastLon  East longitude
      */
     private void highlightBoundingBoxOnMap(double southLat, double northLat, double westLon, double eastLon) {
         if (browser != null && browser.mainFrame().isPresent()) {
-            String script = String.format(Locale.US, "if(typeof highlightBoundingBox === 'function') { highlightBoundingBox(%f, %f, %f, %f); } else { console.error('JavaScript function highlightBoundingBox not found.'); }",
-                                          southLat, northLat, westLon, eastLon);
+            String script = String.format(Locale.US,
+                    "if(typeof highlightBoundingBox === 'function') { highlightBoundingBox(%f, %f, %f, %f); } else { console.error('JavaScript function highlightBoundingBox not found.'); }",
+                    southLat, northLat, westLon, eastLon);
             browser.mainFrame().get().executeJavaScript(script);
         }
     }
 
     /**
-     * Yêu cầu JavaScript highlight một đối tượng địa lý từ chuỗi GeoJSON.
-     * @param geoJsonString Chuỗi GeoJSON của đối tượng.
+     * Requests JavaScript to highlight a geographic object from GeoJSON string.
+     * 
+     * @param geoJsonString GeoJSON string of the object.
      */
     private void highlightGeoJsonOnMap(String geoJsonString) {
         if (browser != null && browser.mainFrame().isPresent()) {
-            // Cần escape chuỗi GeoJSON để nó hợp lệ trong một chuỗi JavaScript
+            // Need to escape GeoJSON string to be valid in a JavaScript string
             String escapedGeoJson = Utils.escapeJavaScriptString(geoJsonString);
-            String script = String.format("if(typeof highlightGeoJsonFeature === 'function') { highlightGeoJsonFeature('%s'); } else { console.error('JavaScript function highlightGeoJsonFeature not found.'); }",
-                                          escapedGeoJson);
+            String script = String.format(
+                    "if(typeof highlightGeoJsonFeature === 'function') { highlightGeoJsonFeature('%s'); } else { console.error('JavaScript function highlightGeoJsonFeature not found.'); }",
+                    escapedGeoJson);
             browser.mainFrame().get().executeJavaScript(script);
         }
     }
 
     /**
-     * Yêu cầu JavaScript xóa mọi highlight hiện tại trên bản đồ.
+     * Requests JavaScript to clear all current highlights on map.
      */
     private void clearMapHighlight() {
         if (browser != null && browser.mainFrame().isPresent()) {
-            executeJavaScript("if(typeof clearHighlight === 'function') { clearHighlight(); } else { console.error('clearHighlight function not found in map.html'); }");
+            executeJavaScript(
+                    "if(typeof clearHighlight === 'function') { clearHighlight(); } else { console.error('clearHighlight function not found in map.html'); }");
         } else {
-            System.err.println("Không thể gọi clearMapHighlight: browser hoặc mainFrame không khả dụng.");
+            System.err.println("Cannot call clearMapHighlight: browser or mainFrame not available.");
         }
     }
 
     /**
-     * Thêm một marker vào bản đồ tại vị trí (lat, lng) với tên và mô tả cho trước.
-     * Gọi hàm JavaScript 'addMapMarker' trong map.html.
-     * @param name Tên của địa điểm (hiển thị trong popup của marker).
-     * @param lat Vĩ độ của địa điểm.
-     * @param lng Kinh độ của địa điểm.
-     * @param description Mô tả chi tiết của địa điểm.
+     * Adds a marker to the map at position (lat, lng) with given name and
+     * description.
+     * Calls JavaScript function 'addMapMarker' in map.html.
+     * 
+     * @param name        Name of the place (displayed in marker popup).
+     * @param lat         Latitude of the place.
+     * @param lng         Longitude of the place.
+     * @param description Detailed description of the place.
      */
     public void addMapMarker(String name, double lat, double lng, String description) {
         String script = String.format(Locale.US, "addMapMarker('%s', %f, %f, '%s');",
@@ -1038,21 +1061,23 @@ public class MainController {
     }
 
     /**
-     * Vẽ một lộ trình trên bản đồ dựa trên danh sách các tọa độ.
-     * Gọi hàm JavaScript 'drawRoute' trong map.html.
-     * @param coordinates Danh sách các đối tượng Route.Coordinate đại diện cho lộ trình.
+     * Draws a route on the map based on list of coordinates.
+     * Calls JavaScript function 'drawRoute' in map.html.
+     * 
+     * @param coordinates List of Route.Coordinate objects representing the route.
      */
     public void drawRoute(List<Route.Coordinate> coordinates) {
         if (coordinates == null || coordinates.isEmpty()) {
-            clearRoute(); // Xóa lộ trình cũ nếu không có tọa độ mới.
+            clearRoute(); // Clear old route if no new coordinates.
             return;
         }
-        // Xây dựng một mảng JavaScript từ danh sách tọa độ.
+        // Build a JavaScript array from coordinate list.
         StringBuilder jsRouteArray = new StringBuilder("[");
         for (int i = 0; i < coordinates.size(); i++) {
             Route.Coordinate coord = coordinates.get(i);
-            if (coord != null) { // Kiểm tra coord không null.
-                jsRouteArray.append(String.format(Locale.US, "{lat: %f, lng: %f}", coord.getLatitude(), coord.getLongitude()));
+            if (coord != null) {
+                jsRouteArray.append(
+                        String.format(Locale.US, "{lat: %f, lng: %f}", coord.getLatitude(), coord.getLongitude()));
                 if (i < coordinates.size() - 1) {
                     jsRouteArray.append(",");
                 }
@@ -1064,111 +1089,119 @@ public class MainController {
     }
 
     /**
-     * Xóa tất cả các marker khỏi bản đồ.
-     * Gọi hàm JavaScript 'clearAllMarkers' trong map.html.
+     * Clears all markers from the map.
+     * Calls JavaScript function 'clearAllMarkers' in map.html.
      */
     public void clearAllMarkers() {
         executeJavaScript("clearAllMarkers();");
     }
 
     /**
-     * Xóa lộ trình hiện tại khỏi bản đồ.
-     * Gọi hàm JavaScript 'clearRoute' trong map.html.
+     * Clears current route from the map.
+     * Calls JavaScript function 'clearRoute' in map.html.
      */
     public void clearRoute() {
         if (browser != null && browser.mainFrame().isPresent()) {
-            executeJavaScript("if(typeof clearRoute === 'function') { clearRoute(); } else { console.error('clearRoute function not found in map.html'); }");
+            executeJavaScript(
+                    "if(typeof clearRoute === 'function') { clearRoute(); } else { console.error('clearRoute function not found in map.html'); }");
         } else {
-            System.err.println("Không thể gọi clearRoute: browser hoặc mainFrame không khả dụng.");
+            System.err.println("Cannot call clearRoute: browser or mainFrame not available.");
         }
     }
 
     /**
-     * Tự động zoom bản đồ để hiển thị toàn bộ lộ trình.
-     * Gọi hàm JavaScript 'fitToRoute' trong map.html.
+     * Auto zooms map to show entire route.
+     * Calls JavaScript function 'fitToRoute' in map.html.
      */
     public void fitToRoute() {
-        executeJavaScript("if(typeof fitToRoute === 'function') { fitToRoute(); } else { console.error('JavaScript function fitToRoute not found.'); }");
+        executeJavaScript(
+                "if(typeof fitToRoute === 'function') { fitToRoute(); } else { console.error('JavaScript function fitToRoute not found.'); }");
     }
 
     /**
-     * Hiển thị và highlight địa điểm được chọn trên bản đồ.
-     * @param place Địa điểm cần hiển thị và highlight
+     * Shows and highlights selected place on map.
+     * 
+     * @param place Place to show and highlight
      */
     private void showSelectedPlaceOnMap(Place place) {
         if (place != null) {
             String geoJson = place.getGeoJson();
             double[] boundingBox = place.getBoundingBox();
 
-            // Hiển thị địa điểm được chọn trên bản đồ
+            // Show selected place on map
             if (geoJson != null && !geoJson.trim().isEmpty()) {
-                // Ưu tiên highlight GeoJSON nếu có
+                // Prioritize GeoJSON highlight if available
                 highlightGeoJsonOnMap(geoJson);
-                // Vẫn zoom tới bounding box nếu có, vì GeoJSON có thể là điểm hoặc vùng nhỏ
+                // Still zoom to bounding box if available
                 if (boundingBox != null && boundingBox.length == 4) {
                     zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
                 } else {
-                    // Nếu không có bounding box, pan tới điểm trung tâm với mức zoom mặc định
-                    panTo(place.getLatitude(), place.getLongitude(), 15); 
+                    // If no bounding box, pan to center point with default zoom level
+                    panTo(place.getLatitude(), place.getLongitude(), 15);
                 }
             } else if (boundingBox != null && boundingBox.length == 4) {
-                // Nếu không có GeoJSON nhưng có bounding box, highlight bounding box
+                // If no GeoJSON but has bounding box, highlight bounding box
                 highlightBoundingBoxOnMap(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
                 zoomToBoundingBox(boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
             } else {
-                // Nếu không có cả GeoJSON và bounding box, pan tới điểm trung tâm
+                // If neither GeoJSON nor bounding box, pan to center point
                 panTo(place.getLatitude(), place.getLongitude(), 15);
-                clearMapHighlight(); // Xóa highlight cũ
+                clearMapHighlight(); // Clear old highlight
             }
-            
-            // Hiển thị thông báo cho người dùng
-            statusLabel.setText("Đã di chuyển đến địa điểm: " + place.getName());
+
+            // Show notification to user
+            statusLabel.setText("Moved to place: " + place.getName());
         }
     }
 
     /**
-     * Xử lý sự kiện khi người dùng nhấp chuột vào bản đồ.
-     * Phương thức này được gọi từ JavaScript thông qua 'javaConnector'.
-     * Thực hiện reverse geocoding để lấy thông tin địa điểm tại vị trí nhấp chuột
-     * và hỏi người dùng có muốn thêm địa điểm đó vào lộ trình không.
-     * @param lat Vĩ độ của điểm nhấp chuột.
-     * @param lng Kinh độ của điểm nhấp chuột.
+     * Handles event when user clicks on the map.
+     * This method is called from JavaScript via 'javaConnector'.
+     * Performs reverse geocoding to get place info at clicked location
+     * and asks user if they want to add that place to route.
+     * 
+     * @param lat Latitude of clicked point.
+     * @param lng Longitude of clicked point.
      */
     @JsAccessible
     public void handleMapClick(double lat, double lng) {
-        Platform.runLater(() -> { // Đảm bảo các thay đổi UI được thực hiện trên JavaFX Application Thread.
-            // System.out.println("Map clicked at Lat: " + lat + ", Lng: " + lng); // Removed log
+        Platform.runLater(() -> { // Ensure UI changes are made on JavaFX Application Thread.
             try {
-                Place clickedPlace = routeService.reverseGeocode(lat, lng); // Lấy thông tin địa điểm.
+                Place clickedPlace = routeService.reverseGeocode(lat, lng); // Get place info.
                 if (clickedPlace != null) {
-                    // Hiển thị dialog xác nhận thêm địa điểm.
+                    // Show confirmation dialog to add place.
                     Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
-                    confirmDialog.setTitle("Thêm địa điểm");
-                    confirmDialog.setHeaderText("Thêm địa điểm từ bản đồ?");
-                    confirmDialog.setContentText("Bạn có muốn thêm \"" + clickedPlace.getName() + "\" vào tuyến đường không?");
+                    confirmDialog.setTitle("Add Place");
+                    confirmDialog.setHeaderText("Add place from map?");
+                    confirmDialog.setContentText("Do you want to add \"" + clickedPlace.getName() + "\" to the route?");
                     Optional<ButtonType> result = confirmDialog.showAndWait();
                     if (result.isPresent() && result.get() == ButtonType.OK) {
-                        if (!currentRoutePlaces.contains(clickedPlace)) { // Kiểm tra địa điểm chưa có trong lộ trình.
+                        if (!currentRoutePlaces.contains(clickedPlace)) {
                             currentRoutePlaces.add(clickedPlace);
-                            addMapMarker(clickedPlace.getName(), clickedPlace.getLatitude(), clickedPlace.getLongitude(), clickedPlace.getAddress());
+                            addMapMarker(clickedPlace.getName(), clickedPlace.getLatitude(),
+                                    clickedPlace.getLongitude(), clickedPlace.getAddress());
                         } else {
-                            Utils.showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Địa điểm đã có trong tuyến đường.");
+                            Utils.showAlert(Alert.AlertType.INFORMATION, "Notice", "Place is already in route.");
                         }
                     }
                 } else {
-                    Utils.showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Không thể tìm thấy thông tin cho vị trí đã nhấp.");
+                    Utils.showAlert(Alert.AlertType.INFORMATION, "Notice",
+                            "Could not find information for clicked location.");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                Utils.showAlert(Alert.AlertType.ERROR, "Lỗi Geocoding ngược", "Không thể lấy thông tin địa điểm: " + e.getMessage());
+                Utils.showAlert(Alert.AlertType.ERROR, "Reverse Geocoding Error",
+                        "Could not get place information: " + e.getMessage());
             }
         });
     }
 
     /**
-     * Ghi một thông điệp từ JavaScript ra console của Java.
-     * Phương thức này có thể được gọi từ JavaScript thông qua 'javaConnector.logJs("message")'.
-     * @param message Thông điệp cần ghi.
+     * Logs a message from JavaScript to Java console.
+     * This method can be called from JavaScript via
+     * 'javaConnector.logJs("message")'.
+     * 
+     * @param message Message to log.
      */
     @JsAccessible
     public void logJs(String message) {
@@ -1176,8 +1209,8 @@ public class MainController {
     }
 
     /**
-     * Đóng JxBrowser engine khi ứng dụng kết thúc.
-     * Quan trọng để giải phóng tài nguyên.
+     * Closes JxBrowser engine when application terminates.
+     * Important to release resources.
      */
     public void shutdownJxBrowser() {
         if (engine != null && !engine.isClosed()) {
@@ -1188,144 +1221,156 @@ public class MainController {
     }
 
     /**
-     * Xử lý sự kiện thoát ứng dụng từ menu.
-     * Đóng JavaFX platform và kết thúc tiến trình.
+     * Handles application exit from menu.
+     * Closes JavaFX platform and terminates process.
      */
     @FXML
     private void onExit() {
-        Platform.exit(); // Yêu cầu JavaFX platform thoát.
-        System.exit(0); // Đảm bảo tiến trình JVM kết thúc.
+        Platform.exit(); // Request JavaFX platform to exit.
+        System.exit(0); // Ensure JVM process terminates.
     }
 
     /**
-     * Hiển thị dialog "Thông tin" (About) của ứng dụng.
+     * Shows "About" dialog of the application.
      */
     @FXML
     private void onAbout() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Thông tin");
+        alert.setTitle("About");
         alert.setHeaderText("Tour Route Planner");
-        alert.setContentText("Ứng dụng lập kế hoạch lộ trình du lịch.\\nPhiên bản 1.0\\nPhát triển bởi Nhóm Phát Triển."); // Thay thế bằng tên của bạn/nhóm.
+        alert.setContentText("A travel route planning application.\\nVersion 1.0\\nDeveloped by Development Team.");
         alert.showAndWait();
     }
 
     /**
-     * Xử lý sự kiện xóa tất cả các địa điểm khỏi lộ trình hiện tại.
-     * Hiển thị dialog xác nhận trước khi xóa.
-     * Cập nhật UI (danh sách, bản đồ, tổng quãng đường).
+     * Handles clearing all places from current route.
+     * Shows confirmation dialog before clearing.
+     * Updates UI (list, map, total distance).
      */
     @FXML
     private void onClearAllPlaces() {
         if (currentRoutePlaces.isEmpty()) {
-            Utils.showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Không có địa điểm nào để xóa.");
+            Utils.showAlert(Alert.AlertType.INFORMATION, "Notice", "No places to clear.");
             return;
         }
 
         Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmDialog.setTitle("Xác nhận xóa");
-        confirmDialog.setHeaderText("Xóa tất cả các địa điểm đã chọn?");
-        confirmDialog.setContentText("Bạn có chắc chắn muốn xóa tất cả các địa điểm khỏi lộ trình hiện tại không?");
+        confirmDialog.setTitle("Confirm Clear");
+        confirmDialog.setHeaderText("Clear all selected places?");
+        confirmDialog.setContentText("Are you sure you want to clear all places from the current route?");
         Optional<ButtonType> result = confirmDialog.showAndWait();
 
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            currentRoutePlaces.clear(); 
-            clearAllMarkers(); 
-            clearRoute(); 
-            clearMapHighlight(); 
-            updateDynamicRouteInfo(String.format(Locale.US, "Tổng quãng đường: %.2f km", 0.0), null);
+            currentRoutePlaces.clear();
+            clearAllMarkers();
+            clearRoute();
+            clearMapHighlight();
+            updateDynamicRouteInfo(String.format(Locale.US, "Total distance: %.2f km", 0.0), null);
             if (statusLabel != null) {
-                statusLabel.setText("Đã xóa tất cả các điểm. Lộ trình trống.");
+                statusLabel.setText("Cleared all places. Route is empty.");
             }
         }
-    }    /**
-     * Xử lý sự kiện khi người dùng nhấn nút mũi tên lên.
-     * Di chuyển địa điểm được chọn lên trên một vị trí trong danh sách lộ trình.
-     */    @FXML
+    }
+
+    /**
+     * Handles event when user clicks up arrow button.
+     * Moves selected place up one position in route list.
+     */
+    @FXML
     private void handleMoveUp() {
         int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
-        if (selectedIndex > 0) { // Đảm bảo không phải địa điểm đầu tiên
-            // Lưu lại địa điểm được chọn
+        if (selectedIndex > 0) { // Ensure not the first place
+            // Save selected place
             Place selectedPlace = currentRoutePlaces.get(selectedIndex);
-            
-            // Thực hiện hoán đổi vị trí
+
+            // Swap positions
             currentRoutePlaces.remove(selectedIndex);
             currentRoutePlaces.add(selectedIndex - 1, selectedPlace);
-            
-            // Cập nhật lại hiển thị các marker trên bản đồ
+
+            // Refresh markers on map
             refreshMapMarkers();
-            
-            // Cập nhật lại bảng và chọn lại địa điểm vừa di chuyển
+
+            // Update table and reselect moved place
             routeTableView.getSelectionModel().select(selectedIndex - 1);
-              // Đảm bảo địa điểm được chọn được highlight trên bản đồ
+
+            // Ensure selected place is highlighted on map
             showSelectedPlaceOnMap(selectedPlace);
-            
-            // Nếu đã tính lộ trình trước đó, thì tính toán lại lộ trình
+
+            // If route was calculated before, recalculate
             if (routeCalculated && currentRoutePlaces.size() > 1) {
                 handleFindRoute();
             }
         } else {
-            // Thông báo nếu không thể di chuyển lên (đã ở đầu danh sách)
-            statusLabel.setText("Địa điểm này đã ở vị trí đầu tiên trong lộ trình.");
+            // Notify if cannot move up (already at top of list)
+            statusLabel.setText("This place is already at the first position in the route.");
         }
-    }    /**
-     * Xử lý sự kiện khi người dùng nhấn nút mũi tên xuống.
-     * Di chuyển địa điểm được chọn xuống dưới một vị trí trong danh sách lộ trình.
-     */    @FXML
+    }
+
+    /**
+     * Handles event when user clicks down arrow button.
+     * Moves selected place down one position in route list.
+     */
+    @FXML
     private void handleMoveDown() {
         int selectedIndex = routeTableView.getSelectionModel().getSelectedIndex();
-        if (selectedIndex >= 0 && selectedIndex < currentRoutePlaces.size() - 1) { // Đảm bảo không phải địa điểm cuối cùng
-            // Lưu lại địa điểm được chọn
+        if (selectedIndex >= 0 && selectedIndex < currentRoutePlaces.size() - 1) { // Ensure not the last place
+            // Save selected place
             Place selectedPlace = currentRoutePlaces.get(selectedIndex);
-            
-            // Thực hiện hoán đổi vị trí
+
+            // Swap positions
             currentRoutePlaces.remove(selectedIndex);
             currentRoutePlaces.add(selectedIndex + 1, selectedPlace);
-            
-            // Cập nhật lại hiển thị các marker trên bản đồ
+
+            // Refresh markers on map
             refreshMapMarkers();
-            
-            // Cập nhật lại bảng và chọn lại địa điểm vừa di chuyển
+
+            // Update table and reselect moved place
             routeTableView.getSelectionModel().select(selectedIndex + 1);
-            
-            // Đảm bảo địa điểm được chọn được highlight trên bản đồ
+
+            // Ensure selected place is highlighted on map
             showSelectedPlaceOnMap(selectedPlace);
-            
-            // Nếu đã tính lộ trình trước đó, thì tính toán lại lộ trình
+
+            // If route was calculated before, recalculate
             if (routeCalculated && currentRoutePlaces.size() > 1) {
                 handleFindRoute();
             }
         } else if (selectedIndex == currentRoutePlaces.size() - 1) {
-            // Thông báo nếu không thể di chuyển xuống (đã ở cuối danh sách)
-            statusLabel.setText("Địa điểm này đã ở vị trí cuối cùng trong lộ trình.");
+            // Notify if cannot move down (already at bottom of list)
+            statusLabel.setText("This place is already at the last position in the route.");
         }
-    }    /**
-     * Xử lý sự kiện khi người dùng nhấn nút toggle dark mode.
-     * Chuyển đổi giữa chế độ sáng và chế độ tối.
-     */    @FXML
+    }
+
+    /**
+     * Handles event when user clicks dark mode toggle button.
+     * Switches between light and dark mode.
+     */
+    @FXML
     private void toggleDarkMode() {
         isDarkMode = !isDarkMode;
-        
-        // Lấy root node của scene
+
+        // Get root node of scene
         if (placeListView.getScene() != null && placeListView.getScene().getRoot() != null) {
-            // Thêm hoặc xóa class "dark-mode" từ root node
+            // Add or remove "dark-mode" class from root node
             if (isDarkMode) {
                 placeListView.getScene().getRoot().getStyleClass().add("dark-mode");
-                statusLabel.setText("🌙 Đã chuyển sang chế độ tối");
-                // Cập nhật icon và tooltip cho Dark Mode
+                statusLabel.setText("🌙 Switched to dark mode");
+                // Update icon and tooltip for Dark Mode
                 setDarkModeButtonIcon(true);
-                Tooltip.install(darkModeToggle, new Tooltip("Chuyển sang chế độ sáng"));
+                Tooltip.install(darkModeToggle, new Tooltip("Switch to light mode"));
             } else {
                 placeListView.getScene().getRoot().getStyleClass().remove("dark-mode");
-                statusLabel.setText("☀️ Đã chuyển sang chế độ sáng");
-                // Cập nhật icon và tooltip cho Light Mode
+                statusLabel.setText("☀️ Switched to light mode");
+                // Update icon and tooltip for Light Mode
                 setDarkModeButtonIcon(false);
-                Tooltip.install(darkModeToggle, new Tooltip("Chuyển sang chế độ tối"));
+                Tooltip.install(darkModeToggle, new Tooltip("Switch to dark mode"));
             }
         }
     }
-      /**
-     * Thiết lập icon cho nút chuyển đổi Dark Mode dựa trên trạng thái hiện tại
-     * @param isDarkMode true nếu đang ở Dark Mode, false nếu đang ở Light Mode
+
+    /**
+     * Sets icon for Dark Mode toggle button based on current state
+     * 
+     * @param isDarkMode true if in Dark Mode, false if in Light Mode
      */
     private void setDarkModeButtonIcon(boolean isDarkMode) {
         try {
@@ -1335,20 +1380,20 @@ public class MainController {
             imageView.setFitHeight(20);
             imageView.setFitWidth(20);
             darkModeToggle.setGraphic(imageView);
-            darkModeToggle.setText(""); // Xóa text vì chúng ta dùng image
+            darkModeToggle.setText(""); // Remove text since we use image
         } catch (Exception e) {
-            // Fallback nếu không tìm thấy icon
+            // Fallback if icon not found
             darkModeToggle.setText(isDarkMode ? "☀️" : "🌙");
-            System.err.println("Không thể tải icon Dark Mode: " + e.getMessage());
+            System.err.println("Could not load Dark Mode icon: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Cập nhật trạng thái hiển thị của placeholder text cho bảng route.
-     * Placeholder sẽ hiển thị khi:
-     * - Bảng không có dữ liệu (trống)
-     * Placeholder sẽ ẩn khi:
-     * - Bảng có ít nhất một địa điểm
+     * Updates visibility state of placeholder text for route table.
+     * Placeholder will show when:
+     * - Table has no data (empty)
+     * Placeholder will hide when:
+     * - Table has at least one place
      */
     private void updateRoutePlaceholderVisibility() {
         if (routePlaceholder != null) {
@@ -1356,13 +1401,14 @@ public class MainController {
             routePlaceholder.setVisible(shouldShowPlaceholder);
         }
     }
-    
+
     /**
-     * Cập nhật trạng thái hiển thị của placeholder cho kết quả tìm kiếm
+     * Updates visibility state of placeholder for search results
      */
     private void updateSearchPlaceholderVisibility() {
         if (searchPlaceholder != null) {
-            boolean hasResults = !searchResults.isEmpty();            searchPlaceholder.setVisible(!hasResults);
+            boolean hasResults = !searchResults.isEmpty();
+            searchPlaceholder.setVisible(!hasResults);
             searchPlaceholder.setManaged(!hasResults);
         }
     }

@@ -21,90 +21,102 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
- * Lớp dịch vụ chịu trách nhiệm xử lý các yêu cầu liên quan đến tuyến đường và địa điểm.
- * Tương tác với các API bên ngoài như OSRM (Open Source Routing Machine) để tính toán tuyến đường
- * và Nominatim để tìm kiếm địa điểm (geocoding) và tìm địa chỉ từ tọa độ (reverse geocoding).
+ * Service class responsible for handling route and place-related requests.
+ * Interacts with external APIs such as OSRM (Open Source Routing Machine) for
+ * route calculation
+ * and Nominatim for place search (geocoding) and address lookup from
+ * coordinates (reverse geocoding).
  */
 public class RouteService {
-    /** URL của máy chủ OSRM được sử dụng để yêu cầu tính toán tuyến đường. */
+    /** URL of the OSRM server used for route calculation requests. */
     private String osrmServerUrl;
-    /** URL của máy chủ Nominatim được sử dụng cho các dịch vụ geocoding. */
+    /** URL of the Nominatim server used for geocoding services. */
     private String nominatimServerUrl;
-    /** Lưu trữ đối tượng {@link Route} được tính toán gần đây nhất. */
+    /** Stores the most recently calculated {@link Route} object. */
     private Route lastCalculatedRoute;
 
-    /** 
-     * Lưu trữ chuỗi truy vấn đã được chuẩn hóa từ lần tìm kiếm địa điểm cuối cùng.
-     * Được sử dụng để hậu xử lý và sắp xếp kết quả tìm kiếm cho phù hợp hơn.
+    /**
+     * Stores the normalized query string from the last place search.
+     * Used for post-processing and sorting search results for better relevance.
      */
     public static String lastNormalizedQuery = "";
 
     /**
-     * Khởi tạo một đối tượng {@code RouteService}.
-     * Tải cấu hình URL cho máy chủ OSRM và Nominatim từ tệp {@code config.properties}.
+     * Creates a {@code RouteService} object.
+     * Loads URL configuration for OSRM and Nominatim servers from
+     * {@code config.properties}.
      */
-    public RouteService() { // Xóa tham số apiKey
+    public RouteService() {
         loadConfig();
     }
 
     /**
-     * Tải cấu hình URL máy chủ từ tệp {@code config.properties}.
-     * Nếu tệp không tìm thấy hoặc có lỗi, sử dụng các URL mặc định.
+     * Loads server URL configuration from {@code config.properties}.
+     * If file is not found or an error occurs, uses default URLs.
      */
     private void loadConfig() {
         Properties prop = new Properties();
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
             if (input == null) {
-                System.err.println("Lỗi: Không tìm thấy tệp config.properties. Sử dụng URL mặc định.");
-                // Gán giá trị mặc định nếu không tìm thấy tệp config
-                osrmServerUrl = "http://router.project-osrm.org"; // URL OSRM công cộng
-                nominatimServerUrl = "https://nominatim.openstreetmap.org"; // URL Nominatim công cộng
+                System.err.println("Error: config.properties file not found. Using default URLs.");
+                // Assign default values if config file not found
+                osrmServerUrl = "http://router.project-osrm.org"; // Public OSRM URL
+                nominatimServerUrl = "https://nominatim.openstreetmap.org"; // Public Nominatim URL
                 return;
             }
             prop.load(input);
             osrmServerUrl = prop.getProperty("osrm.server.url", "http://router.project-osrm.org");
-            nominatimServerUrl = prop.getProperty("nominatim.server.url", "https://nominatim.openstreetmap.org"); // Sửa URL mặc định cho Nominatim
+            nominatimServerUrl = prop.getProperty("nominatim.server.url", "https://nominatim.openstreetmap.org");
         } catch (IOException ex) {
             ex.printStackTrace();
-            System.err.println("Lỗi khi đọc config.properties, sử dụng URL mặc định.");
+            System.err.println("Error reading config.properties, using default URLs.");
             osrmServerUrl = "http://router.project-osrm.org";
-            nominatimServerUrl = "https://nominatim.openstreetmap.org"; // Sửa URL mặc định cho Nominatim
+            nominatimServerUrl = "https://nominatim.openstreetmap.org";
         }
     }
 
     /**
-     * Lấy thông tin tuyến đường từ máy chủ OSRM cho một danh sách các địa điểm (waypoints) đã cho.
-     * @param places Danh sách các đối tượng {@link Place} đại diện cho các điểm tham chiếu. Phải chứa ít nhất 2 địa điểm.
-     * @return Một đối tượng {@link Route} chứa chi tiết tuyến đường (đường đi, khoảng cách, thời gian).
-     *         Trả về {@code null} nếu không thể tìm thấy tuyến đường hoặc có lỗi xảy ra trong quá trình xử lý.
-     * @throws IOException Nếu có lỗi kết nối mạng hoặc lỗi khi giao tiếp với API OSRM.
-     * @throws IllegalArgumentException Nếu danh sách {@code places} là {@code null} hoặc chứa ít hơn 2 địa điểm.
-     * @throws IllegalStateException Nếu URL của máy chủ OSRM chưa được cấu hình đúng cách.
+     * Gets route information from OSRM server for a given list of places
+     * (waypoints).
+     * 
+     * @param places List of {@link Place} objects representing waypoints. Must
+     *               contain at least 2 places.
+     * @return A {@link Route} object containing route details (path, distance,
+     *         duration).
+     *         Returns {@code null} if route cannot be found or an error occurs
+     *         during processing.
+     * @throws IOException              If there is a network connection error or
+     *                                  error communicating with OSRM API.
+     * @throws IllegalArgumentException If the {@code places} list is {@code null}
+     *                                  or contains fewer than 2 places.
+     * @throws IllegalStateException    If the OSRM server URL is not properly
+     *                                  configured.
      */
-    public Route getRoute(List<Place> places) throws IOException { // Thay đổi signature thành List<Place>
+    public Route getRoute(List<Place> places) throws IOException {
         if (places == null || places.size() < 2) {
-            throw new IllegalArgumentException("Cần ít nhất 2 địa điểm để tìm lộ trình.");
+            throw new IllegalArgumentException("At least 2 places are required to find a route.");
         }
         if (osrmServerUrl == null || osrmServerUrl.trim().isEmpty()) {
-            // Thông báo lỗi rõ ràng hơn cho người dùng hoặc ghi log
-            System.err.println("URL của OSRM server chưa được cấu hình trong config.properties hoặc không hợp lệ.");
-            throw new IllegalStateException("URL của OSRM server chưa được cấu hình.");
+            System.err.println("OSRM server URL is not configured in config.properties or is invalid.");
+            throw new IllegalStateException("OSRM server URL is not configured.");
         }
 
-        // Định dạng chuỗi tọa độ cho OSRM: longitude,latitude;longitude,latitude;...
+        // Format coordinate string for OSRM: longitude,latitude;longitude,latitude;...
         String coordinatesString = places.stream()
                 .map(p -> String.format(Locale.US, "%.5f,%.5f", p.getLongitude(), p.getLatitude()))
                 .collect(Collectors.joining(";"));
 
-        // Xây dựng URL cho API OSRM - Thêm steps=true để lấy hướng dẫn chi tiết
-        String apiUrl = String.format("%s/route/v1/driving/%s?overview=full&geometries=geojson&alternatives=false&steps=true",
-                                    osrmServerUrl, coordinatesString);
+        // Build URL for OSRM API - Add steps=true to get detailed instructions
+        String apiUrl = String.format(
+                "%s/route/v1/driving/%s?overview=full&geometries=geojson&alternatives=false&steps=true",
+                osrmServerUrl, coordinatesString);
 
         HttpURLConnection connection = (HttpURLConnection) URI.create(apiUrl).toURL().openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Accept", "application/json");
-        // Thêm User-Agent để tuân thủ quy định của một số dịch vụ OSRM công cộng
-        connection.setRequestProperty("User-Agent", "TourRoutePlannerApp/1.0 (your-contact-email@example.com)");
+        // Add User-Agent to comply with some public OSRM service requirements
+        connection.setRequestProperty("User-Agent",
+                "TourRoutePlanner/1.0 (https://github.com/DoCaoThang568/TourRoutePlanner)");
 
         int responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -115,55 +127,62 @@ public class RouteService {
                 response.append(line);
             }
             reader.close();
-            // Truyền danh sách 'places' (các điểm tham chiếu gốc) vào parseOSRMResponse
+            // Pass 'places' (original waypoints) to parseOSRMResponse
             Route calculatedRoute = parseOSRMResponse(response.toString(), places);
-            this.lastCalculatedRoute = calculatedRoute; // Lưu lại tuyến đường vừa tính toán
+            this.lastCalculatedRoute = calculatedRoute; // Store the calculated route
             return calculatedRoute;
         } else {
-            System.err.println("Lỗi từ OSRM API: " + responseCode + " - " + connection.getResponseMessage());
+            System.err.println("Error from OSRM API: " + responseCode + " - " + connection.getResponseMessage());
             try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
                 StringBuilder errorResponse = new StringBuilder();
                 String errorLine;
                 while ((errorLine = errorReader.readLine()) != null) {
                     errorResponse.append(errorLine);
                 }
-                System.err.println("Chi tiết lỗi: " + errorResponse.toString());
-                throw new IOException("Lỗi khi gọi API tìm đường OSRM: " + responseCode + ". Chi tiết: " + errorResponse.toString());
+                System.err.println("Error details: " + errorResponse.toString());
+                throw new IOException(
+                        "Error calling OSRM routing API: " + responseCode + ". Details: " + errorResponse.toString());
             } catch (IOException e) {
-                 throw new IOException("Lỗi khi gọi API tìm đường OSRM: " + responseCode + ". Không thể đọc chi tiết lỗi.");
+                throw new IOException(
+                        "Error calling OSRM routing API: " + responseCode + ". Could not read error details.");
             }
         }
     }
 
     /**
-     * Phân tích chuỗi JSON phản hồi từ API OSRM để tạo đối tượng {@link Route}.
-     * @param jsonResponse Chuỗi JSON nhận được từ OSRM.
-     * @param originalWaypoints Danh sách các {@link Place} ban đầu đã được sử dụng để yêu cầu tuyến đường.
-     *                          Thông tin này được sử dụng để khởi tạo đối tượng {@code Route}.
-     * @return Một đối tượng {@link Route} đã được phân tích từ JSON, 
-     *         hoặc {@code null} nếu JSON không hợp lệ, không tìm thấy tuyến đường, hoặc có lỗi khác.
+     * Parses JSON response string from OSRM API to create a {@link Route} object.
+     * 
+     * @param jsonResponse      JSON string received from OSRM.
+     * @param originalWaypoints List of original {@link Place} used to request the
+     *                          route.
+     *                          This information is used to initialize the
+     *                          {@code Route} object.
+     * @return A {@link Route} object parsed from JSON,
+     *         or {@code null} if JSON is invalid, route not found, or other errors
+     *         occur.
      */
     private Route parseOSRMResponse(String jsonResponse, List<Place> originalWaypoints) {
         JsonObject responseObject = JsonParser.parseString(jsonResponse).getAsJsonObject();
         String code = responseObject.get("code").getAsString();
 
         if (!"Ok".equalsIgnoreCase(code)) {
-            System.err.print("OSRM API trả về mã lỗi: " + code);
+            System.err.print("OSRM API returned error code: " + code);
             if (responseObject.has("message")) {
-                 System.err.println(". Thông báo: " + responseObject.get("message").getAsString());
+                System.err.println(". Message: " + responseObject.get("message").getAsString());
             } else {
                 System.err.println(".");
             }
-            return null; // Hoặc có thể ném một exception cụ thể
-        }
-
-        JsonArray routesArray = responseObject.getAsJsonArray("routes");
-        if (routesArray.isEmpty()) { // Sử dụng isEmpty() cho rõ ràng
-            System.err.println("Không tìm thấy tuyến đường nào trong phản hồi từ OSRM.");
             return null;
         }
 
-        JsonObject routeObject = routesArray.get(0).getAsJsonObject(); // Lấy tuyến đường đầu tiên (thường là duy nhất nếu alternatives=false)
+        JsonArray routesArray = responseObject.getAsJsonArray("routes");
+        if (routesArray.isEmpty()) {
+            System.err.println("No route found in OSRM response.");
+            return null;
+        }
+
+        JsonObject routeObject = routesArray.get(0).getAsJsonObject(); // Get first route (usually only one if
+                                                                       // alternatives=false)
 
         double totalDistanceMeters = routeObject.get("distance").getAsDouble();
         double totalDurationSeconds = routeObject.get("duration").getAsDouble();
@@ -173,14 +192,14 @@ public class RouteService {
             JsonArray coordinatesArray = routeObject.getAsJsonObject("geometry").getAsJsonArray("coordinates");
             for (int i = 0; i < coordinatesArray.size(); i++) {
                 JsonArray coordPair = coordinatesArray.get(i).getAsJsonArray();
-                // OSRM GeoJSON trả về tọa độ theo thứ tự: [kinh độ, vĩ độ]
+                // OSRM GeoJSON returns coordinates in order: [longitude, latitude]
                 double lng = coordPair.get(0).getAsDouble();
                 double lat = coordPair.get(1).getAsDouble();
-                polyline.add(new Route.Coordinate(lat, lng)); // Tạo đối tượng Coordinate
+                polyline.add(new Route.Coordinate(lat, lng));
             }
         }
 
-        // Trích xuất hướng dẫn từng chặng (turn-by-turn instructions)
+        // Extract turn-by-turn instructions
         StringBuilder turnByTurnInstructionsBuilder = new StringBuilder();
         if (routeObject.has("legs") && routeObject.getAsJsonArray("legs").size() > 0) {
             JsonArray legsArray = routeObject.getAsJsonArray("legs");
@@ -190,7 +209,7 @@ public class RouteService {
                     JsonArray stepsArray = legObject.getAsJsonArray("steps");
                     for (int j = 0; j < stepsArray.size(); j++) {
                         JsonObject stepObject = stepsArray.get(j).getAsJsonObject();
-                        
+
                         String streetNameForStep = "";
                         if (stepObject.has("name") && !stepObject.get("name").isJsonNull()) {
                             streetNameForStep = stepObject.get("name").getAsString();
@@ -200,36 +219,34 @@ public class RouteService {
                             rotaryNameForStep = stepObject.get("rotary_name").getAsString();
                         }
 
-                        if (stepObject.has("maneuver")) { // Check if maneuver object exists
+                        if (stepObject.has("maneuver")) {
                             JsonObject maneuverObj = stepObject.getAsJsonObject("maneuver");
                             if (maneuverObj.has("instruction") && !maneuverObj.get("instruction").isJsonNull()) {
                                 String instruction = maneuverObj.get("instruction").getAsString();
-                                // Only append if the instruction string is not null and not blank after trimming
                                 if (instruction != null && !instruction.trim().isEmpty()) {
-                                    turnByTurnInstructionsBuilder.append(instruction.trim()).append("\n"); // Corrected newline
+                                    turnByTurnInstructionsBuilder.append(instruction.trim()).append("\n");
                                 }
                             } else {
                                 // Fallback: Generate instruction from type, modifier, and name
-                                String generatedInstruction = generateSimpleInstruction(maneuverObj, streetNameForStep, rotaryNameForStep);
+                                String generatedInstruction = generateSimpleInstruction(maneuverObj, streetNameForStep,
+                                        rotaryNameForStep);
                                 if (generatedInstruction != null && !generatedInstruction.isEmpty()) {
-                                    turnByTurnInstructionsBuilder.append(generatedInstruction).append("\n"); // Corrected newline
-                                } else {
-                                    // System.out.println("RouteService: Maneuver object found, but \'instruction\' field missing/null, and could not generate simple instruction. Maneuver: " + maneuverObj.toString() + ", Street: " + streetNameForStep); // LOGGING: Fallback failure REMOVED
+                                    turnByTurnInstructionsBuilder.append(generatedInstruction).append("\n");
                                 }
                             }
-                        } else {
-                             // System.out.println("RouteService: Step object does not have a \'maneuver\' field. Step: " + stepObject.toString()); // LOGGING: No maneuver object REMOVED
                         }
                     }
                 }
             }
         }
 
-        return new Route(originalWaypoints, polyline, totalDistanceMeters, totalDurationSeconds, turnByTurnInstructionsBuilder.toString());
+        return new Route(originalWaypoints, polyline, totalDistanceMeters, totalDurationSeconds,
+                turnByTurnInstructionsBuilder.toString());
     }
 
     private String generateSimpleInstruction(JsonObject maneuverObj, String streetName, String rotaryName) {
-        if (maneuverObj == null) return "";
+        if (maneuverObj == null)
+            return "";
 
         String type = maneuverObj.has("type") ? maneuverObj.get("type").getAsString() : "";
         String modifier = maneuverObj.has("modifier") ? maneuverObj.get("modifier").getAsString() : "";
@@ -238,88 +255,112 @@ public class RouteService {
 
         switch (type.toLowerCase()) {
             case "depart":
-                instruction.append("Khởi hành");
-                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                if (!streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                instruction.append("Depart");
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty())
+                    instruction.append(" onto ").append(streetName);
                 break;
             case "turn":
-                instruction.append("Rẽ");
-                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                else instruction.append(" theo hướng không xác định"); 
-                if (!streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                instruction.append("Turn");
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                else
+                    instruction.append(" in unknown direction");
+                if (!streetName.isEmpty())
+                    instruction.append(" onto ").append(streetName);
                 break;
             case "continue":
-                instruction.append("Tiếp tục đi thẳng");
+                instruction.append("Continue straight");
                 if (!modifier.isEmpty() && !modifier.equalsIgnoreCase("straight")) {
-                     instruction.append(" ").append(translateModifier(modifier));
+                    instruction.append(" ").append(translateModifier(modifier));
                 }
-                if (!streetName.isEmpty()) instruction.append(" trên ").append(streetName);
+                if (!streetName.isEmpty())
+                    instruction.append(" on ").append(streetName);
                 break;
             case "new name":
-                instruction.append("Đi vào đường mới");
-                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                if (!streetName.isEmpty()) instruction.append(": ").append(streetName);
+                instruction.append("Continue onto new road");
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty())
+                    instruction.append(": ").append(streetName);
                 break;
             case "arrive":
-                instruction.append("Đến nơi");
-                if (!streetName.isEmpty()) instruction.append(" tại ").append(streetName);
+                instruction.append("Arrive");
+                if (!streetName.isEmpty())
+                    instruction.append(" at ").append(streetName);
                 if (!modifier.isEmpty() && (modifier.equalsIgnoreCase("left") || modifier.equalsIgnoreCase("right"))) {
-                    instruction.append(" (phía ").append(translateModifier(modifier)).append(")");
+                    instruction.append(" (on the ").append(translateModifier(modifier)).append(")");
                 }
                 break;
             case "merge":
-                instruction.append("Nhập làn");
-                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                if (!streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                instruction.append("Merge");
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty())
+                    instruction.append(" onto ").append(streetName);
                 break;
             case "fork":
-                instruction.append("Đi theo nhánh");
-                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                else instruction.append(" không xác định");
-                if (!streetName.isEmpty()) instruction.append(" trên ").append(streetName);
+                instruction.append("Take the fork");
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                else
+                    instruction.append(" unknown");
+                if (!streetName.isEmpty())
+                    instruction.append(" on ").append(streetName);
                 break;
             case "end of road":
-                instruction.append("Cuối đường, rẽ");
-                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                if (!streetName.isEmpty()) instruction.append(" vào ").append(streetName);
+                instruction.append("At end of road, turn");
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty())
+                    instruction.append(" onto ").append(streetName);
                 break;
             case "use lane":
-                instruction.append("Sử dụng làn đường");
-                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                if (!streetName.isEmpty()) instruction.append(" trên ").append(streetName);
+                instruction.append("Use lane");
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                if (!streetName.isEmpty())
+                    instruction.append(" on ").append(streetName);
                 break;
             case "roundabout":
             case "rotary":
-                instruction.append("Đi vào ");
+                instruction.append("Enter ");
                 if (rotaryName != null && !rotaryName.isEmpty()) {
                     instruction.append(rotaryName);
                 } else {
-                    instruction.append("vòng xuyến");
+                    instruction.append("roundabout");
                 }
                 if (maneuverObj.has("exit") && !maneuverObj.get("exit").isJsonNull()) {
-                    instruction.append(" và ra ở lối thoát thứ ").append(maneuverObj.get("exit").getAsInt());
+                    instruction.append(" and take exit ").append(maneuverObj.get("exit").getAsInt());
                 }
-                if (streetName != null && !streetName.isEmpty() && (rotaryName == null || rotaryName.isEmpty() || !streetName.equals(rotaryName))) { 
-                    instruction.append(" vào ").append(streetName);
+                if (streetName != null && !streetName.isEmpty()
+                        && (rotaryName == null || rotaryName.isEmpty() || !streetName.equals(rotaryName))) {
+                    instruction.append(" onto ").append(streetName);
                 }
                 break;
             case "exit roundabout":
             case "exit rotary":
-                 instruction.append("Ra khỏi ");
-                 if (rotaryName != null && rotaryName.isEmpty()) {
+                instruction.append("Exit ");
+                if (rotaryName != null && rotaryName.isEmpty()) {
                     instruction.append(rotaryName);
                 } else {
-                    instruction.append("vòng xuyến");
+                    instruction.append("roundabout");
                 }
-                 if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                 if (streetName != null && !streetName.isEmpty()) instruction.append(" vào ").append(streetName);
-                 break;
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                if (streetName != null && !streetName.isEmpty())
+                    instruction.append(" onto ").append(streetName);
+                break;
             default:
-                if (!type.isEmpty()) instruction.append(capitalize(type));
-                if (!modifier.isEmpty()) instruction.append(" ").append(translateModifier(modifier));
-                if (streetName != null && !streetName.isEmpty()) instruction.append(" trên ").append(streetName);
+                if (!type.isEmpty())
+                    instruction.append(capitalize(type));
+                if (!modifier.isEmpty())
+                    instruction.append(" ").append(translateModifier(modifier));
+                if (streetName != null && !streetName.isEmpty())
+                    instruction.append(" on ").append(streetName);
                 if (instruction.length() == 0) {
-                    return ""; 
+                    return "";
                 }
                 break;
         }
@@ -327,17 +368,27 @@ public class RouteService {
     }
 
     private String translateModifier(String osrmModifier) {
-        if (osrmModifier == null) return "";
+        if (osrmModifier == null)
+            return "";
         switch (osrmModifier.toLowerCase()) {
-            case "uturn": return "quay đầu";
-            case "sharp right": return "gấp sang phải";
-            case "right": return "phải";
-            case "slight right": return "hơi sang phải";
-            case "straight": return "thẳng";
-            case "slight left": return "hơi sang trái";
-            case "left": return "trái";
-            case "sharp left": return "gấp sang trái";
-            default: return osrmModifier; 
+            case "uturn":
+                return "U-turn";
+            case "sharp right":
+                return "sharp right";
+            case "right":
+                return "right";
+            case "slight right":
+                return "slight right";
+            case "straight":
+                return "straight";
+            case "slight left":
+                return "slight left";
+            case "left":
+                return "left";
+            case "sharp left":
+                return "sharp left";
+            default:
+                return osrmModifier;
         }
     }
 
@@ -349,47 +400,52 @@ public class RouteService {
     }
 
     /**
-     * Tìm kiếm các địa điểm dựa trên một chuỗi truy vấn bằng cách sử dụng API Nominatim.
-     * @param query Chuỗi truy vấn tìm kiếm (ví dụ: "Tháp Eiffel", "Hồ Gươm Hà Nội").
-     * @return Một danh sách các đối tượng {@link Place} khớp với truy vấn.
-     *         Trả về danh sách rỗng nếu không tìm thấy kết quả nào hoặc có lỗi xảy ra.
-     * @throws IOException Nếu có lỗi kết nối mạng hoặc lỗi khi giao tiếp với API Nominatim.
-     * @throws IllegalArgumentException Nếu chuỗi {@code query} là {@code null} hoặc rỗng.
+     * Searches for places based on a query string using Nominatim API.
+     * 
+     * @param query Search query string (e.g., "Eiffel Tower", "Ho Guom Hanoi").
+     * @return A list of {@link Place} objects matching the query.
+     *         Returns an empty list if no results found or an error occurs.
+     * @throws IOException              If there is a network connection error or
+     *                                  error communicating with Nominatim API.
+     * @throws IllegalArgumentException If the {@code query} string is {@code null}
+     *                                  or empty.
      */
     public List<Place> searchPlaces(String query) throws IOException {
         if (query == null || query.trim().isEmpty()) {
-            throw new IllegalArgumentException("Chuỗi truy vấn không được rỗng.");
+            throw new IllegalArgumentException("Query string must not be empty.");
         }
         if (nominatimServerUrl == null || nominatimServerUrl.trim().isEmpty()) {
             System.err.println("Nominatim server URL is not configured. Returning empty list.");
-            return new ArrayList<>(); // Trả về danh sách rỗng thay vì ném lỗi ở đây
+            return new ArrayList<>();
         }
 
-        // Chuẩn hóa query cho URL (UTF-8 encoding)
+        // Encode query for URL (UTF-8 encoding)
         String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString());
 
-        // Xây dựng URL cho API Nominatim
-        // Thêm addressdetails=1 để lấy chi tiết địa chỉ
-        // Thêm format=json để nhận kết quả dưới dạng JSON
-        // Thêm limit=20 để giới hạn số lượng kết quả (có thể điều chỉnh)
-        // Thêm polygon_geojson=1 để lấy chi tiết GeoJSON cho các polygon
-        // Thêm lại countrycodes=vn và accept-language=vi
-        String apiUrl = String.format("%s/search?q=%s&format=json&addressdetails=1&limit=20&polygon_geojson=1&countrycodes=vn&accept-language=vi",
-                                    nominatimServerUrl, encodedQuery);
+        // Build URL for Nominatim API
+        // Add addressdetails=1 to get address details
+        // Add format=json to receive results in JSON format
+        // Add limit=20 to limit number of results (adjustable)
+        // Add polygon_geojson=1 to get GeoJSON details for polygons
+        // Add countrycodes=vn and accept-language=vi for Vietnam focus
+        String apiUrl = String.format(
+                "%s/search?q=%s&format=json&addressdetails=1&limit=20&polygon_geojson=1&countrycodes=vn&accept-language=vi",
+                nominatimServerUrl, encodedQuery);
 
-        // Lưu trữ query đã chuẩn hóa để có thể sử dụng sau này (ví dụ: để sắp xếp kết quả)
-        // Cân nhắc: việc chuẩn hóa ở đây có thể khác với chuẩn hóa cho việc hiển thị/so sánh gợi ý
+        // Store normalized query for later use (e.g., for sorting results)
         lastNormalizedQuery = normalizeString(query);
 
         HttpURLConnection connection = (HttpURLConnection) URI.create(apiUrl).toURL().openConnection();
         connection.setRequestMethod("GET");
-        // Thêm User-Agent để tuân thủ quy định của một số dịch vụ công cộng
-        connection.setRequestProperty("User-Agent", "TourRoutePlannerApp/1.0 (your-contact-email@example.com)"); 
+        // Add User-Agent to comply with some public service requirements
+        connection.setRequestProperty("User-Agent",
+                "TourRoutePlanner/1.0 (https://github.com/DoCaoThang568/TourRoutePlanner)");
         connection.setRequestProperty("Accept-Charset", StandardCharsets.UTF_8.toString());
 
         int responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
             StringBuilder response = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -398,101 +454,110 @@ public class RouteService {
             reader.close();
             return parseNominatimResponse(response.toString());
         } else {
-            System.err.println("Lỗi từ Nominatim API: " + responseCode + " - " + connection.getResponseMessage());
+            System.err.println("Error from Nominatim API: " + responseCode + " - " + connection.getResponseMessage());
             try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
                 StringBuilder errorResponse = new StringBuilder();
                 String errorLine;
                 while ((errorLine = errorReader.readLine()) != null) {
                     errorResponse.append(errorLine);
                 }
-                System.err.println("Chi tiết lỗi: " + errorResponse.toString());
-                throw new IOException("Lỗi khi gọi API tìm kiếm địa điểm Nominatim: " + responseCode + ". Chi tiết: " + errorResponse.toString());
+                System.err.println("Error details: " + errorResponse.toString());
+                throw new IOException("Error calling Nominatim place search API: " + responseCode + ". Details: "
+                        + errorResponse.toString());
             } catch (IOException e) {
-                throw new IOException("Lỗi khi gọi API tìm kiếm địa điểm Nominatim: " + responseCode + ". Không thể đọc chi tiết lỗi.");
+                throw new IOException("Error calling Nominatim place search API: " + responseCode
+                        + ". Could not read error details.");
             }
         }
     }
 
     /**
-     * Phân tích chuỗi JSON phản hồi từ API Nominatim (cho tìm kiếm địa điểm) để tạo danh sách các đối tượng {@link Place}.
-     * @param jsonResponse Chuỗi JSON nhận được từ Nominatim.
-     * @return Một danh sách các {@link Place} đã được phân tích. 
-     *         Trả về danh sách rỗng nếu JSON không hợp lệ hoặc không chứa kết quả nào.
+     * Parses JSON response string from Nominatim API (for place search) to create a
+     * list of {@link Place} objects.
+     * 
+     * @param jsonResponse JSON string received from Nominatim.
+     * @return A list of parsed {@link Place} objects.
+     *         Returns an empty list if JSON is invalid or contains no results.
      */
     private List<Place> parseNominatimResponse(String jsonResponse) {
         List<Place> foundPlaces = new ArrayList<>();
         JsonArray resultsArray = JsonParser.parseString(jsonResponse).getAsJsonArray();
 
-        if (resultsArray.isEmpty()) { // Sử dụng isEmpty()
-            return foundPlaces; // Trả về danh sách rỗng
+        if (resultsArray.isEmpty()) {
+            return foundPlaces; // Return empty list
         }
 
         for (int i = 0; i < resultsArray.size(); i++) {
             JsonObject placeObject = resultsArray.get(i).getAsJsonObject();
-            
-            String displayName = placeObject.has("display_name") ? placeObject.get("display_name").getAsString() : "Không có tên hiển thị";
+
+            String displayName = placeObject.has("display_name") ? placeObject.get("display_name").getAsString()
+                    : "No display name";
             double lat = placeObject.get("lat").getAsDouble();
             double lon = placeObject.get("lon").getAsDouble();
-            
+
             double[] boundingBox = null;
             if (placeObject.has("boundingbox") && placeObject.get("boundingbox").isJsonArray()) {
                 JsonArray bboxArray = placeObject.getAsJsonArray("boundingbox");
                 if (bboxArray.size() == 4) {
                     boundingBox = new double[4];
-                    boundingBox[0] = bboxArray.get(0).getAsDouble(); 
-                    boundingBox[1] = bboxArray.get(1).getAsDouble(); 
-                    boundingBox[2] = bboxArray.get(2).getAsDouble(); 
-                    boundingBox[3] = bboxArray.get(3).getAsDouble(); 
+                    boundingBox[0] = bboxArray.get(0).getAsDouble();
+                    boundingBox[1] = bboxArray.get(1).getAsDouble();
+                    boundingBox[2] = bboxArray.get(2).getAsDouble();
+                    boundingBox[3] = bboxArray.get(3).getAsDouble();
                 }
             }
 
             String geoJsonString = null;
             if (placeObject.has("geojson") && placeObject.get("geojson").isJsonObject()) {
                 JsonObject geoJsonObject = placeObject.getAsJsonObject("geojson");
-                geoJsonString = geoJsonObject.toString(); 
+                geoJsonString = geoJsonObject.toString();
             }
 
             double importance = 0.0;
-            if (placeObject.has("importance") && placeObject.get("importance").isJsonPrimitive() && placeObject.get("importance").getAsJsonPrimitive().isNumber()) {
+            if (placeObject.has("importance") && placeObject.get("importance").isJsonPrimitive()
+                    && placeObject.get("importance").getAsJsonPrimitive().isNumber()) {
                 importance = placeObject.get("importance").getAsDouble();
             }
 
             String placeId = "unknown_id";
             if (placeObject.has("osm_type") && placeObject.has("osm_id")) {
-                placeId = placeObject.get("osm_type").getAsString().substring(0,1).toUpperCase() + placeObject.get("osm_id").getAsString(); // Ví dụ: N123, W456, R789
+                placeId = placeObject.get("osm_type").getAsString().substring(0, 1).toUpperCase()
+                        + placeObject.get("osm_id").getAsString(); // Example: N123, W456, R789
             } else if (placeObject.has("place_id")) {
-                 placeId = "nominatim_" + placeObject.get("place_id").getAsString();
+                placeId = "nominatim_" + placeObject.get("place_id").getAsString();
             }
 
-            // Phân tách displayName thành hai phần: tên và địa chỉ
+            // Split displayName into two parts: name and address
             String name = null;
             String address = null;
-            
-            // Phần 1: Thử phân tách displayName theo dấu phẩy
+
+            // Part 1: Try to split displayName by comma
             int firstCommaIndex = displayName.indexOf(',');
             if (firstCommaIndex > 0) {
-                // Mặc định: phần đầu tiên là tên
+                // Default: first part is name
                 name = displayName.substring(0, firstCommaIndex).trim();
-                // Phần còn lại là địa chỉ
+                // Remaining part is address
                 if (firstCommaIndex + 1 < displayName.length()) {
                     address = displayName.substring(firstCommaIndex + 1).trim();
                 }
             } else {
-                // Nếu không có dấu phẩy, toàn bộ displayName là tên
+                // If no comma, entire displayName is name
                 name = displayName;
-                address = ""; // Địa chỉ rỗng
+                address = ""; // Empty address
             }
-            
-            // Phần 2: Cố gắng trích xuất tên ngắn gọn hơn và địa chỉ chi tiết từ addressdetails nếu có
+
+            // Part 2: Try to extract shorter name and detailed address from addressdetails
+            // if available
             if (placeObject.has("addressdetails") && placeObject.get("addressdetails").isJsonObject()) {
                 JsonObject addressDetailsObj = placeObject.getAsJsonObject("addressdetails");
-                
-                // Thử lấy tên từ các trường cụ thể
+
+                // Try to get name from specific fields
                 String extractedName = null;
                 if (addressDetailsObj.has("name")) {
                     extractedName = addressDetailsObj.get("name").getAsString();
                 } else if (addressDetailsObj.has("road") && addressDetailsObj.has("house_number")) {
-                    extractedName = addressDetailsObj.get("house_number").getAsString() + " " + addressDetailsObj.get("road").getAsString();
+                    extractedName = addressDetailsObj.get("house_number").getAsString() + " "
+                            + addressDetailsObj.get("road").getAsString();
                 } else if (addressDetailsObj.has("road")) {
                     extractedName = addressDetailsObj.get("road").getAsString();
                 } else if (addressDetailsObj.has("amenity")) {
@@ -502,12 +567,12 @@ public class RouteService {
                 } else if (addressDetailsObj.has("tourism")) {
                     extractedName = addressDetailsObj.get("tourism").getAsString();
                 }
-                
+
                 if (extractedName != null && !extractedName.isEmpty()) {
-                    name = extractedName; // Cập nhật tên nếu tìm được cái tốt hơn
+                    name = extractedName; // Update name if better one found
                 }
 
-                // Xây dựng địa chỉ chi tiết từ các thành phần
+                // Build detailed address from components
                 StringBuilder sb = new StringBuilder();
                 appendAddressComponent(sb, addressDetailsObj, "house_number");
                 appendAddressComponent(sb, addressDetailsObj, "road");
@@ -524,45 +589,48 @@ public class RouteService {
 
                 String constructedAddress = sb.toString().trim();
                 if (!constructedAddress.isEmpty()) {
-                    // Loại bỏ dấu phẩy thừa ở cuối nếu có
+                    // Remove trailing comma if present
                     if (constructedAddress.endsWith(",")) {
                         constructedAddress = constructedAddress.substring(0, constructedAddress.length() - 1);
                     }
-                    address = constructedAddress; // Cập nhật địa chỉ nếu xây dựng được
+                    address = constructedAddress; // Update address if constructed
                 }
             }
 
-            // Đảm bảo name và address không giống nhau một cách không cần thiết
+            // Ensure name and address are not unnecessarily identical
             if (name != null && address != null && name.equalsIgnoreCase(address)) {
-                // Nếu name và address giống hệt nhau, giữ name và đặt address là chuỗi rỗng
+                // If name and address are identical, keep name and set address to empty
                 address = "";
             }
-            
-            // Đảm bảo name không null và không rỗng
+
+            // Ensure name is not null or empty
             if (name == null || name.trim().isEmpty()) {
-                name = displayName; // Dùng displayName nếu không tìm được tên phù hợp
-            }
-            
-            // Đảm bảo address không null 
-            if (address == null) {
-                address = ""; // Đặt thành chuỗi rỗng nếu null
+                name = displayName; // Use displayName if no suitable name found
             }
 
-            // Sử dụng constructor bao gồm cả importance
+            // Ensure address is not null
+            if (address == null) {
+                address = ""; // Set to empty string if null
+            }
+
+            // Use constructor including importance
             foundPlaces.add(new Place(placeId, name, lat, lon, address, boundingBox, geoJsonString, importance));
         }
 
-        // Sắp xếp kết quả dựa trên 'importance' giảm dần
+        // Sort results by 'importance' in descending order
         foundPlaces.sort((p1, p2) -> Double.compare(p2.getImportance(), p1.getImportance()));
 
         return foundPlaces;
     }
-    
+
     /**
-     * Hàm tiện ích để nối một thành phần địa chỉ vào StringBuilder nếu nó tồn tại trong JsonObject.
-     * @param builder StringBuilder để nối vào.
-     * @param addressObject JsonObject chứa các thành phần địa chỉ.
-     * @param key Khóa của thành phần địa chỉ cần lấy (ví dụ: "road", "city").
+     * Utility function to append an address component to StringBuilder if it exists
+     * in JsonObject.
+     * 
+     * @param builder       StringBuilder to append to.
+     * @param addressObject JsonObject containing address components.
+     * @param key           Key of the address component to get (e.g., "road",
+     *                      "city").
      */
     private void appendAddressComponent(StringBuilder builder, JsonObject addressObject, String key) {
         if (addressObject.has(key)) {
@@ -574,60 +642,70 @@ public class RouteService {
     }
 
     /**
-     * Chuẩn hóa một chuỗi đầu vào bằng cách:
-     * 1. Chuyển đổi về dạng không dấu (loại bỏ dấu phụ).
-     * 2. Chuyển thành chữ thường.
-     * 3. Loại bỏ các ký tự đặc biệt không phải là chữ cái, số, hoặc khoảng trắng.
-     * 4. Cắt bỏ khoảng trắng thừa ở đầu và cuối chuỗi.
-     * Mục đích là để so sánh chuỗi một cách linh hoạt hơn.
-     * @param input Chuỗi cần chuẩn hóa.
-     * @return Chuỗi đã được chuẩn hóa. Trả về chuỗi rỗng nếu đầu vào là {@code null}.
+     * Normalizes an input string by:
+     * 1. Converting to non-accented form (removing diacritics).
+     * 2. Converting to lowercase.
+     * 3. Removing special characters that are not letters, numbers, or spaces.
+     * 4. Trimming leading and trailing whitespace.
+     * Purpose is to enable more flexible string comparison.
+     * 
+     * @param input String to normalize.
+     * @return Normalized string. Returns empty string if input is {@code null}.
      */
     public static String normalizeString(String input) {
-        if (input == null) return "";
+        if (input == null)
+            return "";
         String temp = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD);
         temp = temp.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         return temp.toLowerCase().replaceAll("[^a-z0-9 ]", "").trim();
     }
 
     /**
-     * Tìm địa chỉ (reverse geocode) từ một cặp tọa độ (vĩ độ, kinh độ) sử dụng API Nominatim.
-     * @param lat Vĩ độ của điểm cần tìm địa chỉ.
-     * @param lng Kinh độ của điểm cần tìm địa chỉ.
-     * @return Một đối tượng {@link Place} chứa thông tin địa chỉ tương ứng với tọa độ đã cho.
-     *         Trả về {@code null} nếu không tìm thấy địa chỉ, có lỗi xảy ra, hoặc URL Nominatim chưa được cấu hình.
-     * @throws IOException Nếu có lỗi kết nối mạng hoặc lỗi khi giao tiếp với API Nominatim.
-     * @throws IllegalStateException Nếu URL của máy chủ Nominatim chưa được cấu hình đúng cách.
+     * Finds address (reverse geocode) from a coordinate pair (latitude, longitude)
+     * using Nominatim API.
+     * 
+     * @param lat Latitude of the point to find address for.
+     * @param lng Longitude of the point to find address for.
+     * @return A {@link Place} object containing address information for the given
+     *         coordinates.
+     *         Returns {@code null} if no address found, an error occurs, or
+     *         Nominatim URL is not configured.
+     * @throws IOException           If there is a network connection error or error
+     *                               communicating with Nominatim API.
+     * @throws IllegalStateException If the Nominatim server URL is not properly
+     *                               configured.
      */
     public Place reverseGeocode(double lat, double lng) throws IOException {
         if (nominatimServerUrl == null || nominatimServerUrl.trim().isEmpty()) {
-            System.err.println("URL của Nominatim server chưa được cấu hình trong config.properties hoặc không hợp lệ.");
-            throw new IllegalStateException("URL của Nominatim server chưa được cấu hình.");
+            System.err.println("Nominatim server URL is not configured in config.properties or is invalid.");
+            throw new IllegalStateException("Nominatim server URL is not configured.");
         }
 
-        // Xác định đường dẫn API dựa trên URL máy chủ Nominatim
+        // Determine API path based on Nominatim server URL
         String reversePath = "/reverse";
         if (nominatimServerUrl != null && nominatimServerUrl.startsWith("http://localhost")) {
-            reversePath = "/reverse.php"; // Sử dụng .php cho localhost
+            reversePath = "/reverse.php"; // Use .php for localhost
         }
 
-        // Sử dụng endpoint /reverse cho Nominatim (thường là /reverse.php hoặc /reverse)
-        // zoom=18 để yêu cầu kết quả chi tiết ở mức độ đường phố/tòa nhà
+        // Use /reverse endpoint for Nominatim (usually /reverse.php or /reverse)
+        // zoom=18 to request detailed results at street/building level
         String apiUrl = String.format(Locale.US,
-                "%s%s?lat=%f&lon=%f&format=json&addressdetails=1&zoom=18&accept-language=vi", // Thêm accept-language
+                "%s%s?lat=%f&lon=%f&format=json&addressdetails=1&zoom=18&accept-language=vi",
                 nominatimServerUrl,
-                reversePath, // Sử dụng đường dẫn đã xác định
+                reversePath,
                 lat, lng);
 
         HttpURLConnection connection = (HttpURLConnection) URI.create(apiUrl).toURL().openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Accept", "application/json");
-        // User-Agent rất quan trọng khi sử dụng Nominatim công cộng.
-        connection.setRequestProperty("User-Agent", "TourRoutePlannerApp/1.0 (your-contact-email@example.com)");
+        // User-Agent is very important when using public Nominatim.
+        connection.setRequestProperty("User-Agent",
+                "TourRoutePlanner/1.0 (https://github.com/DoCaoThang568/TourRoutePlanner)");
 
         int responseCode = connection.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
             StringBuilder response = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -636,37 +714,46 @@ public class RouteService {
             reader.close();
             return parseNominatimReverseResponse(response.toString(), lat, lng);
         } else {
-            System.err.println("Lỗi từ Nominatim Reverse Geocoding API: " + responseCode + " - " + connection.getResponseMessage());
-            // Xử lý lỗi tương tự như các phương thức gọi API khác (ví dụ: đọc errorStream)
-            // Hiện tại trả về null để đơn giản
+            System.err.println("Error from Nominatim Reverse Geocoding API: " + responseCode + " - "
+                    + connection.getResponseMessage());
+            // Handle error similar to other API call methods (e.g., read errorStream)
+            // Currently returns null for simplicity
             return null;
         }
     }
 
     /**
-     * Phân tích chuỗi JSON phản hồi từ API Nominatim (cho reverse geocoding) để tạo đối tượng {@link Place}.
-     * @param jsonResponse Chuỗi JSON nhận được từ Nominatim.
-     * @param originalLat Vĩ độ gốc đã được sử dụng để yêu cầu reverse geocoding.
-     * @param originalLng Kinh độ gốc đã được sử dụng để yêu cầu reverse geocoding.
-     * @return Một đối tượng {@link Place} đã được phân tích.
-     *         Trả về {@code null} nếu JSON không hợp lệ, có lỗi từ API, hoặc không tìm thấy thông tin địa chỉ.
+     * Parses JSON response string from Nominatim API (for reverse geocoding) to
+     * create a {@link Place} object.
+     * 
+     * @param jsonResponse JSON string received from Nominatim.
+     * @param originalLat  Original latitude used to request reverse geocoding.
+     * @param originalLng  Original longitude used to request reverse geocoding.
+     * @return A parsed {@link Place} object.
+     *         Returns {@code null} if JSON is invalid, API returns error, or no
+     *         address information found.
      */
     private Place parseNominatimReverseResponse(String jsonResponse, double originalLat, double originalLng) {
         JsonObject resultObject = JsonParser.parseString(jsonResponse).getAsJsonObject();
 
         if (resultObject.has("error")) {
-            System.err.println("Lỗi từ Nominatim khi reverse geocoding: " + resultObject.get("error").getAsString());
+            System.err.println(
+                    "Error from Nominatim during reverse geocoding: " + resultObject.get("error").getAsString());
             return null;
         }
 
-        // Lấy các thông tin cơ bản
-        // Nominatim có thể trả về tọa độ hơi khác so với tọa độ gốc, nên ta có thể dùng tọa độ gốc hoặc tọa độ trả về.
-        // Ở đây ưu tiên tọa độ trả về từ API nếu có, nếu không thì dùng tọa độ gốc.
+        // Get basic information
+        // Nominatim may return slightly different coordinates than original, so we can
+        // use original or returned coordinates.
+        // Here we prefer coordinates returned from API if available, otherwise use
+        // original coordinates.
         double lat = resultObject.has("lat") ? resultObject.get("lat").getAsDouble() : originalLat;
         double lon = resultObject.has("lon") ? resultObject.get("lon").getAsDouble() : originalLng;
-        String displayName = resultObject.has("display_name") ? resultObject.get("display_name").getAsString() : "Không có tên hiển thị";
-        
-        // Lấy boundingbox nếu có từ reverse geocoding (ít phổ biến hơn nhưng có thể có)
+        String displayName = resultObject.has("display_name") ? resultObject.get("display_name").getAsString()
+                : "No display name";
+
+        // Get boundingbox if available from reverse geocoding (less common but
+        // possible)
         double[] boundingBox = null;
         if (resultObject.has("boundingbox") && resultObject.get("boundingbox").isJsonArray()) {
             JsonArray bboxArray = resultObject.getAsJsonArray("boundingbox");
@@ -679,43 +766,49 @@ public class RouteService {
             }
         }
 
-        // Lấy GeoJSON nếu có
+        // Get GeoJSON if available
         String geoJsonString = null;
         if (resultObject.has("geojson") && resultObject.get("geojson").isJsonObject()) {
             JsonObject geoJsonObject = resultObject.getAsJsonObject("geojson");
-            geoJsonString = geoJsonObject.toString(); // Chuyển toàn bộ object geojson thành chuỗi
+            geoJsonString = geoJsonObject.toString();
         }
 
         String placeId = "unknown_id";
-         if (resultObject.has("osm_type") && resultObject.has("osm_id")) {
-            placeId = resultObject.get("osm_type").getAsString().substring(0,1).toUpperCase() + resultObject.get("osm_id").getAsString();
+        if (resultObject.has("osm_type") && resultObject.has("osm_id")) {
+            placeId = resultObject.get("osm_type").getAsString().substring(0, 1).toUpperCase()
+                    + resultObject.get("osm_id").getAsString();
         } else if (resultObject.has("place_id")) {
             placeId = "nominatim_" + resultObject.get("place_id").getAsString();
         }
 
+        String name = displayName; // Default name
+        String address = displayName; // Default address
 
-        String name = displayName; // Tên mặc định
-        String address = displayName; // Địa chỉ mặc định
-
-        // Cố gắng trích xuất tên và địa chỉ chi tiết hơn từ trường 'address'
+        // Try to extract more detailed name and address from 'address' field
         if (resultObject.has("address") && resultObject.get("address").isJsonObject()) {
             JsonObject addressObject = resultObject.getAsJsonObject("address");
-            // Logic trích xuất tên tương tự như trong parseNominatimResponse
-            // Ưu tiên các thành phần cụ thể như tên đường, POI, v.v.
-            if (addressObject.has("road")) { // Tên đường thường là thông tin tốt nhất cho reverse geocoding
+            // Name extraction logic similar to parseNominatimResponse
+            // Prioritize specific components like street name, POI, etc.
+            if (addressObject.has("road")) { // Street name is usually best info for reverse geocoding
                 name = addressObject.get("road").getAsString();
                 if (addressObject.has("house_number")) {
                     name = addressObject.get("house_number").getAsString() + " " + name;
                 }
-            } else if (addressObject.has("amenity")) name = addressObject.get("amenity").getAsString();
-            else if (addressObject.has("shop")) name = addressObject.get("shop").getAsString();
-            else if (addressObject.has("tourism")) name = addressObject.get("tourism").getAsString();
-            // ... (thêm các trường khác nếu cần, tương tự parseNominatimResponse) ...
-            else if (addressObject.has("city")) name = addressObject.get("city").getAsString(); // Fallback cuối cùng có thể là tên thành phố
-            else if (addressObject.has("county")) name = addressObject.get("county").getAsString();
-            else if (addressObject.has("state")) name = addressObject.get("state").getAsString();
-            else if (addressObject.has("country")) name = addressObject.get("country").getAsString();
-            else { // Nếu không có tên cụ thể, dùng phần đầu của display_name
+            } else if (addressObject.has("amenity"))
+                name = addressObject.get("amenity").getAsString();
+            else if (addressObject.has("shop"))
+                name = addressObject.get("shop").getAsString();
+            else if (addressObject.has("tourism"))
+                name = addressObject.get("tourism").getAsString();
+            else if (addressObject.has("city"))
+                name = addressObject.get("city").getAsString(); // Last fallback could be city name
+            else if (addressObject.has("county"))
+                name = addressObject.get("county").getAsString();
+            else if (addressObject.has("state"))
+                name = addressObject.get("state").getAsString();
+            else if (addressObject.has("country"))
+                name = addressObject.get("country").getAsString();
+            else { // If no specific name, use first part of display_name
                 if (displayName.contains(",")) {
                     name = displayName.substring(0, displayName.indexOf(",")).trim();
                 } else {
@@ -723,7 +816,7 @@ public class RouteService {
                 }
             }
 
-            // Xây dựng lại địa chỉ chi tiết từ các thành phần có sẵn
+            // Rebuild detailed address from available components
             StringBuilder detailedAddressBuilder = new StringBuilder();
             appendAddressComponent(detailedAddressBuilder, addressObject, "road");
             appendAddressComponent(detailedAddressBuilder, addressObject, "house_number");
@@ -744,12 +837,14 @@ public class RouteService {
             }
         }
 
-        return new Place(placeId, name, lat, lon, address, boundingBox, geoJsonString); // Thêm boundingBox vào constructor
+        return new Place(placeId, name, lat, lon, address, boundingBox, geoJsonString);
     }
 
     /**
-     * Trả về đối tượng {@link Route} cuối cùng đã được tính toán bởi dịch vụ này.
-     * @return Đối tượng {@code Route} cuối cùng, hoặc {@code null} nếu chưa có tuyến đường nào được tính toán thành công.
+     * Returns the last {@link Route} object calculated by this service.
+     * 
+     * @return The last {@code Route} object, or {@code null} if no route has been
+     *         successfully calculated yet.
      */
     public Route getLastRoute() {
         return lastCalculatedRoute;

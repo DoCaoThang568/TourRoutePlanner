@@ -25,40 +25,42 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<!-- Root container của ứng dụng, sử dụng BorderPane layout -->
+<!-- Root container of the application, using BorderPane layout -->
 <BorderPane fx:controller="tourrouteplanner.MainController" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="700.0" minWidth="1000.0" prefHeight="700.0" prefWidth="1200.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-   <!-- Khu vực TOP: Chứa MenuBar và Header của ứng dụng -->
+   <!-- TOP area: Contains MenuBar and application Header -->
    <top>
       <VBox BorderPane.alignment="CENTER">
          <children>
-            <!-- Thanh Menu chính -->
+            <!-- Main Menu Bar -->
             <MenuBar styleClass="menu-bar">
               <menus>
-                <Menu mnemonicParsing="false" text="Tệp">
+                <Menu mnemonicParsing="false" text="File">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#handleSaveRoute" text="Lưu lộ trình..." />
-                    <MenuItem mnemonicParsing="false" onAction="#handleLoadRoute" text="Tải lộ trình..." />
+                    <MenuItem mnemonicParsing="false" onAction="#handleSaveRoute" text="Save Route..." />
+                    <MenuItem mnemonicParsing="false" onAction="#handleLoadRoute" text="Load Route..." />
                     <SeparatorMenuItem mnemonicParsing="false" />
-                    <MenuItem mnemonicParsing="false" onAction="#onExit" text="Thoát" />
+                    <MenuItem mnemonicParsing="false" onAction="#onExit" text="Exit" />
                   </items>
                 </Menu>
-                <Menu mnemonicParsing="false" text="Trợ giúp">
+                <Menu mnemonicParsing="false" text="Help">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#onAbout" text="Thông tin" />
+                    <MenuItem mnemonicParsing="false" onAction="#onAbout" text="About" />
                   </items>
                 </Menu>
               </menus>
-            </MenuBar>            <!-- Header của ứng dụng -->
+            </MenuBar>
+            <!-- Application Header -->
             <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="app-header">
                <padding>
                   <Insets bottom="15.0" left="25.0" right="25.0" top="15.0" />
                </padding>
                <children>
                   <Label styleClass="header-title" text="TOUR ROUTE PLANNER" />
-                  <!-- Spacer để đẩy dark mode toggle sang bên phải -->
-                  <Region HBox.hgrow="ALWAYS" />                  <Button fx:id="darkModeToggle" onAction="#toggleDarkMode" styleClass="dark-mode-toggle">
+                  <!-- Spacer to push dark mode toggle to the right -->
+                  <Region HBox.hgrow="ALWAYS" />
+                  <Button fx:id="darkModeToggle" onAction="#toggleDarkMode" styleClass="dark-mode-toggle">
                      <tooltip>
-                        <Tooltip text="Chuyển sang chế độ tối" />
+                        <Tooltip text="Switch to dark mode" />
                      </tooltip>
                   </Button>
                </children>
@@ -66,23 +68,27 @@
          </children>
       </VBox>
    </top>
-   <!-- Khu vực CENTER: Chứa SplitPane chia giao diện thành 2 phần chính -->
+   <!-- CENTER area: Contains SplitPane dividing interface into 2 main parts -->
    <center>
       <SplitPane BorderPane.alignment="CENTER" dividerPositions="0.35" prefHeight="160.0" prefWidth="200.0" styleClass="main-split-pane">
         <items>
-          <!-- Panel bên trái: Chứa các control nhập liệu và hiển thị thông tin -->
+          <!-- Left Panel: Contains input controls and information display -->
           <VBox prefHeight="200.0" prefWidth="350.0" spacing="15.0" styleClass="side-panel">
                <padding>
                   <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </padding>
-               <children>                    <!-- Khu vực tìm kiếm địa điểm -->                  <Label styleClass="section-header" text="Tìm kiếm địa điểm:" /><HBox alignment="CENTER_LEFT" spacing="12.0">
+               <children>
+                  <!-- Place search area -->
+                  <Label styleClass="section-header" text="Search Places:" />
+                  <HBox alignment="CENTER_LEFT" spacing="12.0">
                      <children>
                         <StackPane HBox.hgrow="ALWAYS">
                            <children>
                               <VBox spacing="0">
-                                 <children>                                    <TextField fx:id="searchBox" onAction="#handleSearch" promptText="Nhập tên địa điểm..." styleClass="search-field">
+                                 <children>
+                                    <TextField fx:id="searchBox" onAction="#handleSearch" promptText="Enter place name..." styleClass="search-field">
                                        <tooltip>
-                                          <Tooltip text="Nhập ít nhất 2 ký tự để tìm kiếm địa điểm. Gợi ý sẽ hiển thị tự động." />
+                                          <Tooltip text="Enter at least 2 characters to search for places. Suggestions will appear automatically." />
                                        </tooltip>
                                     </TextField>
                                     <ListView fx:id="suggestionsListView" prefHeight="150.0" visible="false" managed="false" styleClass="suggestions-list" />
@@ -92,16 +98,17 @@
                               <HBox fx:id="loadingContainer" alignment="CENTER" spacing="8.0" visible="false" managed="false" styleClass="loading-container">
                                  <children>
                                     <javafx.scene.control.ProgressIndicator fx:id="loadingSpinner" prefHeight="20.0" prefWidth="20.0" styleClass="loading-spinner" />
-                                    <Label text="Đang tìm kiếm..." styleClass="loading-text" />
+                                    <Label text="Searching..." styleClass="loading-text" />
                                  </children>
                                  <StackPane.margin>
                                     <Insets top="50.0" />
                                  </StackPane.margin>
                               </HBox>
                            </children>
-                        </StackPane>                        <Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearch" styleClass="search-button" text="Tìm kiếm">
+                        </StackPane>
+                        <Button fx:id="searchButton" mnemonicParsing="false" onAction="#handleSearch" styleClass="search-button" text="Search">
                            <tooltip>
-                              <Tooltip text="Tìm kiếm địa điểm" />
+                              <Tooltip text="Search for places" />
                            </tooltip>
                            <graphic>
                               <ImageView fitHeight="18.0" fitWidth="18.0">
@@ -116,26 +123,31 @@
                         <Insets bottom="15.0" />
                      </VBox.margin>
                   </HBox>
-                  <!-- Khu vực hiển thị kết quả tìm kiếm -->                  <Label styleClass="section-header" text="Kết quả tìm kiếm:" /><StackPane fx:id="searchResultsContainer" prefHeight="200.0" VBox.vgrow="SOMETIMES">
+                  <!-- Search results display area -->
+                  <Label styleClass="section-header" text="Search Results:" />
+                  <StackPane fx:id="searchResultsContainer" prefHeight="200.0" VBox.vgrow="SOMETIMES">
                      <children>
                         <ListView fx:id="placeListView" styleClass="places-list" />
-                        <Label fx:id="searchPlaceholder" text="Kết quả tìm kiếm sẽ hiển thị ở đây" styleClass="placeholder-text" visible="true" mouseTransparent="true" />
+                        <Label fx:id="searchPlaceholder" text="Search results will appear here" styleClass="placeholder-text" visible="true" mouseTransparent="true" />
                      </children>
                      <VBox.margin>
                         <Insets bottom="10.0" top="8.0" />
                      </VBox.margin>
                   </StackPane>
 
-                  <!-- Khu vực hiển thị các điểm đã chọn trong lộ trình -->                  <Label styleClass="section-header" text="Các điểm đã chọn trong lộ trình:" /><StackPane fx:id="routeTableContainer" prefHeight="250.0" VBox.vgrow="SOMETIMES">
+                  <!-- Selected places in route display area -->
+                  <Label styleClass="section-header" text="Selected Places in Route:" />
+                  <StackPane fx:id="routeTableContainer" prefHeight="250.0" VBox.vgrow="SOMETIMES">
                      <children>
                         <HBox spacing="5.0">
                            <children>
                               <TableView fx:id="routeTableView" styleClass="route-table" HBox.hgrow="ALWAYS">
                                 <columns>
-                                  <TableColumn fx:id="routePlaceNameColumn" prefWidth="150.0" text="Tên địa điểm" />
-                                  <TableColumn fx:id="routePlaceAddressColumn" prefWidth="200.0" text="Địa chỉ" />
+                                  <TableColumn fx:id="routePlaceNameColumn" prefWidth="150.0" text="Place Name" />
+                                  <TableColumn fx:id="routePlaceAddressColumn" prefWidth="200.0" text="Address" />
                                 </columns>
-                              </TableView>                              <!-- Các nút di chuyển lên/xuống -->
+                              </TableView>
+                              <!-- Move up/down buttons -->
                               <VBox alignment="CENTER" spacing="6.0">
                                  <padding>
                                     <Insets left="8.0" right="5.0" />
@@ -150,7 +162,7 @@
                                           </ImageView>
                                        </graphic>
                                        <tooltip>
-                                          <Tooltip text="Di chuyển lên trên" />
+                                          <Tooltip text="Move up" />
                                        </tooltip>
                                     </Button>
                                     <Button fx:id="moveDownButton" mnemonicParsing="false" onAction="#handleMoveDown" styleClass="move-button" disable="true">
@@ -162,22 +174,23 @@
                                           </ImageView>
                                        </graphic>
                                        <tooltip>
-                                          <Tooltip text="Di chuyển xuống dưới" />
+                                          <Tooltip text="Move down" />
                                        </tooltip>
                                     </Button>
                                  </children>
                               </VBox>
                            </children>
                         </HBox>
-                        <Label fx:id="routePlaceholder" text="Chưa có điểm nào được chọn" styleClass="placeholder-text" visible="true" mouseTransparent="true" />
+                        <Label fx:id="routePlaceholder" text="No places selected yet" styleClass="placeholder-text" visible="true" mouseTransparent="true" />
                      </children>
                      <VBox.margin>
                         <Insets top="8.0" />
                      </VBox.margin>
-                  </StackPane>                  <!-- Các nút thao tác với danh sách điểm đã chọn -->
+                  </StackPane>
+                  <!-- Action buttons for selected places list -->
                   <HBox alignment="CENTER" spacing="12.0">
                      <children>
-                        <Button fx:id="removeSelectedButton" mnemonicParsing="false" onAction="#handleRemoveSelected" styleClass="remove-button" text="Xóa điểm" disable="true">
+                        <Button fx:id="removeSelectedButton" mnemonicParsing="false" onAction="#handleRemoveSelected" styleClass="remove-button" text="Remove" disable="true">
                            <padding>
                               <Insets bottom="10.0" left="16.0" right="16.0" top="10.0" />
                            </padding>
@@ -189,10 +202,10 @@
                               </ImageView>
                            </graphic>
                            <tooltip>
-                              <Tooltip text="Xóa điểm đã chọn khỏi lộ trình" />
+                              <Tooltip text="Remove selected place from route" />
                            </tooltip>
                         </Button>
-                        <Button fx:id="clearAllButton" mnemonicParsing="false" onAction="#onClearAllPlaces" styleClass="clear-button" text="Xóa tất cả" disable="true">
+                        <Button fx:id="clearAllButton" mnemonicParsing="false" onAction="#onClearAllPlaces" styleClass="clear-button" text="Clear All" disable="true">
                            <padding>
                               <Insets bottom="10.0" left="16.0" right="16.0" top="10.0" />
                            </padding>
@@ -204,7 +217,7 @@
                               </ImageView>
                            </graphic>
                            <tooltip>
-                              <Tooltip text="Xóa tất cả điểm khỏi lộ trình" />
+                              <Tooltip text="Clear all places from route" />
                            </tooltip>
                         </Button>
                      </children>
@@ -212,10 +225,10 @@
                         <Insets top="15.0" />
                      </VBox.margin>
                   </HBox>
-                    <!-- Nút tìm lộ trình tối ưu -->
+                  <!-- Find optimal route button -->
                   <VBox alignment="CENTER" spacing="12.0">
                      <children>
-                        <Button fx:id="findRouteButton" mnemonicParsing="false" onAction="#handleFindRoute" styleClass="find-route-button" text="🚀 Tìm lộ trình tối ưu" disable="true">
+                        <Button fx:id="findRouteButton" mnemonicParsing="false" onAction="#handleFindRoute" styleClass="find-route-button" text="🚀 Find Optimal Route" disable="true">
                            <font>
                               <Font name="System Bold" size="16.0" />
                            </font>
@@ -223,7 +236,7 @@
                               <Insets bottom="15.0" left="30.0" right="30.0" top="15.0" />
                            </padding>
                            <tooltip>
-                              <Tooltip text="Tìm lộ trình tối ưu cho các điểm đã chọn" />
+                              <Tooltip text="Find optimal route for selected places" />
                            </tooltip>
                         </Button>
                      </children>
@@ -231,21 +244,23 @@
                         <Insets top="25.0" />
                      </VBox.margin>
                   </VBox>
-                  <!-- Nút tìm lộ trình tối ưu đã được di chuyển -->
-                  <!-- Khu vực hiển thị thông tin lộ trình đã được xóa -->
+                  <!-- Find optimal route button has been moved -->
+                  <!-- Route information display area has been removed -->
                </children>
-            </VBox>            <!-- Panel bên phải: Chứa bản đồ và các control mới -->
+            </VBox>
+            <!-- Right Panel: Contains map and new controls -->
             <BorderPane fx:id="mapAndControlsPane" styleClass="glass-panel">
                <center>
-                  <!-- StackPane để chứa trình duyệt JxBrowser hiển thị bản đồ -->
+                  <!-- StackPane to contain JxBrowser displaying map -->
                   <StackPane fx:id="mapPane" BorderPane.alignment="CENTER" styleClass="map-container" />
-               </center>               <bottom>
+               </center>
+               <bottom>
                   <VBox alignment="TOP_CENTER" spacing="15.0" BorderPane.alignment="CENTER" styleClass="glass-panel">
                      <padding>
                         <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                      </padding>
                      <children>
-                        <!-- Khu vực hiển thị thông tin lộ trình động (ban đầu ẩn) -->
+                        <!-- Dynamic route information display area (initially hidden) -->
                         <ScrollPane fx:id="dynamicRouteInfoScrollPane" fitToWidth="true" styleClass="route-info-container" VBox.vgrow="NEVER">
                            <content>
                               <TextArea fx:id="dynamicRouteInfoTextArea" editable="false" wrapText="true" styleClass="route-info" />
@@ -261,14 +276,14 @@
         </items>
       </SplitPane>
    </center>
-   <!-- Khu vực BOTTOM: Chứa thanh trạng thái -->
+   <!-- BOTTOM area: Contains status bar -->
    <bottom>
       <HBox alignment="CENTER_LEFT" styleClass="status-bar" BorderPane.alignment="CENTER">
          <padding>
             <Insets bottom="5.0" left="15.0" right="15.0" top="5.0" />
          </padding>
          <children>
-            <Label fx:id="statusLabel" styleClass="status-text" text="Sẵn sàng" />
+            <Label fx:id="statusLabel" styleClass="status-text" text="Ready" />
          </children>
       </HBox>
    </bottom>
