@@ -27,9 +27,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import tourrouteplanner.model.Place;
 import tourrouteplanner.model.Route;
-import tourrouteplanner.service.RouteService;
+import tourrouteplanner.service.RoutingService;
+import tourrouteplanner.service.GeocodingService;
+import tourrouteplanner.service.IRoutingService;
+import tourrouteplanner.service.IGeocodingService;
+import tourrouteplanner.service.IStorageService;
 import tourrouteplanner.service.StorageService;
 import tourrouteplanner.util.Utils;
+import tourrouteplanner.util.Constants;
+import tourrouteplanner.util.Messages;
 
 import java.io.File;
 import java.io.IOException;
@@ -103,10 +109,12 @@ public class MainController {
     private ObservableList<Place> searchResults = FXCollections.observableArrayList();
     // Observable list of places in current route for UI updates.
     private ObservableList<Place> currentRoutePlaces = FXCollections.observableArrayList();
-    // Service handling place search and routing logic.
-    private RouteService routeService;
+    // Service handling routing logic (OSRM API).
+    private IRoutingService routingService;
+    // Service handling geocoding logic (Nominatim API).
+    private IGeocodingService geocodingService;
     // Service handling route save and load logic.
-    private StorageService storageService;
+    private IStorageService storageService;
     // Timer for debouncing search suggestions
     private ScheduledExecutorService suggestionsScheduler;
     private final ObservableList<String> searchSuggestions = FXCollections.observableArrayList();
@@ -140,8 +148,9 @@ public class MainController {
      */
     @FXML
     public void initialize() {
-        // Initialize services. RouteService no longer receives API key via constructor.
-        routeService = new RouteService();
+        // Initialize services with new separated implementations.
+        routingService = new RoutingService();
+        geocodingService = new GeocodingService();
         storageService = new StorageService();
         suggestionsScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
             Thread thread = new Thread(runnable);
@@ -619,7 +628,7 @@ public class MainController {
         }
 
         try {
-            List<Place> places = routeService.searchPlaces(query);
+            List<Place> places = geocodingService.searchPlaces(query);
             searchResults.setAll(places); // Update results list.
 
             if (!places.isEmpty()) {
@@ -650,7 +659,7 @@ public class MainController {
 
         suggestionsScheduler.schedule(() -> {
             try {
-                List<Place> suggestedPlaces = routeService.searchPlaces(query);
+                List<Place> suggestedPlaces = geocodingService.searchPlaces(query);
 
                 String normalizedUserQuery = Utils.normalizeForSearch(query);
                 if (normalizedUserQuery == null || normalizedUserQuery.isEmpty()) {
@@ -826,7 +835,7 @@ public class MainController {
             return;
         }
         try {
-            Route route = routeService.getRoute(new ArrayList<>(currentRoutePlaces));
+            Route route = routingService.getRoute(new ArrayList<>(currentRoutePlaces));
             if (route != null && route.getCoordinates() != null && !route.getCoordinates().isEmpty()) {
                 drawRoute(route.getCoordinates()); // Draw route on map.
 
@@ -900,7 +909,7 @@ public class MainController {
         File file = storageService.showSaveFileDialog(mapPane.getScene().getWindow());
         if (file != null) {
             // Pass place list and last route info (if any) to save.
-            storageService.saveRoute(file, new ArrayList<>(currentRoutePlaces), routeService.getLastRoute());
+            storageService.saveRoute(file, new ArrayList<>(currentRoutePlaces), routingService.getLastRoute());
         }
     }
 
@@ -1167,7 +1176,7 @@ public class MainController {
     public void handleMapClick(double lat, double lng) {
         Platform.runLater(() -> { // Ensure UI changes are made on JavaFX Application Thread.
             try {
-                Place clickedPlace = routeService.reverseGeocode(lat, lng); // Get place info.
+                Place clickedPlace = geocodingService.reverseGeocode(lat, lng); // Get place info.
                 if (clickedPlace != null) {
                     // Show confirmation dialog to add place.
                     Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
