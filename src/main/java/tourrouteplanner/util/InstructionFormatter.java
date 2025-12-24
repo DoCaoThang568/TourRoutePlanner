@@ -1,10 +1,10 @@
-package tourrouteplanner.service;
+package tourrouteplanner.util;
 
 import com.google.gson.JsonObject;
 
 /**
  * Utility class for formatting turn-by-turn navigation instructions.
- * Extracts instruction generation logic from routing service for better SRP.
+ * Converts OSRM maneuver data into human-readable text.
  */
 public class InstructionFormatter {
 

@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import tourrouteplanner.model.Place;
 import tourrouteplanner.model.Route;
 import tourrouteplanner.model.Route.Coordinate;
+import tourrouteplanner.util.InstructionFormatter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
