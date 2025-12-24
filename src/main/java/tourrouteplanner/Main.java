@@ -19,7 +19,8 @@ import javafx.scene.control.Alert;
  */
 public class Main extends Application {
 
-    private MainController mainController; // Stores the controller instance for shutdown method call
+    private tourrouteplanner.controller.MainController mainController; // Stores the controller instance for shutdown
+                                                                       // method call
 
     /**
      * Main entry point for all JavaFX applications.

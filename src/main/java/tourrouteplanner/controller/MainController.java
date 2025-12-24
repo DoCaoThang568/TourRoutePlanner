@@ -1,22 +1,15 @@
-package tourrouteplanner;
+package tourrouteplanner.controller;
 
 import com.teamdev.jxbrowser.js.JsAccessible;
 
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import tourrouteplanner.controller.MapHelper;
-import tourrouteplanner.controller.RouteHelper;
-import tourrouteplanner.controller.SearchHelper;
 import tourrouteplanner.model.Place;
 import tourrouteplanner.model.Route;
 import tourrouteplanner.service.RoutingService;
@@ -117,10 +110,11 @@ public class MainController {
         geocodingService = new GeocodingService();
         storageService = new StorageService();
 
-        // Initialize helpers
+        // Initialize helpers (order matters: routeHelper first for searchHelper
+        // callback)
+        initializeRouteHelper();
         initializeMapHelper();
         initializeSearchHelper();
-        initializeRouteHelper();
 
         // Setup dark mode button
         setDarkModeButtonIcon(false);
@@ -307,7 +301,7 @@ public class MainController {
     }
 
     @FXML
-    private void handleExit() {
+    private void onExit() {
         shutdownJxBrowser();
         Platform.exit();
     }

@@ -26,7 +26,7 @@
 <?import javafx.scene.text.Font?>
 
 <!-- Root container of the application, using BorderPane layout -->
-<BorderPane fx:controller="tourrouteplanner.MainController" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="700.0" minWidth="1000.0" prefHeight="700.0" prefWidth="1200.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:controller="tourrouteplanner.controller.MainController" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="700.0" minWidth="1000.0" prefHeight="700.0" prefWidth="1200.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
    <!-- TOP area: Contains MenuBar and application Header -->
    <top>
       <VBox BorderPane.alignment="CENTER">
