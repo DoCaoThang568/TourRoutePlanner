@@ -1000,6 +1000,35 @@ Dark Gray: #374151 (Gray-700) - Text
     -fx-text-fill: rgba(255,255,255,0.85);
 }
 
+/* Fix Dark Mode List View Backgrounds */
+.dark-mode .list-view {
+    -fx-background-color: rgba(0,0,0,0.2);
+    -fx-control-inner-background: transparent;
+    -fx-background-insets: 0;
+}
+
+.dark-mode .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: rgba(255,255,255,0.9);
+}
+
+.dark-mode .list-cell:empty {
+    -fx-background-color: transparent;
+}
+
+.dark-mode .list-cell:filled:selected,
+.dark-mode .list-cell:filled:selected:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(79,70,229,0.4) 0%, rgba(67,56,202,0.35) 100%);
+    -fx-text-fill: white;
+}
+
+/* Fix Dark Mode Placeholders */
+.dark-mode .placeholder-label {
+    -fx-text-fill: rgba(255,255,255,0.4) !important;
+    -fx-opacity: 0.8;
+}
+
 .dark-mode .places-list .list-cell:filled:hover,
 .dark-mode .suggestions-list .list-cell:filled:hover {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
