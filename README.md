@@ -1,108 +1,124 @@
-# TourRoutePlanner
+# 🗺️ Tour Route Planner
 
-A JavaFX application for planning and visualizing tourist routes, initially focused on Vietnam.
+![Status](https://img.shields.io/badge/Status-Active-brightgreen)
+![Java](https://img.shields.io/badge/Java-17+-orange)
+![JavaFX](https://img.shields.io/badge/JavaFX-21-blue)
+![Maven](https://img.shields.io/badge/Maven-3.6+-red)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## Features
-- Search and display tourist places on an interactive map (powered by MapTiler).
-- Plan and optimize travel routes between multiple destinations using OSRM.
-- Reverse geocoding (find address from map click) and geocoding (find location from search) via Nominatim.
-- Save and load custom routes in JSON format.
-- View detailed route information (distance, estimated duration).
-- Interactive map with custom markers and pop-up information.
-- Support for Vietnamese locations and Unicode.
+A professional JavaFX application for planning and visualizing tourist routes, featuring interactive maps, turn-by-turn navigation, and route optimization.
 
-## Getting Started
+## ✨ Features
+
+### 🗺️ Interactive Mapping
+
+- **Smart Map Integration**: Powered by JxBrowser and OpenLayers.
+- **MapTiler Integration**: High-quality vector tiles.
+- **Search & Geocoding**: Find any place using Nominatim API.
+- **Reverse Geocoding**: Click anywhere on the map to get the address.
+
+### 🚗 Advanced Routing
+
+- **OSRM Powered**: Fast and accurate routing engine.
+- **Turn-by-urn Directions**: Detailed navigation instructions.
+- **Route Management**: Add, remove, and reorder stops easily.
+- **Save & Load**: Persist your favorite routes as JSON files.
+
+### 🎨 Modern UI/UX
+
+- **Glassmorphism Design**: Modern, sleek interface with glass effects.
+- **Dark Mode**: Fully supported dark theme for night usage.
+- **Responsive Layout**: Adapts to different window sizes.
+- **Keyboard Shortcuts**: Fast navigation with hotkeys.
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut     | Action                    |
+| ------------ | ------------------------- |
+| `Ctrl` + `S` | 💾 Save Route             |
+| `Ctrl` + `O` | 📂 Load Route             |
+| `Ctrl` + `F` | 🔍 Focus Search Box       |
+| `Delete`     | 🗑️ Remove Selected Place  |
+| `Escape`     | ❌ Clear Selection/Search |
+
+## 🏗️ Architecture
+
+The project follows a **Clean Architecture** and **SOLID** principles approach:
+
+```
+src/main/java/tourrouteplanner
+├── controller/       # UI Logic & Event Handlers
+│   ├── MainController.java
+│   ├── MapHelper.java
+│   ├── SearchHelper.java
+│   └── RouteHelper.java
+├── model/            # Data Models (Place, Route)
+├── service/          # Business Logic
+│   ├── RoutingService.java    # OSRM integration
+│   ├── GeocodingService.java  # Nominatim integration
+│   └── StorageService.java    # JSON persistence
+├── util/             # Cross-cutting concerns
+    ├── Constants.java
+    └── InstructionFormatter.java
+```
+
+### 📝 Professional Logging
+
+- **SLF4J + Logback**: Fully implemented structured logging.
+- **Log Rotation**: Automatic log file rotation and archiving.
+- **Console & File**: Logs output to both console and `logs/app.log`.
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Java 17 or newer
-- Maven 3.6+
-- Docker and Docker Compose (for running local Nominatim service)
-- Valid JxBrowser License Key (for map display)
-- Valid MapTiler API Key (for map tiles)
+
+- **Java 17+**
+- **Maven 3.6+**
+- **JxBrowser License** (Required)
+- **MapTiler API Key** (Free tier available)
 
 ### Configuration
-1.  Clone this repository:
-    ```sh
-    git clone <your-repo-url>
-    cd TourRoutePlanner
-    ```
-2.  **Configuration:**
-    -   Navigate to `src/main/resources/`.
-    -   Create a file named `config.properties` if it doesn't exist.
-    -   Add your JxBrowser license key and MapTiler API key to `config.properties`:
-        ```properties
-        jxbrowser.license.key=YOUR_JXBROWSER_LICENSE_KEY
-        maptiler.api.key=YOUR_MAPTILER_API_KEY
-        # Optional: Configure local OSRM and Nominatim server URLs if needed
-        # osrm.server.url=http://localhost:5000
-        # nominatim.server.url=http://localhost:8080
-        ```
-3.  Build and run the application:
-    ```sh
-    mvn clean javafx:run
-    ```
 
-### Running with Docker (Optional - for local Nominatim)
+1. Clone the repository:
 
-This project includes a `docker-compose.yml` file to easily set up a local Nominatim service for geocoding. This is useful if you prefer not to rely on public Nominatim servers or require offline capabilities.
+   ```bash
+   git clone <your-repo-url>
+   cd TourRoutePlanner
+   ```
 
-1.  **Prerequisites for Docker:**
-    *   Ensure Docker and Docker Compose are installed on your system.
-    *   Download the OpenStreetMap PBF data file for your desired region (e.g., `vietnam-latest.osm.pbf` from Geofabrik).
+2. Create `src/main/resources/config.properties`:
 
-2.  **Configure Docker Compose:**
-    *   Open the `docker-compose.yml` file.
-    *   Modify the volume mapping for the PBF file. Change `/mydata/osm/vietnam-latest.osm.pbf` to the actual path of your downloaded PBF file on your host machine. For example, if your PBF file is in `C:\\osm_data\\vietnam-latest.osm.pbf`, the line should look like:
-        ```yaml
-        - C:\\osm_data\\vietnam-latest.osm.pbf:/data/region.osm.pbf:ro
-        ```
-    *   (Optional) Adjust the `THREADS` environment variable based on your system's CPU cores.
-    *   (Important) Change the `NOMINATIM_PASSWORD` to a secure password.
+   ```properties
+   jxbrowser.license.key=YOUR_LICENSE_KEY
+   maptiler.api.key=YOUR_API_KEY
+   # Optional: Local server overrides
+   # osrm.server.url=http://localhost:5000
+   # nominatim.server.url=http://localhost:8080
+   ```
 
-3.  **Start the Nominatim Service:**
-    *   Open a terminal in the project root directory (where `docker-compose.yml` is located).
-    *   Run the following command:
-        ```sh
-        docker-compose up -d
-        ```
-    *   The first time you run this, Docker will download the Nominatim image and then import the PBF data. This import process can take a significant amount of time (from tens of minutes to several hours) depending on the size of the PBF file and your system's performance. You can monitor the progress using `docker-compose logs -f nominatim`.
+3. Build and Run:
+   ```bash
+   mvn clean javafx:run
+   ```
 
-4.  **Configure Application to Use Local Nominatim:**
-    *   Once the Nominatim service is running (import is complete), update the `src/main/resources/config.properties` file:
-        ```properties
-        nominatim.server.url=http://localhost:8080
-        ```
-    *   If you stop and restart the Nominatim container later (e.g., `docker-compose stop` and `docker-compose start`), it will use the previously imported data and start much faster.
+### 🐳 Docker (Optional)
 
-### Build and Run
-1.  Ensure all configurations are set, including `config.properties`.
-2.  Build and run the application:
-    ```sh
-    mvn clean javafx:run
-    ```
+Run a local Nominatim server for offline geocoding:
 
-### Configuration Details
-- The `config.properties` file in `src/main/resources/` is crucial for:
-    -   `jxbrowser.license.key`: Your commercial or evaluation license key for JxBrowser.
-    -   `maptiler.api.key`: Your API key from MapTiler for accessing map tiles.
-    -   `osrm.server.url` (Optional): URL for your OSRM routing server. Defaults to a public server if not set.
-    -   `nominatim.server.url` (Optional): URL for your Nominatim geocoding server. Defaults to a public server if not set.
-- The application uses MapTiler for map tiles, OSRM for route calculation, and Nominatim for geocoding services.
+```bash
+docker-compose up -d
+```
 
-## Project Structure
-- `src/main/java/tourrouteplanner/` - Main application Java code (controllers, services, models).
-- `src/main/resources/` - FXML layouts, `map.html` for JxBrowser, `styles.css`, `config.properties`, and icons.
-- `data/` - Default directory for saved routes (JSON files).
+Update `config.properties` to use `http://localhost:8080`.
 
-## Technologies Used
-- Java 17
-- JavaFX (for the user interface)
-- Maven (for project build and dependency management)
-- JxBrowser (for embedding a web browser to display interactive maps)
-- MapTiler (for map tiles and styles)
-- OSRM (Open Source Routing Machine - for route calculation)
-- Nominatim (for geocoding and reverse geocoding services based on OpenStreetMap data)
-- Gson (for JSON serialization/deserialization)
+## 🛠️ Technologies
 
-## Author
-- Cao Thang
+- **JavaFX 21**: Modern desktop UI toolkit.
+- **JxBrowser 7**: Chromium-based browser embedding.
+- **OpenLayers**: Advanced map visualization.
+- **Gson**: JSON data handling.
+- **SLF4J / Logback**: Industry-standard logging.
+
+## 👥 Author
+
+- **Cao Thang**
