@@ -374,12 +374,12 @@ public class MainController {
         if (placeListView.getScene() != null && placeListView.getScene().getRoot() != null) {
             if (isDarkMode) {
                 placeListView.getScene().getRoot().getStyleClass().add("dark-mode");
-                statusLabel.setText("🌙 Switched to dark mode");
+                statusLabel.setText("Switched to dark mode");
                 setDarkModeButtonIcon(true);
                 Tooltip.install(darkModeToggle, new Tooltip("Switch to light mode"));
             } else {
                 placeListView.getScene().getRoot().getStyleClass().remove("dark-mode");
-                statusLabel.setText("☀️ Switched to light mode");
+                statusLabel.setText("Switched to light mode");
                 setDarkModeButtonIcon(false);
                 Tooltip.install(darkModeToggle, new Tooltip("Switch to dark mode"));
             }
