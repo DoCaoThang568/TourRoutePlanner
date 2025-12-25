@@ -1258,3 +1258,37 @@ Dark Gray: #374151 (Gray-700) - Text
     -fx-cursor: hand;
     cursor: pointer; /* Standard CSS property */
 }
+
+/* ========== RESPONSIVE LAYOUT ========== */
+/* Ensure controls don't get too small when window is resized */
+.side-panel {
+    -fx-min-width: 280;
+}
+
+.search-field {
+    -fx-min-width: 150;
+}
+
+.search-button, .find-route-button, .remove-button, .clear-button {
+    -fx-min-width: 80;
+}
+
+.places-list, .route-table {
+    -fx-min-height: 80;
+}
+
+/* Ensure TableView columns resize properly */
+.route-table .column-header {
+    -fx-pref-width: USE_COMPUTED_SIZE;
+}
+
+/* Map container should fill available space */
+.map-container {
+    -fx-min-width: 300;
+    -fx-min-height: 200;
+}
+
+/* Status bar should not shrink */
+.status-bar {
+    -fx-min-height: 30;
+}
