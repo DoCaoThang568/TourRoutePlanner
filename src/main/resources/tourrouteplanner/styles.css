@@ -1036,6 +1036,21 @@ Dark Gray: #374151 (Gray-700) - Text
     -fx-text-fill: rgba(255,255,255,0.95);
 }
 
+/* Fix Dark Mode labels inside ListView cells */
+.dark-mode .place-name {
+    -fx-text-fill: rgba(255,255,255,1.0);
+    -fx-font-weight: bold;
+}
+
+.dark-mode .place-address {
+    -fx-text-fill: rgba(255,255,255,0.7);
+}
+
+/* Fix Dark Mode labels inside TableView cells */
+.dark-mode .route-table .table-cell .label {
+    -fx-text-fill: rgba(255,255,255,0.9);
+}
+
 .dark-mode .route-table {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
         rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.2) 100%);
@@ -1046,13 +1061,25 @@ Dark Gray: #374151 (Gray-700) - Text
     -fx-text-fill: rgba(255,255,255,0.85);
 }
 
+.dark-mode .route-table .table-row-cell {
+    -fx-background-color: transparent; /* Keep rows dark */
+}
+
+/* Ensure selected rows are highlighted correctly */
+.dark-mode .route-table .table-row-cell:selected,
+.dark-mode .route-table .table-row-cell:selected .table-cell,
+.dark-mode .route-table .table-row-cell:selected .label {
+    -fx-text-fill: white;
+}
+
 .dark-mode .route-table .table-row-cell:hover {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
         rgba(79,70,229,0.2) 0%, rgba(67,56,202,0.15) 100%);
 }
 
-.dark-mode .route-table .table-row-cell:selected .table-cell {
-    -fx-text-fill: rgba(255,255,255,0.95);
+.dark-mode .route-table .table-row-cell:selected {
+     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 
+        rgba(79,70,229,0.4) 0%, rgba(67,56,202,0.35) 100%);
 }
 
 .dark-mode .route-info-container {

@@ -13,6 +13,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import javafx.application.Platform;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +33,7 @@ public class RouteHelper {
     private final TableColumn<Place, String> nameColumn;
     private final TableColumn<Place, String> addressColumn;
     private final Label statusLabel;
+    private final Consumer<Boolean> loadingHandler;
 
     private final ObservableList<Place> currentRoutePlaces = FXCollections.observableArrayList();
     private boolean routeCalculated = false;
@@ -59,12 +65,14 @@ public class RouteHelper {
             TableView<Place> routeTableView,
             TableColumn<Place, String> nameColumn,
             TableColumn<Place, String> addressColumn,
-            Label statusLabel) {
+            Label statusLabel,
+            Consumer<Boolean> loadingHandler) {
         this.routingService = routingService;
         this.routeTableView = routeTableView;
         this.nameColumn = nameColumn;
         this.addressColumn = addressColumn;
         this.statusLabel = statusLabel;
+        this.loadingHandler = loadingHandler;
     }
 
     /**
@@ -279,10 +287,8 @@ public class RouteHelper {
 
     /**
      * Calculates and returns route between current places.
-     *
-     * @return The calculated Route, or null if failed.
      */
-    public Route findRoute() {
+    public void findRoute() {
         if (currentRoutePlaces.size() < 2) {
             Utils.showAlert(Alert.AlertType.INFORMATION, "Notice",
                     "At least 2 places are required to find a route.");
@@ -290,17 +296,25 @@ public class RouteHelper {
             if (onRouteUpdate != null) {
                 onRouteUpdate.onUpdate(null);
             }
-            return null;
+            return;
         }
 
-        try {
-            Route route = routingService.getRoute(new ArrayList<>(currentRoutePlaces));
+        if (loadingHandler != null) {
+            loadingHandler.accept(true);
+        }
+
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return routingService.getRoute(new ArrayList<>(currentRoutePlaces));
+            } catch (IOException e) {
+                throw new CompletionException(e);
+            }
+        }).thenAcceptAsync(route -> {
             if (route != null && route.getCoordinates() != null && !route.getCoordinates().isEmpty()) {
                 routeCalculated = true;
                 if (onRouteUpdate != null) {
                     onRouteUpdate.onUpdate(route);
                 }
-                return route;
             } else {
                 Utils.showAlert(Alert.AlertType.ERROR, "Route Finding Error",
                         "Could not find route for selected places.");
@@ -308,18 +322,25 @@ public class RouteHelper {
                 if (onRouteUpdate != null) {
                     onRouteUpdate.onUpdate(null);
                 }
-                return null;
             }
-        } catch (IOException e) {
-            log.error("Error connecting to routing service: {}", e.getMessage(), e);
-            Utils.showAlert(Alert.AlertType.ERROR, "Route Finding Error",
-                    "Error connecting to routing service: " + e.getMessage());
-            routeCalculated = false;
-            if (onRouteUpdate != null) {
-                onRouteUpdate.onUpdate(null);
+            if (loadingHandler != null) {
+                loadingHandler.accept(false);
             }
+        }, Platform::runLater).exceptionally(ex -> {
+            Platform.runLater(() -> {
+                if (loadingHandler != null) {
+                    loadingHandler.accept(false);
+                }
+                log.error("Error connecting to routing service: {}", ex.getCause().getMessage(), ex);
+                Utils.showAlert(Alert.AlertType.ERROR, "Route Finding Error",
+                        "Error connecting to routing service: " + ex.getCause().getMessage());
+                routeCalculated = false;
+                if (onRouteUpdate != null) {
+                    onRouteUpdate.onUpdate(null);
+                }
+            });
             return null;
-        }
+        });
     }
 
     /**

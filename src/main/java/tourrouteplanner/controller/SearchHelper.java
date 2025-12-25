@@ -16,6 +16,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +37,9 @@ public class SearchHelper {
     private final ListView<Place> placeListView;
     private final ListView<String> suggestionsListView;
     private final TextField searchBox;
+
+    private final Label statusLabel;
+    private final Consumer<Boolean> loadingHandler;
 
     private final ObservableList<Place> searchResults = FXCollections.observableArrayList();
     private final ObservableList<String> searchSuggestions = FXCollections.observableArrayList();
@@ -60,12 +66,14 @@ public class SearchHelper {
             TextField searchBox,
             ListView<Place> placeListView,
             ListView<String> suggestionsListView,
-            Label statusLabel) {
+            Label statusLabel,
+            Consumer<Boolean> loadingHandler) {
         this.geocodingService = geocodingService;
         this.searchBox = searchBox;
         this.placeListView = placeListView;
         this.suggestionsListView = suggestionsListView;
-        // statusLabel reserved for future use
+        this.statusLabel = statusLabel;
+        this.loadingHandler = loadingHandler;
 
         initializeScheduler();
     }
@@ -233,16 +241,34 @@ public class SearchHelper {
             return;
         }
 
-        try {
-            List<Place> places = geocodingService.searchPlaces(query);
+        if (loadingHandler != null) {
+            loadingHandler.accept(true);
+        }
+
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return geocodingService.searchPlaces(query);
+            } catch (IOException e) {
+                throw new CompletionException(e);
+            }
+        }).thenAcceptAsync(places -> {
             searchResults.setAll(places);
             if (!places.isEmpty()) {
                 placeListView.getSelectionModel().selectFirst();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            Utils.showAlert(Alert.AlertType.ERROR, "Search Error", "Could not perform search: " + e.getMessage());
-        }
+            if (loadingHandler != null) {
+                loadingHandler.accept(false);
+            }
+        }, Platform::runLater).exceptionally(ex -> {
+            Platform.runLater(() -> {
+                if (loadingHandler != null) {
+                    loadingHandler.accept(false);
+                }
+                Utils.showAlert(Alert.AlertType.ERROR, "Search Error",
+                        "Could not perform search: " + ex.getCause().getMessage());
+            });
+            return null;
+        });
     }
 
     /**

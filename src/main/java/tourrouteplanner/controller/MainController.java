@@ -146,7 +146,7 @@ public class MainController {
 
     private void initializeSearchHelper() {
         searchHelper = new SearchHelper(geocodingService, searchBox, placeListView,
-                suggestionsListView, statusLabel);
+                suggestionsListView, statusLabel, this::setLoading);
 
         // Setup callbacks
         searchHelper.setOnPlaceAdd(place -> {
@@ -168,9 +168,16 @@ public class MainController {
         searchHelper.setupSearchBoxListener();
     }
 
+    private void setLoading(boolean loading) {
+        Platform.runLater(() -> {
+            loadingContainer.setVisible(loading);
+            loadingContainer.setManaged(loading);
+        });
+    }
+
     private void initializeRouteHelper() {
         routeHelper = new RouteHelper(routingService, routeTableView,
-                routePlaceNameColumn, routePlaceAddressColumn, statusLabel);
+                routePlaceNameColumn, routePlaceAddressColumn, statusLabel, this::setLoading);
 
         // Setup callbacks
         routeHelper.setOnRouteUpdate(route -> {
