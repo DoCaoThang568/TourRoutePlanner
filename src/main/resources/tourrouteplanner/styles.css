@@ -259,40 +259,52 @@
     -fx-text-fill: #94A3B8;
 }
 
-/* Remove Button (Danger) */
+/* Remove Button (Ghost/Outline style) */
 .remove-button {
-    -fx-background-color: #DC2626;
-    -fx-text-fill: white;
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748B;
+    -fx-border-color: #CBD5E1;
+    -fx-border-width: 1;
     -fx-font-weight: 500;
     -fx-background-radius: 6;
+    -fx-border-radius: 6;
     -fx-padding: 8 16 8 16;
 }
 
 .remove-button:hover {
-    -fx-background-color: #B91C1C;
+    -fx-background-color: #FEE2E2;
+    -fx-text-fill: #DC2626;
+    -fx-border-color: #DC2626;
 }
 
 .remove-button:disabled {
-    -fx-background-color: #CBD5E1;
-    -fx-text-fill: #94A3B8;
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #64748B;
+    -fx-border-color: #CBD5E1;
 }
 
-/* Clear Button */
+/* Clear Button (Ghost/Outline style) */
 .clear-button {
-    -fx-background-color: #EF4444;
-    -fx-text-fill: white;
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748B;
+    -fx-border-color: #CBD5E1;
+    -fx-border-width: 1;
     -fx-font-weight: 500;
     -fx-background-radius: 6;
+    -fx-border-radius: 6;
     -fx-padding: 8 16 8 16;
 }
 
 .clear-button:hover {
-    -fx-background-color: #DC2626;
+    -fx-background-color: #FEE2E2;
+    -fx-text-fill: #DC2626;
+    -fx-border-color: #DC2626;
 }
 
 .clear-button:disabled {
-    -fx-background-color: #CBD5E1;
-    -fx-text-fill: #94A3B8;
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #64748B;
+    -fx-border-color: #CBD5E1;
 }
 
 /* Move Buttons */
@@ -331,8 +343,8 @@
 }
 
 .find-route-button:disabled {
-    -fx-background-color: #CBD5E1;
-    -fx-text-fill: #94A3B8;
+    -fx-background-color: #E2E8F0;
+    -fx-text-fill: #64748B;
 }
 
 /* Lists */

@@ -80,7 +80,7 @@
                <children>
                   <!-- Place search area -->
                   <Label styleClass="section-header" text="Search Places:" />
-                  <HBox alignment="CENTER_LEFT" spacing="0">
+                  <HBox alignment="TOP_LEFT" spacing="0">
                      <children>
                         <StackPane HBox.hgrow="ALWAYS">
                            <children>
@@ -142,6 +142,9 @@
                         <HBox spacing="5.0">
                            <children>
                                <TableView fx:id="routeTableView" styleClass="route-table" HBox.hgrow="ALWAYS">
+                                 <placeholder>
+                                    <Label text="No places selected yet" styleClass="placeholder-text" />
+                                 </placeholder>
                                  <columnResizePolicy>
                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
                                  </columnResizePolicy>
@@ -184,7 +187,6 @@
                               </VBox>
                            </children>
                         </HBox>
-                        <Label fx:id="routePlaceholder" text="No places selected yet" styleClass="placeholder-text" visible="true" mouseTransparent="true" />
                      </children>
                      <VBox.margin>
                         <Insets top="8.0" />
