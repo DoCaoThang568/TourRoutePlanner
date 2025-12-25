@@ -200,6 +200,10 @@ public class MainController {
             statusLabel.setText("Moved to: " + place.getName());
         });
 
+        // Add selection listener for button states
+        routeTableView.getSelectionModel().selectedItemProperty().addListener(
+                (obs, oldSelection, newSelection) -> updateButtonStates());
+
         routeHelper.setupRouteTableView();
     }
 
@@ -228,6 +232,7 @@ public class MainController {
         routeHelper.getCurrentRoutePlaces().addListener(
                 (javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
                     updateRoutePlaceholderVisibility();
+                    updateButtonStates();
                 });
     }
 
@@ -465,6 +470,38 @@ public class MainController {
             boolean hasResults = !searchHelper.getSearchResults().isEmpty();
             searchPlaceholder.setVisible(!hasResults);
             searchPlaceholder.setManaged(!hasResults);
+        }
+    }
+
+    /**
+     * Updates the enabled/disabled state of buttons based on route places count and
+     * selection.
+     */
+    private void updateButtonStates() {
+        int placeCount = routeHelper.getCurrentRoutePlaces().size();
+        boolean hasPlaces = placeCount > 0;
+        boolean canFindRoute = placeCount >= 2;
+
+        // Enable/disable buttons based on places count
+        if (findRouteButton != null) {
+            findRouteButton.setDisable(!canFindRoute);
+        }
+        if (clearAllButton != null) {
+            clearAllButton.setDisable(!hasPlaces);
+        }
+
+        // Selection-dependent buttons
+        boolean hasSelection = routeTableView != null &&
+                routeTableView.getSelectionModel().getSelectedItem() != null;
+        if (removeSelectedButton != null) {
+            removeSelectedButton.setDisable(!hasSelection);
+        }
+
+        // Move buttons depend on selection and position
+        if (moveUpButton != null && moveDownButton != null) {
+            int selectedIndex = routeTableView != null ? routeTableView.getSelectionModel().getSelectedIndex() : -1;
+            moveUpButton.setDisable(selectedIndex <= 0);
+            moveDownButton.setDisable(selectedIndex < 0 || selectedIndex >= placeCount - 1);
         }
     }
 
