@@ -26,7 +26,7 @@
 <?import javafx.scene.text.Font?>
 
 <!-- Root container of the application, using BorderPane layout -->
-<BorderPane fx:controller="tourrouteplanner.controller.MainController" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="700.0" minWidth="1000.0" prefHeight="700.0" prefWidth="1200.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:controller="tourrouteplanner.controller.MainController" minHeight="500.0" minWidth="800.0" prefHeight="700.0" prefWidth="1200.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
    <!-- TOP area: Contains MenuBar and application Header -->
    <top>
       <VBox BorderPane.alignment="CENTER">
@@ -73,7 +73,7 @@
       <SplitPane BorderPane.alignment="CENTER" dividerPositions="0.35" prefHeight="160.0" prefWidth="200.0" styleClass="main-split-pane">
         <items>
           <!-- Left Panel: Contains input controls and information display -->
-          <VBox prefHeight="200.0" prefWidth="350.0" spacing="15.0" styleClass="side-panel">
+          <VBox minWidth="280.0" prefWidth="350.0" spacing="15.0" styleClass="side-panel" SplitPane.resizableWithParent="true">
                <padding>
                   <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </padding>
@@ -125,7 +125,7 @@
                   </HBox>
                   <!-- Search results display area -->
                   <Label styleClass="section-header" text="Search Results:" />
-                  <StackPane fx:id="searchResultsContainer" prefHeight="200.0" VBox.vgrow="SOMETIMES">
+                   <StackPane fx:id="searchResultsContainer" minHeight="100.0" prefHeight="200.0" VBox.vgrow="ALWAYS">
                      <children>
                         <ListView fx:id="placeListView" styleClass="places-list" />
                         <Label fx:id="searchPlaceholder" text="Search results will appear here" styleClass="placeholder-text" visible="true" mouseTransparent="true" />
@@ -137,15 +137,18 @@
 
                   <!-- Selected places in route display area -->
                   <Label styleClass="section-header" text="Selected Places in Route:" />
-                  <StackPane fx:id="routeTableContainer" prefHeight="250.0" VBox.vgrow="SOMETIMES">
+                   <StackPane fx:id="routeTableContainer" minHeight="120.0" prefHeight="250.0" VBox.vgrow="ALWAYS">
                      <children>
                         <HBox spacing="5.0">
                            <children>
-                              <TableView fx:id="routeTableView" styleClass="route-table" HBox.hgrow="ALWAYS">
-                                <columns>
-                                  <TableColumn fx:id="routePlaceNameColumn" prefWidth="150.0" text="Place Name" />
-                                  <TableColumn fx:id="routePlaceAddressColumn" prefWidth="200.0" text="Address" />
-                                </columns>
+                               <TableView fx:id="routeTableView" styleClass="route-table" HBox.hgrow="ALWAYS">
+                                 <columnResizePolicy>
+                                   <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                 </columnResizePolicy>
+                                 <columns>
+                                   <TableColumn fx:id="routePlaceNameColumn" text="Place Name" />
+                                   <TableColumn fx:id="routePlaceAddressColumn" text="Address" />
+                                 </columns>
                               </TableView>
                               <!-- Move up/down buttons -->
                               <VBox alignment="CENTER" spacing="6.0">
