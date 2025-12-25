@@ -1,19 +1,637 @@
 ﻿/* ====================================================
-   STYLES.CSS - Main stylesheet (imports all modules)
+   TOUR ROUTE PLANNER - Complete Stylesheet
    ==================================================== */
 
-/* Import modular stylesheets */
-@import url("css/base.css");
-@import url("css/layout.css");
-@import url("css/components.css");
-@import url("css/dark-mode.css");
+/* ====================================================
+   BASE - Root styles, typography, color variables
+   ==================================================== */
 
-/* 
- * This is the main entry point for all styles.
- * Each module handles a specific concern:
+/* Color Variables (as comments for reference):
+ * Primary:        #2563EB (Blue-600)
+ * Primary Hover:  #1D4ED8 (Blue-700)
+ * Success:        #059669 (Emerald-600)
+ * Danger:         #DC2626 (Red-600)
+ * Warning:        #D97706 (Amber-600)
  * 
- * - base.css:       Root styles, typography, color variables
- * - layout.css:     Header, sidebar, panels, containers
- * - components.css: Buttons, inputs, lists, tables
- * - dark-mode.css:  Dark theme overrides
+ * Light Mode:
+ *   Background:   #F8FAFC (Slate-50)
+ *   Surface:      #FFFFFF
+ *   Text Primary: #1E293B (Slate-800)
+ *   Text Secondary: #64748B (Slate-500)
+ *   Border:       #E2E8F0 (Slate-200)
+ *
+ * Dark Mode:
+ *   Background:   #0F172A (Slate-900)
+ *   Surface:      #1E293B (Slate-800)
+ *   Text Primary: #F1F5F9 (Slate-100)
+ *   Text Secondary: #94A3B8 (Slate-400)
+ *   Border:       #334155 (Slate-700)
  */
+
+.root {
+    -fx-background-color: #F8FAFC;
+    -fx-font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+    -fx-font-size: 14px;
+}
+
+.menu-bar, .menu-bar .menu, .menu-bar .menu .menu-item, 
+.menu-bar .menu .menu-item .label, .header-title, 
+.section-header, .button, .text-field, .label {
+    -fx-font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+}
+
+/* ====================================================
+   LAYOUT - Header, sidebar, panels, containers
+   ==================================================== */
+
+/* Menu Bar */
+.menu-bar {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 4 8 4 8;
+}
+
+.menu-bar .menu .label {
+    -fx-text-fill: #1E293B;
+    -fx-font-weight: 500;
+    -fx-font-size: 13px;
+}
+
+.menu-bar .menu:hover {
+    -fx-background-color: #F1F5F9;
+    -fx-background-radius: 6;
+}
+
+.menu-bar .menu:hover .label,
+.menu-bar .menu:focused .label,
+.menu-bar .menu:showing .label {
+    -fx-text-fill: #0F172A;
+}
+
+.menu-bar .menu:focused,
+.menu-bar .menu:showing {
+    -fx-background-color: #E2E8F0;
+    -fx-background-radius: 6;
+}
+
+/* Menu Dropdown */
+.menu-bar .menu .context-menu {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0, 0, 4);
+    -fx-padding: 4;
+}
+
+.menu-bar .menu .menu-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: #334155;
+    -fx-font-weight: 400;
+    -fx-font-size: 13px;
+    -fx-padding: 8 16 8 16;
+    -fx-background-radius: 4;
+}
+
+.menu-bar .menu .menu-item:hover {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #0F172A;
+}
+
+.menu-bar .menu .menu-item:focused {
+    -fx-background-color: #E2E8F0;
+    -fx-text-fill: #0F172A;
+}
+
+.menu-bar .menu .separator {
+    -fx-background-color: #E2E8F0;
+    -fx-padding: 4 0 4 0;
+}
+
+/* App Header */
+.app-header {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 16 24 16 24;
+}
+
+.header-title {
+    -fx-text-fill: #0F172A;
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+}
+
+/* Side Panel */
+.side-panel {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 1 0 0;
+    -fx-padding: 20 20 20 20;
+}
+
+.section-header {
+    -fx-font-weight: 600;
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748B;
+    -fx-padding: 0 0 8 0;
+}
+
+/* Glass Panel (Map area) */
+.glass-panel {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1 0 0 0;
+}
+
+/* Status Bar */
+.status-bar {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 8 16 8 16;
+}
+
+.status-text {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 12px;
+}
+
+/* Split Pane */
+.main-split-pane {
+    -fx-background-color: transparent;
+}
+
+.main-split-pane > .split-pane-divider {
+    -fx-background-color: #E2E8F0;
+    -fx-padding: 0 1 0 1;
+}
+
+/* ====================================================
+   COMPONENTS - Buttons, inputs, lists, tables
+   ==================================================== */
+
+/* Text Fields */
+.search-field {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 10 14 10 14;
+    -fx-prompt-text-fill: #94A3B8;
+    -fx-font-size: 14px;
+}
+
+.search-field:focused {
+    -fx-border-color: #2563EB;
+    -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.15), 8, 0, 0, 0);
+}
+
+/* Buttons - Base */
+.button {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-font-size: 13px;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 8 16 8 16;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #1D4ED8;
+}
+
+.button:pressed {
+    -fx-background-color: #1E40AF;
+}
+
+.button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+    -fx-cursor: default;
+}
+
+/* Search Button */
+.search-button {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 10 20 10 20;
+}
+
+.search-button:hover {
+    -fx-background-color: #1D4ED8;
+}
+
+.search-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* Add Button (Success) */
+.add-button {
+    -fx-background-color: #059669;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-background-radius: 6;
+    -fx-padding: 6 12 6 12;
+}
+
+.add-button:hover {
+    -fx-background-color: #047857;
+}
+
+.add-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* Remove Button (Danger) */
+.remove-button {
+    -fx-background-color: #DC2626;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16 8 16;
+}
+
+.remove-button:hover {
+    -fx-background-color: #B91C1C;
+}
+
+.remove-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* Clear Button */
+.clear-button {
+    -fx-background-color: #EF4444;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16 8 16;
+}
+
+.clear-button:hover {
+    -fx-background-color: #DC2626;
+}
+
+.clear-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* Move Buttons */
+.move-button {
+    -fx-background-color: #64748B;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-background-radius: 6;
+    -fx-padding: 6 10 6 10;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+}
+
+.move-button:hover {
+    -fx-background-color: #475569;
+}
+
+.move-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* Find Route Button (Primary CTA) */
+.find-route-button {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-font-size: 14px;
+    -fx-background-radius: 8;
+    -fx-padding: 12 24 12 24;
+}
+
+.find-route-button:hover {
+    -fx-background-color: #1D4ED8;
+    -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.3), 8, 0, 0, 2);
+}
+
+.find-route-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* Lists */
+.places-list, .suggestions-list {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.places-list .list-cell,
+.suggestions-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1E293B;
+    -fx-padding: 10 12 10 12;
+}
+
+.places-list .list-cell:filled:hover,
+.suggestions-list .list-cell:filled:hover {
+    -fx-background-color: #F1F5F9;
+}
+
+.places-list .list-cell:filled:selected,
+.suggestions-list .list-cell:filled:selected {
+    -fx-background-color: #DBEAFE;
+    -fx-text-fill: #1E40AF;
+}
+
+/* Table View */
+.route-table {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.route-table .column-header {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 12 8 12;
+}
+
+.route-table .column-header .label {
+    -fx-text-fill: #64748B;
+    -fx-font-weight: 600;
+    -fx-font-size: 12px;
+}
+
+.route-table .table-row-cell {
+    -fx-background-color: transparent;
+}
+
+.route-table .table-row-cell:odd {
+    -fx-background-color: #F8FAFC;
+}
+
+.route-table .table-row-cell:selected {
+    -fx-background-color: #DBEAFE;
+}
+
+.route-table .table-cell {
+    -fx-text-fill: #1E293B;
+    -fx-padding: 8 12 8 12;
+}
+
+/* Placeholder Text */
+.placeholder-text {
+    -fx-text-fill: #94A3B8;
+    -fx-font-style: italic;
+    -fx-font-size: 13px;
+}
+
+/* Route Info */
+.route-info-container {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.route-info {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1E293B;
+    -fx-font-size: 13px;
+    -fx-padding: 12;
+}
+
+/* Loading Indicator */
+.loading-container {
+    -fx-background-color: rgba(248, 250, 252, 0.9);
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+}
+
+.loading-text {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13px;
+}
+
+/* Dark Mode Toggle */
+.dark-mode-toggle {
+    -fx-background-color: #F1F5F9;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 50;
+    -fx-border-radius: 50;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-max-width: 40;
+    -fx-max-height: 40;
+    -fx-padding: 8;
+}
+
+.dark-mode-toggle:hover {
+    -fx-background-color: #E2E8F0;
+}
+
+/* ====================================================
+   DARK MODE - Theme overrides
+   ==================================================== */
+
+.dark-mode {
+    -fx-background-color: #0F172A;
+}
+
+/* Dark Mode - Menu Bar */
+.dark-mode .menu-bar {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .menu-bar .menu .label {
+    -fx-text-fill: #F1F5F9;
+}
+
+.dark-mode .menu-bar .menu:hover,
+.dark-mode .menu-bar .menu:focused,
+.dark-mode .menu-bar .menu:showing {
+    -fx-background-color: #334155;
+}
+
+.dark-mode .menu-bar .menu .context-menu {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .menu-bar .menu .menu-item {
+    -fx-text-fill: #CBD5E1;
+}
+
+.dark-mode .menu-bar .menu .menu-item:hover,
+.dark-mode .menu-bar .menu .menu-item:focused {
+    -fx-background-color: #334155;
+    -fx-text-fill: #F1F5F9;
+}
+
+/* Dark Mode - Header */
+.dark-mode .app-header {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .header-title {
+    -fx-text-fill: #F1F5F9;
+}
+
+/* Dark Mode - Side Panel */
+.dark-mode .side-panel {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .section-header {
+    -fx-text-fill: #94A3B8;
+}
+
+/* Dark Mode - Text Fields */
+.dark-mode .search-field {
+    -fx-background-color: #0F172A;
+    -fx-border-color: #334155;
+    -fx-text-fill: #F1F5F9;
+    -fx-prompt-text-fill: #64748B;
+}
+
+.dark-mode .search-field:focused {
+    -fx-border-color: #3B82F6;
+}
+
+/* Dark Mode - Lists */
+.dark-mode .places-list,
+.dark-mode .suggestions-list {
+    -fx-background-color: #0F172A;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .places-list .list-cell,
+.dark-mode .suggestions-list .list-cell {
+    -fx-text-fill: #E2E8F0;
+}
+
+.dark-mode .places-list .list-cell:filled:hover,
+.dark-mode .suggestions-list .list-cell:filled:hover {
+    -fx-background-color: #334155;
+}
+
+.dark-mode .places-list .list-cell:filled:selected,
+.dark-mode .suggestions-list .list-cell:filled:selected {
+    -fx-background-color: #1E3A5F;
+    -fx-text-fill: #DBEAFE;
+}
+
+/* Dark Mode - Table View */
+.dark-mode .route-table {
+    -fx-background-color: #0F172A;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .route-table .column-header {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .route-table .column-header .label {
+    -fx-text-fill: #94A3B8;
+}
+
+.dark-mode .route-table .table-row-cell {
+    -fx-background-color: #0F172A;
+}
+
+.dark-mode .route-table .table-row-cell:odd {
+    -fx-background-color: #1E293B;
+}
+
+.dark-mode .route-table .table-row-cell:selected {
+    -fx-background-color: #1E3A5F;
+}
+
+.dark-mode .route-table .table-cell {
+    -fx-text-fill: #E2E8F0;
+}
+
+/* Dark Mode - Placeholder */
+.dark-mode .placeholder-text {
+    -fx-text-fill: #64748B;
+}
+
+/* Dark Mode - Status Bar */
+.dark-mode .status-bar {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .status-text {
+    -fx-text-fill: #94A3B8;
+}
+
+/* Dark Mode - Glass Panel */
+.dark-mode .glass-panel {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+/* Dark Mode - Route Info */
+.dark-mode .route-info-container {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #334155;
+}
+
+.dark-mode .route-info {
+    -fx-text-fill: #E2E8F0;
+}
+
+/* Dark Mode - Toggle Button */
+.dark-mode .dark-mode-toggle {
+    -fx-background-color: #334155;
+    -fx-border-color: #475569;
+}
+
+.dark-mode .dark-mode-toggle:hover {
+    -fx-background-color: #475569;
+}
+
+/* Dark Mode - Loading */
+.dark-mode .loading-container {
+    -fx-background-color: rgba(30, 41, 59, 0.95);
+}
+
+.dark-mode .loading-text {
+    -fx-text-fill: #94A3B8;
+}
+
+/* Dark Mode - Scroll Bars */
+.dark-mode .scroll-bar {
+    -fx-background-color: #1E293B;
+}
+
+.dark-mode .scroll-bar .thumb {
+    -fx-background-color: #475569;
+}
+
+.dark-mode .scroll-bar .thumb:hover {
+    -fx-background-color: #64748B;
+}
