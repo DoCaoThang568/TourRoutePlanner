@@ -205,7 +205,7 @@
                               <Tooltip text="Remove selected place from route" />
                            </tooltip>
                         </Button>
-                        <Button fx:id="clearAllButton" mnemonicParsing="false" onAction="#onClearAllPlaces" styleClass="clear-button" text="Clear All" disable="true">
+                        <Button fx:id="clearAllButton" mnemonicParsing="false" onAction="#handleClearAllPlaces" styleClass="clear-button" text="Clear All" disable="true">
                            <padding>
                               <Insets bottom="10.0" left="16.0" right="16.0" top="10.0" />
                            </padding>
