@@ -213,11 +213,11 @@ public class MapHelper {
     }
 
     /**
-     * Adds a marker to the map.
+     * Adds a marker to the map with an index number.
      */
-    public void addMarker(String name, double lat, double lng, String description) {
-        String script = String.format(Locale.US, "addMapMarker('%s', %f, %f, '%s');",
-                Utils.escapeJavaScriptString(name), lat, lng, Utils.escapeJavaScriptString(description));
+    public void addMarker(String name, double lat, double lng, String description, int index) {
+        String script = String.format(Locale.US, "addMapMarker('%s', %f, %f, '%s', %d);",
+                Utils.escapeJavaScriptString(name), lat, lng, Utils.escapeJavaScriptString(description), index);
         executeJavaScript(script);
     }
 
@@ -267,12 +267,13 @@ public class MapHelper {
     }
 
     /**
-     * Refreshes markers for all places.
+     * Refreshes markers for all places with their indices.
      */
     public void refreshMarkers(List<Place> places) {
         clearAllMarkers();
-        for (Place place : places) {
-            addMarker(place.getName(), place.getLatitude(), place.getLongitude(), place.getAddress());
+        for (int i = 0; i < places.size(); i++) {
+            Place place = places.get(i);
+            addMarker(place.getName(), place.getLatitude(), place.getLongitude(), place.getAddress(), i + 1);
         }
     }
 

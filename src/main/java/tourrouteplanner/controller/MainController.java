@@ -153,8 +153,8 @@ public class MainController {
         // Setup callbacks
         searchHelper.setOnPlaceAdd(place -> {
             if (routeHelper.addPlace(place)) {
-                mapHelper.addMarker(place.getName(), place.getLatitude(),
-                        place.getLongitude(), place.getAddress());
+                // Refresh all markers with updated indices
+                mapHelper.refreshMarkers(routeHelper.getCurrentRoutePlaces());
                 placeListView.refresh();
             }
         });
@@ -405,8 +405,7 @@ public class MainController {
                     Optional<ButtonType> result = confirmDialog.showAndWait();
                     if (result.isPresent() && result.get() == ButtonType.OK) {
                         if (routeHelper.addPlace(clickedPlace)) {
-                            mapHelper.addMarker(clickedPlace.getName(), clickedPlace.getLatitude(),
-                                    clickedPlace.getLongitude(), clickedPlace.getAddress());
+                            mapHelper.refreshMarkers(routeHelper.getCurrentRoutePlaces());
                         }
                     }
                 } else {

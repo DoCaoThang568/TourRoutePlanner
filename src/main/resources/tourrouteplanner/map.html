@@ -438,11 +438,11 @@
         }
       }
 
-      // Add a new marker to the map.
+      // Add a new marker to the map with index number.
       // This function is called from Java via javaConnector.
-      function addMapMarker(name, lat, lng, description) {
+      function addMapMarker(name, lat, lng, description, index) {
         console.log(
-          `map.html: addMapMarker called with Name: ${name}, Lat: ${lat}, Lng: ${lng}, Desc: ${description}`
+          `map.html: addMapMarker called with Name: ${name}, Lat: ${lat}, Lng: ${lng}, Desc: ${description}, Index: ${index}`
         );
         if (!mapInstance || !markerLayer) {
           console.error(
@@ -456,9 +456,27 @@
             geometry: new ol.geom.Point(markerCoords), // Marker geometry is a point
             name: name, // Place name (used for popup)
             description: description, // Detailed description (used for popup)
+            index: index, // Index number for display
           });
+          
+          // Create numbered marker style
+          const markerStyle = new ol.style.Style({
+            image: new ol.style.Circle({
+              radius: 16,
+              fill: new ol.style.Fill({ color: '#2563EB' }),
+              stroke: new ol.style.Stroke({ color: '#FFFFFF', width: 2 }),
+            }),
+            text: new ol.style.Text({
+              text: String(index),
+              font: 'bold 12px Arial',
+              fill: new ol.style.Fill({ color: '#FFFFFF' }),
+              offsetY: 1,
+            }),
+          });
+          
+          markerFeature.setStyle(markerStyle);
           markerLayer.getSource().addFeature(markerFeature); // Add marker feature to layer source
-          console.log(`map.html: Marker "${name}" added at ${lng},${lat}`);
+          console.log(`map.html: Marker "${name}" (#${index}) added at ${lng},${lat}`);
         } catch (e) {
           console.error("map.html: Error in addMapMarker: ", e);
         }
