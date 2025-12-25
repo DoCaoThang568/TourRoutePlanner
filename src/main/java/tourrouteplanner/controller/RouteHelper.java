@@ -30,6 +30,7 @@ public class RouteHelper {
     private static final Logger log = LoggerFactory.getLogger(RouteHelper.class);
     private final IRoutingService routingService;
     private final TableView<Place> routeTableView;
+    private final TableColumn<Place, Integer> indexColumn;
     private final TableColumn<Place, String> nameColumn;
     private final TableColumn<Place, String> addressColumn;
     private final Label statusLabel;
@@ -63,12 +64,14 @@ public class RouteHelper {
      */
     public RouteHelper(IRoutingService routingService,
             TableView<Place> routeTableView,
+            TableColumn<Place, Integer> indexColumn,
             TableColumn<Place, String> nameColumn,
             TableColumn<Place, String> addressColumn,
             Label statusLabel,
             Consumer<Boolean> loadingHandler) {
         this.routingService = routingService;
         this.routeTableView = routeTableView;
+        this.indexColumn = indexColumn;
         this.nameColumn = nameColumn;
         this.addressColumn = addressColumn;
         this.statusLabel = statusLabel;
@@ -121,6 +124,19 @@ public class RouteHelper {
      * Sets up the route table view.
      */
     public void setupRouteTableView() {
+        // Setup index column to show row number
+        indexColumn.setCellFactory(column -> new TableCell<Place, Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setText(null);
+                } else {
+                    setText(String.valueOf(getIndex() + 1));
+                }
+            }
+        });
+
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         addressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
 

@@ -52,6 +52,8 @@ public class MainController {
     @FXML
     private TableView<Place> routeTableView;
     @FXML
+    private TableColumn<Place, Integer> routeIndexColumn;
+    @FXML
     private TableColumn<Place, String> routePlaceNameColumn;
     @FXML
     private TableColumn<Place, String> routePlaceAddressColumn;
@@ -177,7 +179,7 @@ public class MainController {
 
     private void initializeRouteHelper() {
         routeHelper = new RouteHelper(routingService, routeTableView,
-                routePlaceNameColumn, routePlaceAddressColumn, statusLabel, this::setLoading);
+                routeIndexColumn, routePlaceNameColumn, routePlaceAddressColumn, statusLabel, this::setLoading);
 
         // Setup callbacks
         routeHelper.setOnRouteUpdate(route -> {

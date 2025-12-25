@@ -149,6 +149,7 @@
                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
                                  </columnResizePolicy>
                                  <columns>
+                                   <TableColumn fx:id="routeIndexColumn" text="#" prefWidth="40" minWidth="40" maxWidth="50" />
                                    <TableColumn fx:id="routePlaceNameColumn" text="Place Name" />
                                    <TableColumn fx:id="routePlaceAddressColumn" text="Address" />
                                  </columns>
