@@ -1044,6 +1044,37 @@ Dark Gray: #374151 (Gray-700) - Text
     font-weight: 500; /* Standard CSS property */
 }
 
+/* ========== DARK MODE TEXTAREA FIX ========== */
+.dark-mode .text-area {
+    -fx-background-color: #1a1a2e;
+    -fx-control-inner-background: #1a1a2e;
+    -fx-text-fill: rgba(255,255,255,0.95);
+}
+
+.dark-mode .text-area .content {
+    -fx-background-color: #1a1a2e;
+}
+
+.dark-mode .text-area .scroll-pane {
+    -fx-background-color: #1a1a2e;
+}
+
+.dark-mode .text-area .scroll-pane .viewport {
+    -fx-background-color: #1a1a2e;
+}
+
+.dark-mode .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.dark-mode .route-info-container .text-area,
+.dark-mode .route-info-container .text-area .content,
+.dark-mode .route-info-container .text-area .viewport {
+    -fx-background-color: #1a1a2e;
+    -fx-control-inner-background: #1a1a2e;
+    -fx-text-fill: rgba(255,255,255,0.95);
+}
+
 /* ========== DARK MODE TOGGLE BUTTON ========== */
 .dark-mode-toggle {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, 

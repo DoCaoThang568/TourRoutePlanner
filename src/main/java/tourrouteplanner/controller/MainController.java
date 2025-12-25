@@ -131,6 +131,9 @@ public class MainController {
         // Setup placeholder listeners
         setupPlaceholderListeners();
 
+        // Setup keyboard shortcuts
+        setupKeyboardShortcuts();
+
         // Initial placeholder state
         updateRoutePlaceholderVisibility();
         updateSearchPlaceholderVisibility();
@@ -219,6 +222,36 @@ public class MainController {
                 (javafx.collections.ListChangeListener.Change<? extends Place> c) -> {
                     updateRoutePlaceholderVisibility();
                 });
+    }
+
+    private void setupKeyboardShortcuts() {
+        // Keyboard shortcuts require scene to be initialized
+        Platform.runLater(() -> {
+            if (mapPane.getScene() != null) {
+                mapPane.getScene().setOnKeyPressed(event -> {
+                    if (event.isControlDown()) {
+                        switch (event.getCode()) {
+                            case S -> handleSaveRoute(); // Ctrl+S: Save
+                            case O -> handleLoadRoute(); // Ctrl+O: Open/Load
+                            case F -> searchBox.requestFocus(); // Ctrl+F: Focus search
+                            default -> {
+                            }
+                        }
+                    } else {
+                        switch (event.getCode()) {
+                            case DELETE -> handleRemoveSelected(); // Delete key
+                            case ESCAPE -> {
+                                mapHelper.clearHighlight();
+                                searchBox.clear();
+                            }
+                            default -> {
+                            }
+                        }
+                    }
+                });
+                log.debug("Keyboard shortcuts initialized");
+            }
+        });
     }
 
     // ==================== FXML Event Handlers ====================
