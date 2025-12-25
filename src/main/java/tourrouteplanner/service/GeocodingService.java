@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Service for geocoding operations using Nominatim API.
  * Handles place search (forward geocoding) and address lookup (reverse
@@ -25,6 +28,7 @@ import java.util.Properties;
  */
 public class GeocodingService implements IGeocodingService {
 
+    private static final Logger log = LoggerFactory.getLogger(GeocodingService.class);
     private static final String DEFAULT_NOMINATIM_URL = "https://nominatim.openstreetmap.org";
     private static final String USER_AGENT = "TourRoutePlanner/1.0 (https://github.com/DoCaoThang568/TourRoutePlanner)";
 
@@ -45,15 +49,14 @@ public class GeocodingService implements IGeocodingService {
         Properties prop = new Properties();
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
             if (input == null) {
-                System.err.println("Error: config.properties file not found. Using default Nominatim URL.");
+                log.warn("config.properties not found, using default Nominatim URL: {}", DEFAULT_NOMINATIM_URL);
                 nominatimServerUrl = DEFAULT_NOMINATIM_URL;
                 return;
             }
             prop.load(input);
             nominatimServerUrl = prop.getProperty("nominatim.server.url", DEFAULT_NOMINATIM_URL);
         } catch (IOException ex) {
-            ex.printStackTrace();
-            System.err.println("Error reading config.properties, using default Nominatim URL.");
+            log.error("Error reading config.properties, using default Nominatim URL", ex);
             nominatimServerUrl = DEFAULT_NOMINATIM_URL;
         }
     }
@@ -64,7 +67,7 @@ public class GeocodingService implements IGeocodingService {
             throw new IllegalArgumentException("Query string must not be empty.");
         }
         if (nominatimServerUrl == null || nominatimServerUrl.trim().isEmpty()) {
-            System.err.println("Nominatim server URL is not configured. Returning empty list.");
+            log.warn("Nominatim server URL is not configured. Returning empty list.");
             return new ArrayList<>();
         }
 
@@ -125,7 +128,7 @@ public class GeocodingService implements IGeocodingService {
             reader.close();
             return parseReverseResponse(response.toString(), latitude, longitude);
         } else {
-            System.err.println("Error from Nominatim Reverse Geocoding API: " + responseCode);
+            log.error("Nominatim reverse geocoding error: HTTP {}", responseCode);
             return null;
         }
     }
@@ -188,7 +191,7 @@ public class GeocodingService implements IGeocodingService {
         JsonObject resultObject = JsonParser.parseString(jsonResponse).getAsJsonObject();
 
         if (resultObject.has("error")) {
-            System.err.println("Error from Nominatim: " + resultObject.get("error").getAsString());
+            log.error("Nominatim error: {}", resultObject.get("error").getAsString());
             return null;
         }
 
@@ -377,14 +380,14 @@ public class GeocodingService implements IGeocodingService {
 
     private void handleErrorResponse(HttpURLConnection connection, int responseCode, String apiName)
             throws IOException {
-        System.err.println("Error from " + apiName + " API: " + responseCode + " - " + connection.getResponseMessage());
+        log.error("{} API error: HTTP {} - {}", apiName, responseCode, connection.getResponseMessage());
         try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
             StringBuilder errorResponse = new StringBuilder();
             String errorLine;
             while ((errorLine = errorReader.readLine()) != null) {
                 errorResponse.append(errorLine);
             }
-            System.err.println("Error details: " + errorResponse.toString());
+            log.error("{} error details: {}", apiName, errorResponse);
             throw new IOException(
                     "Error calling " + apiName + " API: " + responseCode + ". Details: " + errorResponse.toString());
         } catch (IOException e) {

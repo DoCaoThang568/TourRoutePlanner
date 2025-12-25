@@ -22,6 +22,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Helper class for managing JxBrowser map operations.
  * Handles map initialization, JavaScript communication, and all map-related
@@ -29,6 +32,7 @@ import java.util.Locale;
  */
 public class MapHelper {
 
+    private static final Logger log = LoggerFactory.getLogger(MapHelper.class);
     private Engine engine;
     private Browser browser;
     private BrowserView browserView;
@@ -57,7 +61,7 @@ public class MapHelper {
         if (licenseKey == null || licenseKey.trim().isEmpty()) {
             Utils.showAlert(Alert.AlertType.ERROR, "License Key Error",
                     "JxBrowser License Key not found in config.properties.");
-            System.err.println("JxBrowser License Key is missing in config.properties.");
+            log.error("JxBrowser License Key is missing in config.properties");
             return false;
         }
 
@@ -75,7 +79,7 @@ public class MapHelper {
                 if (window != null) {
                     window.putProperty("javaConnector", javaConnector);
                 } else {
-                    System.err.println("Could not get window object from frame.");
+                    log.warn("Could not get window object from frame");
                 }
                 return InjectJsCallback.Response.proceed();
             });
@@ -83,7 +87,7 @@ public class MapHelper {
             // Log JavaScript console messages
             browser.on(ConsoleMessageReceived.class, event -> {
                 String message = "[JS " + event.consoleMessage().level() + "] " + event.consoleMessage().message();
-                System.out.println(message);
+                log.debug(message);
             });
 
             // Handle map.html load completion
@@ -113,7 +117,7 @@ public class MapHelper {
                 return event.navigation().browser().url();
             }
         } catch (Exception e) {
-            System.err.println("Error retrieving URL in LoadFinished: " + e.getMessage());
+            log.warn("Error retrieving URL in LoadFinished: {}", e.getMessage());
         }
         return "unknown";
     }
@@ -124,7 +128,7 @@ public class MapHelper {
             browser.navigation().loadUrl(mapHtmlPath.toUri().toString());
         } else {
             String errorMessage = "map.html not found at: " + mapHtmlPath.toString();
-            System.err.println(errorMessage);
+            log.error("map.html not found at: {}", mapHtmlPath);
             Utils.showAlert(Alert.AlertType.ERROR, "Map Loading Error", errorMessage);
         }
     }
@@ -156,7 +160,7 @@ public class MapHelper {
         if (browser != null && browser.mainFrame().isPresent()) {
             browser.mainFrame().get().executeJavaScript(script);
         } else {
-            System.err.println("Cannot execute JavaScript, browser not ready: " + script);
+            log.warn("Cannot execute JavaScript, browser not ready");
         }
     }
 
@@ -304,7 +308,7 @@ public class MapHelper {
     public void shutdown() {
         if (engine != null) {
             engine.close();
-            System.out.println("JxBrowser Engine closed successfully.");
+            log.info("JxBrowser Engine closed successfully");
         }
     }
 

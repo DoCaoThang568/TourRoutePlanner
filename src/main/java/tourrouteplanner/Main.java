@@ -11,6 +11,9 @@ import java.io.File;
 import java.io.IOException;
 import javafx.scene.control.Alert;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Main application class for TourRoutePlanner.
  * Initializes the JavaFX user interface, loads the FXML file,
@@ -19,6 +22,7 @@ import javafx.scene.control.Alert;
  */
 public class Main extends Application {
 
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
     private tourrouteplanner.controller.MainController mainController; // Stores the controller instance for shutdown
                                                                        // method call
 
@@ -39,11 +43,9 @@ public class Main extends Application {
             File dataDir = new File(Constants.DATA_PATH);
             if (!dataDir.exists()) {
                 if (dataDir.mkdirs()) {
-                    System.out.println("Data directory '" + Constants.DATA_PATH + "' has been created.");
+                    log.info("Data directory created: {}", Constants.DATA_PATH);
                 } else {
-                    System.err.println("Could not create data directory '" + Constants.DATA_PATH
-                            + "'. Please check write permissions.");
-                    // Consider showing an Alert to the user here if directory creation is mandatory
+                    log.error("Could not create data directory: {}", Constants.DATA_PATH);
                 }
             }
 
@@ -55,18 +57,14 @@ public class Main extends Application {
             primaryStage.setScene(new Scene(root));
             primaryStage.show();
         } catch (IOException e) {
-            e.printStackTrace();
-            // Handle critical error when FXML cannot be loaded
+            log.error("Failed to load Main.fxml", e);
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Critical Startup Error");
             alert.setHeaderText("Could not start TourRoutePlanner application");
-            alert.setContentText(
-                    "A critical error occurred while loading the main user interface (Main.fxml).\\nThe application cannot continue.\\nError details: "
-                            + e.getMessage());
+            alert.setContentText("Error loading Main.fxml: " + e.getMessage());
             alert.showAndWait();
-            // Consider System.exit(1) here if application cannot function without FXML
         } catch (NullPointerException e) {
-            e.printStackTrace();
+            log.error("Main.fxml not found", e);
             // Handle error when FXML file is not found
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Critical Startup Error");

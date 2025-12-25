@@ -14,6 +14,9 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Service class responsible for storing and loading application data.
  * This data includes list of places ({@link Place}) and route information
@@ -21,6 +24,7 @@ import java.util.List;
  * Uses JSON format for file storage.
  */
 public class StorageService implements IStorageService {
+    private static final Logger log = LoggerFactory.getLogger(StorageService.class);
     /** Gson object used for converting between Java objects and JSON strings. */
     private final Gson gson;
 
@@ -88,7 +92,7 @@ public class StorageService implements IStorageService {
             fileChooser.setInitialDirectory(initialDirectory);
         } else {
             // If DATA_PATH doesn't exist, let the OS decide the default directory.
-            System.out.println("DATA_PATH directory does not exist, using system default directory for FileChooser.");
+            log.debug("DATA_PATH directory does not exist, using system default directory for FileChooser");
         }
         return fileChooser.showSaveDialog(ownerWindow);
     }
@@ -112,7 +116,7 @@ public class StorageService implements IStorageService {
         if (initialDirectory.exists() && initialDirectory.isDirectory()) {
             fileChooser.setInitialDirectory(initialDirectory);
         } else {
-            System.out.println("DATA_PATH directory does not exist, using system default directory for FileChooser.");
+            log.debug("DATA_PATH directory does not exist, using system default directory for FileChooser");
         }
         return fileChooser.showOpenDialog(ownerWindow);
     }
@@ -131,12 +135,10 @@ public class StorageService implements IStorageService {
         LoadedRouteData dataToSave = new LoadedRouteData(places, route);
         try (Writer writer = new FileWriter(file)) {
             gson.toJson(dataToSave, writer);
-            System.out.println("Route successfully saved to: " + file.getAbsolutePath());
+            log.info("Route saved to: {}", file.getAbsolutePath());
             return true;
         } catch (IOException e) {
-            System.err.println("Error saving route to file " + file.getAbsolutePath() + ": " + e.getMessage());
-            e.printStackTrace();
-            // Consider showing an error message to the user via UI.
+            log.error("Error saving route to {}", file.getAbsolutePath(), e);
             return false;
         }
     }
@@ -152,7 +154,7 @@ public class StorageService implements IStorageService {
      */
     public LoadedRouteData loadRoute(File file) {
         if (file == null || !file.exists() || !file.canRead()) {
-            System.err.println("Invalid or unreadable file: " + (file != null ? file.getAbsolutePath() : "null"));
+            log.warn("Invalid or unreadable file: {}", file != null ? file.getAbsolutePath() : "null");
             return null;
         }
         try (Reader reader = new FileReader(file)) {
@@ -160,23 +162,19 @@ public class StorageService implements IStorageService {
             }.getType();
             LoadedRouteData loadedData = gson.fromJson(reader, dataType);
             if (loadedData != null) {
-                System.out.println("Route successfully loaded from: " + file.getAbsolutePath());
+                log.info("Route loaded from: {}", file.getAbsolutePath());
             } else {
-                System.err.println("Could not parse route data from file (null result): " + file.getAbsolutePath());
+                log.warn("Could not parse route data from file: {}", file.getAbsolutePath());
             }
             return loadedData;
         } catch (FileNotFoundException e) {
-            System.err.println("File not found when loading route: " + file.getAbsolutePath());
-            // This case is unlikely since file.exists() was already checked above.
+            log.error("File not found: {}", file.getAbsolutePath());
             return null;
         } catch (IOException e) {
-            System.err
-                    .println("IO error when loading route from file " + file.getAbsolutePath() + ": " + e.getMessage());
-            e.printStackTrace();
+            log.error("IO error loading route from {}", file.getAbsolutePath(), e);
             return null;
         } catch (com.google.gson.JsonSyntaxException e) {
-            System.err.println("JSON syntax error in route file " + file.getAbsolutePath() + ": " + e.getMessage());
-            e.printStackTrace();
+            log.error("JSON syntax error in {}", file.getAbsolutePath(), e);
             return null;
         }
     }
@@ -192,16 +190,15 @@ public class StorageService implements IStorageService {
      */
     public boolean savePlaces(List<Place> places, String filePath) {
         if (filePath == null || filePath.trim().isEmpty()) {
-            System.err.println("File path for saving places must not be empty.");
+            log.warn("File path for saving places must not be empty");
             return false;
         }
         try (Writer writer = new FileWriter(filePath)) {
             gson.toJson(places, writer);
-            System.out.println("Place list successfully saved to: " + filePath);
+            log.info("Place list saved to: {}", filePath);
             return true;
         } catch (IOException e) {
-            System.err.println("Error saving place list to file " + filePath + ": " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error saving place list to {}", filePath, e);
             return false;
         }
     }
@@ -219,13 +216,13 @@ public class StorageService implements IStorageService {
      */
     public List<Place> loadPlaces(String filePath) {
         if (filePath == null || filePath.trim().isEmpty()) {
-            System.err.println("File path for loading places must not be empty.");
-            return new ArrayList<>(); // Return empty list instead of null
+            log.warn("File path for loading places must not be empty");
+            return new ArrayList<>();
         }
         File file = new File(filePath);
         if (!file.exists() || !file.canRead()) {
-            System.err.println("Places file does not exist or is unreadable: " + filePath);
-            return new ArrayList<>(); // Return empty list instead of null
+            log.warn("Places file does not exist or is unreadable: {}", filePath);
+            return new ArrayList<>();
         }
 
         try (Reader reader = new FileReader(filePath)) {
@@ -233,24 +230,20 @@ public class StorageService implements IStorageService {
             }.getType();
             List<Place> loadedPlaces = gson.fromJson(reader, placeListType);
             if (loadedPlaces != null) {
-                System.out.println("Place list successfully loaded from: " + filePath);
+                log.info("Place list loaded from: {}", filePath);
                 return loadedPlaces;
             } else {
-                System.err.println(
-                        "Could not parse place data from file (null result): " + filePath + ". Returning empty list.");
-                return new ArrayList<>(); // Ensure never returning null
+                log.warn("Could not parse place data from: {}", filePath);
+                return new ArrayList<>();
             }
         } catch (FileNotFoundException e) {
-            // This case is unlikely since file.exists() was already checked above.
-            System.err.println("File not found when loading places: " + filePath);
+            log.error("Places file not found: {}", filePath);
             return new ArrayList<>();
         } catch (IOException e) {
-            System.err.println("IO error when loading places from file " + filePath + ": " + e.getMessage());
-            e.printStackTrace();
+            log.error("IO error loading places from {}", filePath, e);
             return new ArrayList<>();
         } catch (com.google.gson.JsonSyntaxException e) {
-            System.err.println("JSON syntax error in places file " + filePath + ": " + e.getMessage());
-            e.printStackTrace();
+            log.error("JSON syntax error in places file {}", filePath, e);
             return new ArrayList<>();
         }
     }
@@ -265,9 +258,9 @@ public class StorageService implements IStorageService {
         File dataDir = new File(Constants.DATA_PATH);
         if (!dataDir.exists()) {
             if (dataDir.mkdirs()) {
-                System.out.println("Directory " + Constants.DATA_PATH + " has been created by StorageService.");
+                log.info("Data directory created: {}", Constants.DATA_PATH);
             } else {
-                System.err.println("StorageService: Could not create directory " + Constants.DATA_PATH);
+                log.error("Could not create data directory: {}", Constants.DATA_PATH);
             }
         }
     }

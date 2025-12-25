@@ -14,10 +14,15 @@ import java.text.Normalizer;
 import java.util.regex.Pattern;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Utility class containing commonly used helper functions.
  */
 public class Utils {
+
+    private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
     /**
      * Displays an alert dialog.
@@ -56,8 +61,7 @@ public class Utils {
                 }
             }
         } catch (IOException e) {
-            // Log error or handle, but currently will proceed to next attempt
-            System.err.println("Error loading config from classpath: " + e.getMessage());
+            log.warn("Error loading config from classpath: {}", e.getMessage());
         }
 
         // Attempt 2: Load from explicit target/classes path (fallback)
@@ -71,8 +75,7 @@ public class Utils {
                     return value.trim();
                 }
             } catch (IOException e) {
-                // Log error or handle, but currently will return defaultValue
-                System.err.println("Error loading config from explicit path: " + e.getMessage());
+                log.warn("Error loading config from explicit path: {}", e.getMessage());
             }
         }
 

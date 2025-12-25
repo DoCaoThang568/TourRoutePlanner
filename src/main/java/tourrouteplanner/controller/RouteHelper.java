@@ -11,8 +11,10 @@ import tourrouteplanner.util.Utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Helper class for managing route table operations.
@@ -20,6 +22,7 @@ import java.util.List;
  */
 public class RouteHelper {
 
+    private static final Logger log = LoggerFactory.getLogger(RouteHelper.class);
     private final IRoutingService routingService;
     private final TableView<Place> routeTableView;
     private final TableColumn<Place, String> nameColumn;
@@ -308,7 +311,7 @@ public class RouteHelper {
                 return null;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error connecting to routing service: {}", e.getMessage(), e);
             Utils.showAlert(Alert.AlertType.ERROR, "Route Finding Error",
                     "Error connecting to routing service: " + e.getMessage());
             routeCalculated = false;

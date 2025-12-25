@@ -21,12 +21,16 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Service for routing operations using OSRM API.
  * Handles route calculation between waypoints.
  */
 public class RoutingService implements IRoutingService {
 
+    private static final Logger log = LoggerFactory.getLogger(RoutingService.class);
     private static final String DEFAULT_OSRM_URL = "http://router.project-osrm.org";
     private static final String USER_AGENT = "TourRoutePlanner/1.0 (https://github.com/DoCaoThang568/TourRoutePlanner)";
 
@@ -49,15 +53,14 @@ public class RoutingService implements IRoutingService {
         Properties prop = new Properties();
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
             if (input == null) {
-                System.err.println("Error: config.properties file not found. Using default OSRM URL.");
+                log.warn("config.properties not found, using default OSRM URL: {}", DEFAULT_OSRM_URL);
                 osrmServerUrl = DEFAULT_OSRM_URL;
                 return;
             }
             prop.load(input);
             osrmServerUrl = prop.getProperty("osrm.server.url", DEFAULT_OSRM_URL);
         } catch (IOException ex) {
-            ex.printStackTrace();
-            System.err.println("Error reading config.properties, using default OSRM URL.");
+            log.error("Error reading config.properties, using default OSRM URL", ex);
             osrmServerUrl = DEFAULT_OSRM_URL;
         }
     }
@@ -118,13 +121,13 @@ public class RoutingService implements IRoutingService {
         if (!"Ok".equalsIgnoreCase(code)) {
             String message = responseObject.has("message") ? responseObject.get("message").getAsString()
                     : "Unknown error";
-            System.err.println("OSRM API error: " + message);
+            log.error("OSRM API error: {}", message);
             return null;
         }
 
         if (!responseObject.has("routes") || !responseObject.get("routes").isJsonArray()
                 || responseObject.getAsJsonArray("routes").isEmpty()) {
-            System.err.println("OSRM response contains no routes.");
+            log.error("OSRM response contains no routes");
             return null;
         }
 
@@ -235,14 +238,14 @@ public class RoutingService implements IRoutingService {
      * Handles HTTP error response from OSRM API.
      */
     private void handleErrorResponse(HttpURLConnection connection, int responseCode) throws IOException {
-        System.err.println("Error from OSRM API: " + responseCode);
+        log.error("OSRM API error: HTTP {}", responseCode);
         try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
             StringBuilder errorResponse = new StringBuilder();
             String errorLine;
             while ((errorLine = errorReader.readLine()) != null) {
                 errorResponse.append(errorLine);
             }
-            System.err.println("Error details: " + errorResponse.toString());
+            log.error("OSRM error details: {}", errorResponse);
             throw new IOException("OSRM API error: " + responseCode + ". " + errorResponse.toString());
         } catch (Exception e) {
             throw new IOException("OSRM API error: " + responseCode + ". Could not read error details.");

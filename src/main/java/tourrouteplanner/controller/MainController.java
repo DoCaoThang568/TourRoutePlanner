@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Main controller for the Tour Route Planner application.
  * Acts as coordinator delegating to helper classes for specific functionality:
@@ -35,6 +38,8 @@ import java.util.Optional;
  * - RouteHelper: Route table management
  */
 public class MainController {
+
+    private static final Logger log = LoggerFactory.getLogger(MainController.class);
 
     // ==================== FXML UI Components ====================
 
@@ -362,7 +367,7 @@ public class MainController {
                             "Could not find information for clicked location.");
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Error in reverse geocoding: {}", e.getMessage(), e);
                 Utils.showAlert(Alert.AlertType.ERROR, "Geocoding Error",
                         "Error getting address: " + e.getMessage());
             }
@@ -371,7 +376,7 @@ public class MainController {
 
     @JsAccessible
     public void logFromJs(String message) {
-        System.out.println("[JS Log] " + message);
+        log.debug("[JS] {}", message);
     }
 
     // ==================== UI Helper Methods ====================

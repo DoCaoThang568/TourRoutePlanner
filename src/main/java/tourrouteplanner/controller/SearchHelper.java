@@ -17,12 +17,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Helper class for managing search operations and UI.
  * Handles place search, suggestions, and search result display.
  */
 public class SearchHelper {
 
+    private static final Logger log = LoggerFactory.getLogger(SearchHelper.class);
     private static final int DEBOUNCE_DELAY_MS = 300;
     private static final int MIN_SEARCH_LENGTH = 2;
 
@@ -30,7 +34,6 @@ public class SearchHelper {
     private final ListView<Place> placeListView;
     private final ListView<String> suggestionsListView;
     private final TextField searchBox;
-    private final Label statusLabel;
 
     private final ObservableList<Place> searchResults = FXCollections.observableArrayList();
     private final ObservableList<String> searchSuggestions = FXCollections.observableArrayList();
@@ -62,7 +65,7 @@ public class SearchHelper {
         this.searchBox = searchBox;
         this.placeListView = placeListView;
         this.suggestionsListView = suggestionsListView;
-        this.statusLabel = statusLabel;
+        // statusLabel reserved for future use
 
         initializeScheduler();
     }
@@ -282,7 +285,7 @@ public class SearchHelper {
                     }
                 });
             } catch (IOException e) {
-                System.err.println("Error fetching suggestions: " + e.getMessage());
+                log.warn("Error fetching suggestions: {}", e.getMessage());
             }
         }, DEBOUNCE_DELAY_MS, TimeUnit.MILLISECONDS);
     }
