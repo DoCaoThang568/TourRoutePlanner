@@ -1,0 +1,40 @@
+/* ====================================================
+   BASE.CSS - Root styles, typography, color variables
+   ==================================================== */
+
+/* ========== COLOR VARIABLES (as comments for reference) ========== */
+/* 
+ * Primary:        #2563EB (Blue-600)
+ * Primary Hover:  #1D4ED8 (Blue-700)
+ * Success:        #059669 (Emerald-600)
+ * Danger:         #DC2626 (Red-600)
+ * Warning:        #D97706 (Amber-600)
+ * 
+ * Light Mode:
+ *   Background:   #F8FAFC (Slate-50)
+ *   Surface:      #FFFFFF
+ *   Text Primary: #1E293B (Slate-800)
+ *   Text Secondary: #64748B (Slate-500)
+ *   Border:       #E2E8F0 (Slate-200)
+ *
+ * Dark Mode:
+ *   Background:   #0F172A (Slate-900)
+ *   Surface:      #1E293B (Slate-800)
+ *   Text Primary: #F1F5F9 (Slate-100)
+ *   Text Secondary: #94A3B8 (Slate-400)
+ *   Border:       #334155 (Slate-700)
+ */
+
+/* ========== ROOT ========== */
+.root {
+    -fx-background-color: #F8FAFC;
+    -fx-font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+    -fx-font-size: 14px;
+}
+
+/* ========== TYPOGRAPHY ========== */
+.menu-bar, .menu-bar .menu, .menu-bar .menu .menu-item, 
+.menu-bar .menu .menu-item .label, .header-title, 
+.section-header, .button, .text-field, .label {
+    -fx-font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+}

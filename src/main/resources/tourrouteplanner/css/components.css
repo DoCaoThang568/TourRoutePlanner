@@ -1,0 +1,278 @@
+/* ====================================================
+   COMPONENTS.CSS - Buttons, inputs, lists, tables
+   ==================================================== */
+
+/* ========== TEXT FIELDS ========== */
+.search-field {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 10 14 10 14;
+    -fx-prompt-text-fill: #94A3B8;
+    -fx-font-size: 14px;
+}
+
+.search-field:focused {
+    -fx-border-color: #2563EB;
+    -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.15), 8, 0, 0, 0);
+}
+
+/* ========== BUTTONS - BASE ========== */
+.button {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-font-size: 13px;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 8 16 8 16;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #1D4ED8;
+}
+
+.button:pressed {
+    -fx-background-color: #1E40AF;
+}
+
+.button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+    -fx-cursor: default;
+}
+
+/* ========== SEARCH BUTTON ========== */
+.search-button {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 10 20 10 20;
+}
+
+.search-button:hover {
+    -fx-background-color: #1D4ED8;
+}
+
+.search-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* ========== ADD BUTTON (Success) ========== */
+.add-button {
+    -fx-background-color: #059669;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-background-radius: 6;
+    -fx-padding: 6 12 6 12;
+}
+
+.add-button:hover {
+    -fx-background-color: #047857;
+}
+
+.add-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* ========== REMOVE BUTTON (Danger) ========== */
+.remove-button {
+    -fx-background-color: #DC2626;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16 8 16;
+}
+
+.remove-button:hover {
+    -fx-background-color: #B91C1C;
+}
+
+.remove-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* ========== CLEAR BUTTON ========== */
+.clear-button {
+    -fx-background-color: #EF4444;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16 8 16;
+}
+
+.clear-button:hover {
+    -fx-background-color: #DC2626;
+}
+
+.clear-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* ========== MOVE BUTTONS ========== */
+.move-button {
+    -fx-background-color: #64748B;
+    -fx-text-fill: white;
+    -fx-font-weight: 500;
+    -fx-background-radius: 6;
+    -fx-padding: 6 10 6 10;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+}
+
+.move-button:hover {
+    -fx-background-color: #475569;
+}
+
+.move-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* ========== FIND ROUTE BUTTON (Primary CTA) ========== */
+.find-route-button {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-font-size: 14px;
+    -fx-background-radius: 8;
+    -fx-padding: 12 24 12 24;
+}
+
+.find-route-button:hover {
+    -fx-background-color: #1D4ED8;
+    -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.3), 8, 0, 0, 2);
+}
+
+.find-route-button:disabled {
+    -fx-background-color: #CBD5E1;
+    -fx-text-fill: #94A3B8;
+}
+
+/* ========== LISTS ========== */
+.places-list, .suggestions-list {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.places-list .list-cell,
+.suggestions-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1E293B;
+    -fx-padding: 10 12 10 12;
+}
+
+.places-list .list-cell:filled:hover,
+.suggestions-list .list-cell:filled:hover {
+    -fx-background-color: #F1F5F9;
+}
+
+.places-list .list-cell:filled:selected,
+.suggestions-list .list-cell:filled:selected {
+    -fx-background-color: #DBEAFE;
+    -fx-text-fill: #1E40AF;
+}
+
+/* ========== TABLE VIEW ========== */
+.route-table {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.route-table .column-header {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 12 8 12;
+}
+
+.route-table .column-header .label {
+    -fx-text-fill: #64748B;
+    -fx-font-weight: 600;
+    -fx-font-size: 12px;
+}
+
+.route-table .table-row-cell {
+    -fx-background-color: transparent;
+}
+
+.route-table .table-row-cell:odd {
+    -fx-background-color: #F8FAFC;
+}
+
+.route-table .table-row-cell:selected {
+    -fx-background-color: #DBEAFE;
+}
+
+.route-table .table-cell {
+    -fx-text-fill: #1E293B;
+    -fx-padding: 8 12 8 12;
+}
+
+/* ========== PLACEHOLDER TEXT ========== */
+.placeholder-text {
+    -fx-text-fill: #94A3B8;
+    -fx-font-style: italic;
+    -fx-font-size: 13px;
+}
+
+/* ========== ROUTE INFO ========== */
+.route-info-container {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.route-info {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1E293B;
+    -fx-font-size: 13px;
+    -fx-padding: 12;
+}
+
+/* ========== LOADING INDICATOR ========== */
+.loading-container {
+    -fx-background-color: rgba(248, 250, 252, 0.9);
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+}
+
+.loading-text {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13px;
+}
+
+/* ========== DARK MODE TOGGLE ========== */
+.dark-mode-toggle {
+    -fx-background-color: #F1F5F9;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 50;
+    -fx-border-radius: 50;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-max-width: 40;
+    -fx-max-height: 40;
+    -fx-padding: 8;
+}
+
+.dark-mode-toggle:hover {
+    -fx-background-color: #E2E8F0;
+}
