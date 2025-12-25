@@ -90,6 +90,8 @@ public class MainController {
     @FXML
     private TextArea dynamicRouteInfoTextArea;
     @FXML
+    private TitledPane directionsPane;
+    @FXML
     private Label statusLabel;
 
     // ==================== Services ====================
@@ -428,7 +430,7 @@ public class MainController {
     // ==================== UI Helper Methods ====================
 
     private void updateDynamicRouteInfo(String totalDistanceText, String turnByTurnInstructions) {
-        if (dynamicRouteInfoScrollPane != null && dynamicRouteInfoTextArea != null) {
+        if (dynamicRouteInfoTextArea != null && directionsPane != null) {
             StringBuilder infoBuilder = new StringBuilder();
             infoBuilder.append(totalDistanceText);
 
@@ -440,8 +442,8 @@ public class MainController {
             dynamicRouteInfoTextArea.setText(infoBuilder.toString());
 
             boolean hasContent = totalDistanceText != null && !totalDistanceText.trim().isEmpty();
-            dynamicRouteInfoScrollPane.setVisible(hasContent);
-            dynamicRouteInfoScrollPane.setManaged(hasContent);
+            directionsPane.setVisible(hasContent);
+            directionsPane.setManaged(hasContent);
         }
     }
 

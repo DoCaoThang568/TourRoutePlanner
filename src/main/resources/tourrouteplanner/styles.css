@@ -678,3 +678,59 @@
 .dark-mode .scroll-bar .thumb:hover {
     -fx-background-color: #64748B;
 }
+
+/* Directions Pane (Collapsible) */
+.directions-pane {
+    -fx-background-color: transparent;
+}
+
+.directions-pane > .title {
+    -fx-background-color: #F1F5F9;
+    -fx-background-radius: 6 6 0 0;
+    -fx-padding: 8 12 8 12;
+}
+
+.directions-pane > .title > .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.directions-pane > .title > .arrow-button > .arrow {
+    -fx-background-color: #64748B;
+}
+
+.directions-pane > .title > .text {
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+    -fx-text-fill: #334155;
+}
+
+.directions-pane > .content {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 1 1 1;
+    -fx-border-radius: 0 0 6 6;
+}
+
+.route-info {
+    -fx-background-color: transparent;
+    -fx-font-size: 12px;
+    -fx-text-fill: #475569;
+}
+
+/* Dark mode */
+.dark-mode .directions-pane > .title {
+    -fx-background-color: #334155;
+}
+
+.dark-mode .directions-pane > .title > .text {
+    -fx-text-fill: #E2E8F0;
+}
+
+.dark-mode .directions-pane > .content {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #475569;
+}
+
+.dark-mode .route-info {
+    -fx-text-fill: #CBD5E1;
+}
