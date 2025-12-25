@@ -134,9 +134,9 @@
 
 .section-header {
     -fx-font-weight: 600;
-    -fx-font-size: 12px;
-    -fx-text-fill: #64748B;
-    -fx-padding: 0 0 8 0;
+    -fx-font-size: 13px;
+    -fx-text-fill: #475569;
+    -fx-padding: 0 0 10 0;
 }
 
 /* Glass Panel (Map area) */
@@ -528,7 +528,12 @@
 
 .dark-mode .places-list .list-cell,
 .dark-mode .suggestions-list .list-cell {
-    -fx-text-fill: #E2E8F0;
+    -fx-text-fill: #F1F5F9;
+}
+
+.dark-mode .places-list .list-cell .label,
+.dark-mode .suggestions-list .list-cell .label {
+    -fx-text-fill: #F1F5F9;
 }
 
 .dark-mode .places-list .list-cell:filled:hover,
@@ -570,7 +575,11 @@
 }
 
 .dark-mode .route-table .table-cell {
-    -fx-text-fill: #E2E8F0;
+    -fx-text-fill: #F1F5F9;
+}
+
+.dark-mode .route-table .table-cell .label {
+    -fx-text-fill: #F1F5F9;
 }
 
 /* Dark Mode - Placeholder */
@@ -601,7 +610,23 @@
 }
 
 .dark-mode .route-info {
-    -fx-text-fill: #E2E8F0;
+    -fx-background-color: #1E293B;
+    -fx-text-fill: #F1F5F9;
+    -fx-control-inner-background: #1E293B;
+}
+
+.dark-mode .route-info .content {
+    -fx-background-color: #1E293B;
+}
+
+.dark-mode .text-area {
+    -fx-background-color: #1E293B;
+    -fx-text-fill: #F1F5F9;
+    -fx-control-inner-background: #1E293B;
+}
+
+.dark-mode .text-area .content {
+    -fx-background-color: #1E293B;
 }
 
 /* Dark Mode - Toggle Button */
